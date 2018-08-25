@@ -1,18 +1,18 @@
 #pragma once
 #include "expr.h"
-#include <iostream>
 
+namespace ad {
 namespace core {
 
 template <class T>
 struct DualNum: public Expr<DualNum<T>>
 {
     using value_type = T;
-    T x;
-    T xdot;
+    T w;
+    T df;
     DualNum() =default;
-    DualNum(T x, T xdot)
-        : x(x), xdot(xdot)
+    DualNum(T w, T df=0)
+        : w(w), df(df)
     {}
 
     template <class ExprType, class Enable=void>
@@ -24,12 +24,12 @@ struct DualNum: public Expr<DualNum<T>>
 
     // Higher precedence!
     inline DualNum<T>& operator=(DualNum<T> const& N) {
-        x = N.x; xdot = N.xdot; return *this;
+        w = N.w; df = N.df; return *this;
     }
     
     // Equality
     inline bool operator==(DualNum<T> const& n) const {
-        return (x == n.x) && (xdot == n.xdot);
+        return (w == n.w) && (df == n.df);
     }
 
     // Evaluate
@@ -38,4 +38,5 @@ struct DualNum: public Expr<DualNum<T>>
 };
 
 
-} // end core
+} // namepsace core
+} // namespace ad 

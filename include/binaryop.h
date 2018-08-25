@@ -4,6 +4,8 @@
 #include "utils.h"
 #include <iostream>
 
+namespace ad {
+
 // Pre-defined Binary Operation classes
 namespace core {
     // Add
@@ -15,7 +17,7 @@ namespace core {
         // Specialize for DualNum
         template <class T>
         inline static DualNum<T> map(DualNum<T> const& lhs, DualNum<T> const& rhs)
-        {return DualNum<T>(lhs.x + rhs.x, lhs.xdot + rhs.xdot);}
+        {return DualNum<T>(lhs.w + rhs.w, lhs.df + rhs.df);}
     };
 
     //// Subtract
@@ -49,7 +51,9 @@ namespace core {
     //    {return lhs / rhs;}
     //};
 }
+} // namespace ad
 
+namespace ad {
 // BinaryOpExpr
 namespace core {
     // Binary Op Expression
@@ -77,7 +81,9 @@ namespace core {
 
     // operator+
     template <class TL, class TR>
-    inline auto operator+(TL const& lhs, TR const& rhs)
+    inline auto operator+(Expr<TL> const& lhs, Expr<TR> const& rhs)
         -> BinaryOpExpr<add, TL, TR>
-    {return make_BinaryOpExpr<add>(lhs, rhs);}
-}
+    {return make_BinaryOpExpr<add>(lhs.self(), rhs.self());}
+    
+} // namespace core
+} // namespace ad

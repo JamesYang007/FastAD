@@ -1,5 +1,6 @@
 #pragma once
 
+namespace ad {
 namespace core {
 
 template <class SubType>
@@ -9,5 +10,5 @@ struct Expr
     inline SubType const& self() const
     {return *static_cast<SubType const*>(this);}
 };
-
 } // end core
+} // namespace ad

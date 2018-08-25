@@ -25,13 +25,17 @@ USER_DIR = ../
 CPPFLAGS += -std=c++11 -isystem $(GTEST_DIR)/include
 
 # Flags passed to the C++ compiler.
-CXXFLAGS += -g -Wall -Wextra -pthread 
+CXXFLAGS += -g -pthread 
 
 # All tests produced by this Makefile.  Remember to add new tests you
 # created to the list.
 TESTS=utils_unittest \
 	  dualnum_unittest \
 	  binaryop_unittest \
+	  autodiff_unittest \
+	  admath_unittest \
+	  adnode_unittest \
+	  ultimate_unittest \
 	  all_unittest
 
 # All Google Test headers.  Usually you shouldn't change this
@@ -117,6 +121,45 @@ binaryop_unittest.o : $(USER_DIR)/src/binaryop_unittest.cpp \
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/src/binaryop_unittest.cpp
 
 binaryop_unittest : binaryop_unittest.o gtest_main.a
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@
+
+# autodiff
+autodiff_unittest.o : $(USER_DIR)/src/autodiff_unittest.cpp \
+					$(USER_DIR)/src/autodiff_unittest.h \
+                     $(USER_DIR)/include/autodiff.h \
+					 $(GTEST_HEADERS) $(MY_HEADERS)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/src/autodiff_unittest.cpp
+
+autodiff_unittest : autodiff_unittest.o gtest_main.a
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@
+
+# admath
+admath_unittest.o : $(USER_DIR)/src/admath_unittest.cpp \
+					$(USER_DIR)/src/admath_unittest.h \
+                     $(USER_DIR)/include/admath.h \
+					 $(GTEST_HEADERS) $(MY_HEADERS)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/src/admath_unittest.cpp
+
+admath_unittest : admath_unittest.o gtest_main.a
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@
+
+# adnode
+adnode_unittest.o : $(USER_DIR)/src/adnode_unittest.cpp \
+					$(USER_DIR)/src/adnode_unittest.h \
+                     $(USER_DIR)/include/adnode.h \
+					 $(GTEST_HEADERS) $(MY_HEADERS)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/src/adnode_unittest.cpp
+
+adnode_unittest : adnode_unittest.o gtest_main.a
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@
+
+# ultimate
+ultimate_unittest.o : $(USER_DIR)/src/ultimate_unittest.cpp \
+					$(USER_DIR)/src/ultimate_unittest.h \
+					 $(GTEST_HEADERS) $(MY_HEADERS)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/src/ultimate_unittest.cpp
+
+ultimate_unittest : ultimate_unittest.o gtest_main.a
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@
 
 # all (NO NEED TO MODIFY) 
