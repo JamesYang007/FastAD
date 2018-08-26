@@ -26,9 +26,10 @@ namespace core {
         TR const& rhs;
         ADNode(TL const& lhs, TR const& rhs)
             : datatype(0,0), lhs(lhs), rhs(rhs)
-        {std::cout << this << ": BinaryNode constructor" << std::endl;}
-        ~ADNode()
-        {std::cout << this << ": BinaryNode destructor" << std::endl;}
+        {}
+        //{std::cout << this << ": BinaryNode constructor" << std::endl;}
+        //~ADNode()
+        //{std::cout << this << ": BinaryNode destructor" << std::endl;}
 
         inline T feval()
         {this->w = Binary::fmap(
@@ -51,9 +52,10 @@ namespace core {
         TL const& lhs; 
         ADNode(TL const& lhs)
             : datatype(0,0), lhs(lhs)
-        {std::cout << this << ": UnaryNode constructor" << std::endl;}
-        ~ADNode()
-        {std::cout << this << ": UnaryNode destructor" << std::endl;}
+        {}
+        //{std::cout << this << ": UnaryNode constructor" << std::endl;}
+        //~ADNode()
+        //{std::cout << this << ": UnaryNode destructor" << std::endl;}
 
         inline T feval()
         {this->w = Unary::fmap(
@@ -74,9 +76,10 @@ namespace core {
         {std::cout << this << ": LeafNode default constructor" << std::endl;};
         ADNode(T w, T* df_ptr, T df) 
             : datatype(w, df), df_ptr(df_ptr)
-        {std::cout << this << ": LeafNode constructor" << std::endl;}
-        ~ADNode()
-        {std::cout << this << ": LeafNode destructor" << std::endl;}
+        {}
+        //{std::cout << this << ": LeafNode constructor" << std::endl;}
+        //~ADNode()
+        //{std::cout << this << ": LeafNode destructor" << std::endl;}
         
         inline T feval() const
         {return this->w;}
