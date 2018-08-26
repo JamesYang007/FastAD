@@ -5,7 +5,7 @@
 namespace {
 
     TEST(binaryop_test, contructor) {
-        using namespace ad::core;
+        using namespace ad::core::test;
         DualNum<double> n1(-2.3, 1.0);
         DualNum<double> n2(5.1002, -100);
         BinaryOpExpr<add, DualNum<double>, DualNum<double>> boe(n1, n2);
@@ -18,7 +18,7 @@ namespace {
     }
 
     TEST(binaryop_test, eval) {
-        using namespace ad::core;
+        using namespace ad::core::test;
         DualNum<double> n1(-2.3, 1.0);
         DualNum<double> n2(5.1002, -100);
         BinaryOpExpr<add, DualNum<double>, DualNum<double>> boe(n1, n2);

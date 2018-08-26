@@ -2,6 +2,7 @@
 
 namespace ad {
 namespace core {
+namespace test {
 
 template <class SubType>
 struct Expr
@@ -10,5 +11,8 @@ struct Expr
     inline SubType const& self() const
     {return *static_cast<SubType const*>(this);}
 };
+
+} // namespace test
+
 } // end core
 } // namespace ad

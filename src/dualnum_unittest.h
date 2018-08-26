@@ -7,7 +7,7 @@
 namespace {
     
     TEST(dualnum_test, constructor) {
-        using namespace ad::core;
+        using namespace ad::core::test;
         DualNum<double> dual(2.1, 2.3);
         EXPECT_EQ(dual.w, 2.1);
         EXPECT_EQ(dual.df, 2.3);
@@ -16,20 +16,20 @@ namespace {
     }
 
     TEST(dualnum_test, logic_eq) {
-        using namespace ad::core; 
+        using namespace ad::core::test;
         DualNum<double> n1(-1.2, 0.104);
         DualNum<double> n2(-1.2, 0.104);
         EXPECT_EQ(n1 == n2, 1); 
     }
 
     TEST(dualnum_test, eval) {
-        using namespace ad::core; 
+        using namespace ad::core::test; 
         DualNum<double> n1(-1.2, 0.104);
         EXPECT_EQ(n1 == n1.eval(), 1); 
     }
 
     TEST(dualnum_test, op_eq) {
-        using namespace ad::core; 
+        using namespace ad::core::test; 
         DualNum<double> n1(-1.2, 0.104);
         DualNum<double> n2(3.2, 1.42);
         EXPECT_EQ(n1 == n2, 0); 
@@ -39,7 +39,7 @@ namespace {
     }
 
     TEST(dualnum_test, add) {
-        using namespace ad::core; 
+        using namespace ad::core::test; 
         DualNum<double> n1(-1.2, 0.104);
         DualNum<double> n2(3.2, 1.42);
         DualNum<double> n3(1., 0.);

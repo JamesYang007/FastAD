@@ -5,10 +5,23 @@
 
 namespace {
 
+    TEST(adnode_test, memory) {
+        using namespace ad;
+        double x1 = 2.0, x2 = 1.31, x3 = -3.14;
+        double dfs[3] = {0};
+        auto leaf1 = make_leaf(x1, dfs);
+        auto leaf2 = make_var(x2, dfs+1); // same thing as make_leaf
+        auto leaf3 = make_leaf(x3, dfs+2);
+        
+        auto res = leaf1 + sin(leaf2 + leaf3);
+        std::cout << "Mark" << std::endl;
+        EXPECT_EQ(res.feval(), x1 + std::sin(x2 + x3));
+    }
+
     TEST(adnode_test, adnode) {
         using namespace ad::core;
         bool b;
-        ADNode<double, LeafNode<double>> node(0.0, 1.0);
+        LeafNode<double> node(0.0, 0, 1.0);
         EXPECT_EQ(node.w==0.0, 1);
         EXPECT_EQ(node.df==1.0, 1);
         auto& x = node.self();
@@ -17,7 +30,7 @@ namespace {
             , LeafNode<double>&>::value;
         EXPECT_EQ(b, 1);
 
-        ADNode<double, LeafNode<double>> const node_const(1.0, -1.0);
+        LeafNode<double> const node_const(1.0, 0, -1.0);
         EXPECT_EQ(node_const.w==1.0, 1);
         EXPECT_EQ(node_const.df==-1.0, 1);
         auto& tmp = node_const.self();
@@ -29,7 +42,7 @@ namespace {
 
     TEST(adnode_test, leaf) {
         using namespace ad::core;
-        LeafNode<double> leaf(2.1);
+        LeafNode<double> leaf(2.1, 0, 0);
         EXPECT_EQ(leaf.w==2.1, 1);
         EXPECT_EQ(leaf.df==0.0, 1);
         EXPECT_EQ(leaf.feval()==2.1, 1);
@@ -38,7 +51,8 @@ namespace {
     TEST(adnode_test, unary) {
         using namespace ad::core;
         bool b;
-        LeafNode<double> leaf(0.0);
+        double df;
+        LeafNode<double> leaf(0.0, &df, 0);
         UnaryNode<double, ad::math::Sin<double>, LeafNode<double>> unary(leaf);
         // Constructor ok?
         EXPECT_EQ(unary.w==0.0, 1);
@@ -73,7 +87,7 @@ namespace {
         // dsin/dx(0) = cos(0) = 1
         unary.df = 1; // seed
         unary.beval();
-        EXPECT_EQ(leaf.df==1, 1);
+        EXPECT_EQ(df==1, 1);
         EXPECT_EQ(unary.lhs.df==1, 1);
     }
 
@@ -82,23 +96,27 @@ namespace {
     // LeafNode -> UnaryNode -> UnaryNode
     TEST(adnode_test, unary_complex) {
         using namespace ad;
-        core::LeafNode<double> leaf(3.14);
+        double df;
+        core::LeafNode<double> leaf(3.14, &df, 0.0);
         auto sin_unary = sin(leaf); 
         auto sin_sin_unary = sin(sin_unary);
         double fx = sin_sin_unary.feval();
         EXPECT_EQ(fx, std::sin(std::sin(3.14)));
         sin_sin_unary.df = 1;
         sin_sin_unary.beval();
-        EXPECT_EQ(leaf.df, std::cos(std::sin(3.14)) * std::cos(3.14));
-        EXPECT_EQ(sin_unary.df, std::cos(std::sin(3.14)));
+        EXPECT_EQ(df, std::cos(std::sin(3.14)) * std::cos(3.14));
+        // This is because sin_unary is copied
+        EXPECT_EQ(sin_sin_unary.lhs.df, std::cos(std::sin(3.14)));
+        EXPECT_EQ(sin_unary.df, std::cos(std::sin(3.14))); 
     }
 
 
     // BinaryNode
     TEST(adnode_test, binary) {
         using namespace ad;
-        core::LeafNode<double> leaf1(1.0);
-        core::LeafNode<double> leaf2(0.0);
+        double df1, df2;
+        core::LeafNode<double> leaf1(1.0, &df1, 0.0);
+        core::LeafNode<double> leaf2(0.0, &df2, 0.0);
 
         auto binary = leaf1 + leaf2;
         // feval
@@ -109,29 +127,31 @@ namespace {
         // beval
         binary.df = 1;
         binary.beval();
-        EXPECT_EQ(leaf1.df, 1.0);
-        EXPECT_EQ(leaf2.df, 1.0);
+        EXPECT_EQ(df1, 1.0);
+        EXPECT_EQ(df2, 1.0);
     }
 
     // BinaryNode more complex
     TEST(adnode_test, binary_complex) {
         using namespace ad;
-        core::LeafNode<double> leaf1(1.0);
-        core::LeafNode<double> leaf2(0.0);
-        core::LeafNode<double> leaf3(2.0);
-        core::LeafNode<double> leaf4(-3.0);
+        double df1,df2,df3,df4;
+        core::LeafNode<double> leaf1(1.0, &df1, 0.0);
+        core::LeafNode<double> leaf2(0.0, &df2, 0.0);
+        core::LeafNode<double> leaf3(2.0, &df3, 0.0);
+        core::LeafNode<double> leaf4(-3.0, &df4, 0.0);
 
-        auto binary = leaf1 + leaf2 + leaf3 + leaf4;
+        auto&& binary = leaf1 + leaf2 + leaf3 + leaf4;
         // feval
         EXPECT_EQ(binary.feval(), 0.0);
+        EXPECT_EQ(binary.lhs.w, 3.0);
 
         // beval
         binary.df = 1;
         binary.beval();
-        EXPECT_EQ(leaf1.df, 1.0);
-        EXPECT_EQ(leaf2.df, 1.0);
-        EXPECT_EQ(leaf3.df, 1.0);
-        EXPECT_EQ(leaf4.df, 1.0);
+        EXPECT_EQ(df1, 1.0);
+        EXPECT_EQ(df2, 1.0);
+        EXPECT_EQ(df3, 1.0);
+        EXPECT_EQ(df4, 1.0);
     }
 
 }

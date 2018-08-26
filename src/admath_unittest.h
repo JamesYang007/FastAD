@@ -35,8 +35,8 @@ namespace {
     // operator+
     TEST(admath_test, op_add) {
         using namespace ad;
-        core::LeafNode<double> leaf1(1.0);
-        core::LeafNode<double> leaf2(0.0);
+        core::LeafNode<double> leaf1(1.0, 0, 0.0);
+        core::LeafNode<double> leaf2(0.0, 0, 0.0);
 
         bool b;
         auto binary = leaf1 + leaf2;

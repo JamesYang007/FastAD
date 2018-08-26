@@ -32,7 +32,7 @@ CXXFLAGS += -g -pthread
 TESTS=utils_unittest \
 	  dualnum_unittest \
 	  binaryop_unittest \
-	  autodiff_unittest \
+	  advec_unittest \
 	  admath_unittest \
 	  adnode_unittest \
 	  ultimate_unittest \
@@ -123,14 +123,14 @@ binaryop_unittest.o : $(USER_DIR)/src/binaryop_unittest.cpp \
 binaryop_unittest : binaryop_unittest.o gtest_main.a
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@
 
-# autodiff
-autodiff_unittest.o : $(USER_DIR)/src/autodiff_unittest.cpp \
-					$(USER_DIR)/src/autodiff_unittest.h \
-                     $(USER_DIR)/include/autodiff.h \
+# advec
+advec_unittest.o : $(USER_DIR)/src/advec_unittest.cpp \
+					$(USER_DIR)/src/advec_unittest.h \
+                     $(USER_DIR)/include/advec.h \
 					 $(GTEST_HEADERS) $(MY_HEADERS)
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/src/autodiff_unittest.cpp
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/src/advec_unittest.cpp
 
-autodiff_unittest : autodiff_unittest.o gtest_main.a
+advec_unittest : advec_unittest.o gtest_main.a
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@
 
 # admath
@@ -164,6 +164,7 @@ ultimate_unittest : ultimate_unittest.o gtest_main.a
 
 # all (NO NEED TO MODIFY) 
 all_unittest.o: $(USER_DIR)/src/*.cpp \
+				$(USER_DIR)/src/*.h \
 				$(USER_DIR)/include/*.h \
 				$(GTEST_HEADERS) \
 				$(MY_HEADERS)

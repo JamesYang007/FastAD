@@ -8,6 +8,7 @@ namespace ad {
 
 // Pre-defined Binary Operation classes
 namespace core {
+namespace test {
     // Add
     struct add {
         template <class T>
@@ -50,12 +51,15 @@ namespace core {
     //    inline static T map(T lhs, T rhs)
     //    {return lhs / rhs;}
     //};
-}
+
+} // namespace test
+} // namespace core
 } // namespace ad
 
 namespace ad {
 // BinaryOpExpr
 namespace core {
+namespace test {
     // Binary Op Expression
     template <class Op, class TL, class TR>
     struct BinaryOpExpr : public Expr<BinaryOpExpr<Op, TL, TR>>
@@ -84,6 +88,9 @@ namespace core {
     inline auto operator+(Expr<TL> const& lhs, Expr<TR> const& rhs)
         -> BinaryOpExpr<add, TL, TR>
     {return make_BinaryOpExpr<add>(lhs.self(), rhs.self());}
+
     
+
+} // namespace test
 } // namespace core
 } // namespace ad

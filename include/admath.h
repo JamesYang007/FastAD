@@ -95,115 +95,176 @@ namespace math {
 // 
 // ad::sin(ADNode)
 // Returns a UnaryNode containing Sin as Unary operation
-template <class T, class Derived>
-inline auto sin(core::ADNode<T, Derived> const& node)
-    -> core::UnaryNode<T
-        , typename math::Sin<T>
+// sin(expr)
+template <class Derived>
+inline auto sin(core::ADNodeExpr<Derived> const& node)
+    -> core::ADNode<
+        typename Derived::valuetype
+        , typename math::Sin<typename Derived::valuetype>
         , Derived> 
-{return core::UnaryNode<T
-        , typename math::Sin<T>
-        , Derived>(
-                const_cast<core::ADNode<T, Derived>&>(node).self())
+{return core::ADNode<
+        typename Derived::valuetype
+        , typename math::Sin<typename Derived::valuetype>
+        , Derived>(node.self())
         ;}
 
 // ad::cos(ADNode)
 // Returns a UnaryNode containing Cos as Unary operation
-template <class T, class Derived>
-inline auto cos(core::ADNode<T, Derived> const& node)
-    -> core::UnaryNode<T
-        , typename math::Cos<T>
+template <class Derived>
+inline auto cos(core::ADNodeExpr<Derived> const& node)
+    -> core::ADNode<
+        typename Derived::valuetype
+        , typename math::Cos<typename Derived::valuetype>
         , Derived> 
-{return core::UnaryNode<T
-        , typename math::Cos<T>
-        , Derived>(
-                const_cast<core::ADNode<T, Derived>&>(node).self())
+{return core::ADNode<
+        typename Derived::valuetype
+        , typename math::Cos<typename Derived::valuetype>
+        , Derived>(node.self())
         ;}
 
 // ad::exp(ADNode)
 // Returns a UnaryNode containing Exp as Unary operation
-template <class T, class Derived>
-inline auto exp(core::ADNode<T, Derived> const& node)
-    -> core::UnaryNode<T
-        , typename math::Exp<T>
+template <class Derived>
+inline auto exp(core::ADNodeExpr<Derived> const& node)
+    -> core::ADNode<
+        typename Derived::valuetype
+        , typename math::Exp<typename Derived::valuetype>
         , Derived> 
-{return core::UnaryNode<T
-        , typename math::Exp<T>
-        , Derived>(
-                const_cast<core::ADNode<T, Derived>&>(node).self())
+{return core::ADNode<
+        typename Derived::valuetype
+        , typename math::Exp<typename Derived::valuetype>
+        , Derived>(node.self())
         ;}
 
 //================================================================================
 
 // Binary operator functions 
-//
-// ad::core::operator+(ADNode)
-// Returns a BinaryNode containing Operator
 namespace core {
-template <class T, class Derived1, class Derived2>
+
+// ad::core::operator+(ADNode)
+// expr + expr
+template <class Derived1, class Derived2>
 inline auto operator+(
-        ADNode<T, Derived1> const& node1
-        , ADNode<T, Derived2> const& node2)
-    -> BinaryNode<T
-        , typename ad::math::Add<T>
+        ADNodeExpr<Derived1> const& node1
+        , ADNodeExpr<Derived2> const& node2)
+    -> ADNode<
+        typename std::common_type<
+            typename Derived1::valuetype, typename Derived2::valuetype
+            >::type
+        , typename ad::math::Add<
+            typename std::common_type<
+                typename Derived1::valuetype, typename Derived2::valuetype
+                >::type
+            >
         , Derived1
         , Derived2>
-{return BinaryNode<T
-        , typename ad::math::Add<T>
-        , Derived1
-        , Derived2>(
-                const_cast<ADNode<T, Derived1>&>(node1).self()
-                , const_cast<ADNode<T, Derived2>&>(node2).self())
-        ;}
+{return make_node<
+        typename std::common_type<
+            typename Derived1::valuetype, typename Derived2::valuetype
+            >::type
+        , typename ad::math::Add<
+            typename std::common_type<
+                typename Derived1::valuetype, typename Derived2::valuetype
+                >::type
+            >
+        >(
+            node1.self(), node2.self()
+        );}
 
+//========================================================================================
 // ad::core::operator-(ADNode)
-template <class T, class Derived1, class Derived2>
+// expr - expr
+template <class Derived1, class Derived2>
 inline auto operator-(
-        ADNode<T, Derived1> const& node1
-        , ADNode<T, Derived2> const& node2)
-    -> BinaryNode<T
-        , typename ad::math::Sub<T>
+        ADNodeExpr<Derived1> const& node1
+        , ADNodeExpr<Derived2> const& node2)
+    -> ADNode<
+        typename std::common_type<
+            typename Derived1::valuetype, typename Derived2::valuetype
+            >::type
+        , typename ad::math::Sub<
+            typename std::common_type<
+                typename Derived1::valuetype, typename Derived2::valuetype
+                >::type
+            >
         , Derived1
         , Derived2>
-{return BinaryNode<T
-        , typename ad::math::Sub<T>
-        , Derived1
-        , Derived2>(
-                const_cast<ADNode<T, Derived1>&>(node1).self()
-                , const_cast<ADNode<T, Derived2>&>(node2).self())
-        ;}
+{return make_node<
+        typename std::common_type<
+            typename Derived1::valuetype, typename Derived2::valuetype
+            >::type
+        , typename ad::math::Sub<
+            typename std::common_type<
+                typename Derived1::valuetype, typename Derived2::valuetype
+                >::type
+            >
+        >(
+            node1.self(), node2.self()
+        );}
 
+//========================================================================================
 // ad::core::operator*(ADNode)
-template <class T, class Derived1, class Derived2>
+// expr * expr
+template <class Derived1, class Derived2>
 inline auto operator*(
-        ADNode<T, Derived1> const& node1
-        , ADNode<T, Derived2> const& node2)
-    -> BinaryNode<T
-        , typename ad::math::Mul<T>
+        ADNodeExpr<Derived1> const& node1
+        , ADNodeExpr<Derived2> const& node2)
+    -> ADNode<
+        typename std::common_type<
+            typename Derived1::valuetype, typename Derived2::valuetype
+            >::type
+        , typename ad::math::Mul<
+            typename std::common_type<
+                typename Derived1::valuetype, typename Derived2::valuetype
+                >::type
+            >
         , Derived1
         , Derived2>
-{return BinaryNode<T
-        , typename ad::math::Mul<T>
-        , Derived1
-        , Derived2>(
-                const_cast<ADNode<T, Derived1>&>(node1).self()
-                , const_cast<ADNode<T, Derived2>&>(node2).self())
-        ;}
+{return make_node<
+        typename std::common_type<
+            typename Derived1::valuetype, typename Derived2::valuetype
+            >::type
+        , typename ad::math::Mul<
+            typename std::common_type<
+                typename Derived1::valuetype, typename Derived2::valuetype
+                >::type
+            >
+        >(
+            node1.self(), node2.self()
+        );}
 
+//========================================================================================
 // ad::core::operator/(ADNode)
-template <class T, class Derived1, class Derived2>
+// expr / expr
+template <class Derived1, class Derived2>
 inline auto operator/(
-        ADNode<T, Derived1> const& node1
-        , ADNode<T, Derived2> const& node2)
-    -> BinaryNode<T
-        , typename ad::math::Div<T>
+        ADNodeExpr<Derived1> const& node1
+        , ADNodeExpr<Derived2> const& node2)
+    -> ADNode<
+        typename std::common_type<
+            typename Derived1::valuetype, typename Derived2::valuetype
+            >::type
+        , typename ad::math::Div<
+            typename std::common_type<
+                typename Derived1::valuetype, typename Derived2::valuetype
+                >::type
+            >
         , Derived1
         , Derived2>
-{return BinaryNode<T
-        , typename ad::math::Div<T>
-        , Derived1
-        , Derived2>(
-                const_cast<ADNode<T, Derived1>&>(node1).self()
-                , const_cast<ADNode<T, Derived2>&>(node2).self())
-        ;}
+{return make_node<
+        typename std::common_type<
+            typename Derived1::valuetype, typename Derived2::valuetype
+            >::type
+        , typename ad::math::Div<
+            typename std::common_type<
+                typename Derived1::valuetype, typename Derived2::valuetype
+                >::type
+            >
+        >(
+            node1.self(), node2.self()
+        );}
+
+
+
 } // namespace core
 } // namespace ad

@@ -5,7 +5,7 @@
 namespace {
 
     TEST(utils_test, valuetype_test) {
-        using namespace ad::core;
+        using namespace ad::core::test;
         bool x;
         x = std::is_same<typename utils::valuetype<
             DualNum<double>, DualNum<double> 

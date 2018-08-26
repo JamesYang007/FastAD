@@ -4,6 +4,19 @@
 namespace ad {
 namespace core {
 
+    // Node data container
+    template <class T>
+    struct DualNum
+    {
+        using valuetype = T;
+        T w, df;   
+        DualNum(T w, T df)
+            : w(w), df(df)
+        {}
+    };
+
+
+namespace test {
 template <class T>
 struct DualNum: public Expr<DualNum<T>>
 {
@@ -37,6 +50,6 @@ struct DualNum: public Expr<DualNum<T>>
     {return *this;}
 };
 
-
+} // namespace test
 } // namepsace core
 } // namespace ad 
