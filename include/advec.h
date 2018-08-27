@@ -1,6 +1,6 @@
 #pragma once
 #include "adnode.h"
-#include <vector>
+#include <array>
 #include <initializer_list>
 
 namespace ad {
@@ -8,41 +8,29 @@ namespace ad {
     struct Vec
     {
         template <class U>
-        using impl_type = std::vector<U>;
-        T dfs[N];
-        impl_type<core::ADNode<T>> leaves;
-        T f;
+        using impl_type = std::array<U, N>;
+        impl_type<core::ADNode<T>> xvec;
 
-        Vec(std::initializer_list<T> il)
-            : leaves(il.size()), f(0)
+        // memory ptr (array) for adjoint, x1,...,xn
+        Vec(T* memptr, std::initializer_list<T> il)
         {
             size_t i=0;
             std::transform(
                 il.begin()
                 , il.end()
-                , leaves.begin()
-                , [this, &i](T x)
-                -> core::ADNode<T> {return make_node(x, dfs+(i++));}
+                , xvec.begin()
+                , [this, &i, memptr](T x)
+                -> core::ADNode<T> {++i; return make_node(x, &xvec[i-1].w, memptr+i-1);}
                 );
         }
 
         inline core::ADNode<T>& operator[](size_t i)
-        {return leaves[i];}
-
-        template <class Derived>
-        inline Vec<T,N>& operator=(core::ADNodeExpr<Derived> const& expr_)
-        {
-            Derived& expr = const_cast<Derived&>(expr_.self());
-            f = expr.feval();
-            expr.df = 1; // seed
-            expr.beval();
-            return *this;
-        }
+        {return xvec[i];}
     };
 
-    template <class... Ts>
-    inline auto make_vec(Ts ...xi)
-        -> Vec<typename std::common_type<Ts...>::type, sizeof...(xi)>
-    {return Vec<typename std::common_type<Ts...>::type, sizeof...(xi)>({xi...});}
+    template <class T, class... Ts>
+    inline auto make_vec(T* memptr, Ts ...xi)
+        -> Vec<typename std::common_type<T, Ts...>::type, sizeof...(xi)>
+    {return Vec<typename std::common_type<T, Ts...>::type, sizeof...(xi)>(memptr, {xi...});}
 
 } // namespace ad

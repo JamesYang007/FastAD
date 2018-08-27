@@ -16,8 +16,7 @@ namespace {
         
         auto res = leaf1 + sin(leaf2 + leaf3);
         EXPECT_EQ(res.feval(), x1 + std::sin(x2 + x3));
-        res.df = 1;
-        res.beval(); 
+        res.beval(1); 
         EXPECT_EQ(dfs[0], 1);
         EXPECT_EQ(dfs[1], std::cos(x2 + x3));
         EXPECT_EQ(dfs[2], std::cos(x2 + x3));
@@ -36,8 +35,7 @@ namespace {
 
         auto res = leaf1 * leaf2 + sin(leaf1);
         EXPECT_EQ(res.feval(), x1*x2 + std::sin(x1));
-        res.df=1;
-        res.beval();
+        res.beval(1);
         EXPECT_EQ(dfs[0], x2 + std::cos(x1));
         EXPECT_EQ(dfs[1], x1);
     }
@@ -52,8 +50,7 @@ namespace {
 
         auto res = leaf1 * leaf2 + sin(leaf1 + leaf2) * leaf2 - leaf1/leaf2;
         EXPECT_EQ(res.feval(), x1*x2 + std::sin(x1+x2)*x2 - x1/x2);
-        res.df=1;
-        res.beval();
+        res.beval(1);
         EXPECT_EQ(dfs[0], 
                     x2 + std::cos(x1 + x2) * x2 - 1./x2);
         EXPECT_EQ(dfs[1], 
@@ -74,8 +71,7 @@ namespace {
             leaf1 * leaf3 + sin(cos(leaf1 + leaf2)) * leaf2 - leaf1/exp(leaf3);
         EXPECT_EQ(res.feval(), 
                 x1*x3 + std::sin(std::cos(x1+x2))*x2 - x1/std::exp(x3));
-        res.df=1;
-        res.beval();
+        res.beval(1);
         EXPECT_EQ(dfs[0], 
                     x3 - x2*std::cos(std::cos(x1+x2))*std::sin(x1+x2) - std::exp(-x3));
         EXPECT_EQ(dfs[1],
@@ -89,20 +85,20 @@ namespace {
     TEST(ultimate, benchmark1) {
         using namespace ad;
         size_t ntrials = 1e6;
-        for (size_t i=0; i < ntrials; ++i) {
         double x1 = 1.2041, x2 = -2.2314;
-        double dfs[2];
+        double dfs[2] = {0};
+        for (size_t i=0; i < ntrials; ++i) {
         auto leaf1 = make_leaf(x1, dfs);
         auto leaf2 = make_leaf(x2, dfs+1);
 
         auto res = leaf1 * leaf2 + sin(leaf1 + leaf2) * leaf2 - leaf1/leaf2;
         EXPECT_EQ(res.feval(), x1*x2 + std::sin(x1+x2)*x2 - x1/x2);
-        res.df=1;
-        res.beval();
+        res.beval(1);
         EXPECT_EQ(dfs[0], 
                     x2 + std::cos(x1 + x2) * x2 - 1./x2);
         EXPECT_EQ(dfs[1], 
                     x1 + std::cos(x1 + x2) * x2 + std::sin(x1+x2) + x1/(x2*x2));
+        dfs[0] = 0; dfs[1]=0;
         }
     }
 
@@ -122,14 +118,14 @@ namespace {
             leaf1 * leaf3 + sin(cos(leaf1 + leaf2)) * leaf2 - leaf1/exp(leaf3);
         EXPECT_EQ(res.feval(), 
                 x1*x3 + std::sin(std::cos(x1+x2))*x2 - x1/std::exp(x3));
-        res.df=1;
-        res.beval();
+        res.beval(1);
         EXPECT_EQ(dfs[0], 
                     x3 - x2*std::cos(std::cos(x1+x2))*std::sin(x1+x2) - std::exp(-x3));
         EXPECT_EQ(dfs[1],
                     std::sin(std::cos(x1+x2)) 
                     - x2*std::cos(std::cos(x1+x2))*std::sin(x1+x2));
         EXPECT_EQ(dfs[2], x1 + x1*std::exp(-x3));
+        dfs[0] = 0; dfs[1]=0; dfs[2]=0;
         }
     }
 

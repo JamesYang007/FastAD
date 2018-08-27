@@ -6,7 +6,17 @@ namespace ad {
 namespace math {
 
     // Unary Operators
-    //
+   
+    // Identity struct
+    template <class T>
+    struct Identity
+    {
+        static inline T fmap(T x)
+        {return x;}
+        static inline T bmap(T x)
+        {return 1;}
+    };
+
     // Sin struct
     template <class T>
     struct Sin
@@ -38,7 +48,7 @@ namespace math {
     };
 
     // Binary Operators
-    //
+
     // Add
     template <class T>
     struct Add
@@ -263,6 +273,7 @@ inline auto operator/(
         >(
             node1.self(), node2.self()
         );}
+
 
 
 
