@@ -37,6 +37,7 @@ struct DualNum: public Expr<DualNum<T>>
 
     // Higher precedence!
     inline DualNum<T>& operator=(DualNum<T> const& N) {
+        if (this == &N) return *this; 
         w = N.w; df = N.df; return *this;
     }
     

@@ -1,6 +1,7 @@
 #pragma once
 #include "adnode.h"
 #include "admath.h"
+#include "testgarbage.h"
 #include "gtest/gtest.h"
 
 namespace {
@@ -185,13 +186,14 @@ namespace {
         auto expr = (
                 w3 = w1 * w2
                 , w4 = w3 * w3
-                , w4 = w4
+                //w4 = w1*w2*w1*w2
                 );
-        EXPECT_EQ(expr.lhs.lhs.lhs.w, 3.0);
+        //EXPECT_EQ(expr.lhs.lhs.w, 3.0);
 
         ad::Evaluate(expr);
         EXPECT_EQ(w4.w, 4.0);
         EXPECT_EQ(w3.w, 2.0);
+        //EXPECT_EQ(w3.w, 3.0);
         EXPECT_EQ(w2.w, 2.0);
         EXPECT_EQ(w1.w, 1.0);
 
@@ -203,6 +205,7 @@ namespace {
         ad::EvaluateAdj(expr);
         EXPECT_EQ(w4.df, 1.0);
         EXPECT_EQ(w3.df, 2*w3.w);
+        //EXPECT_EQ(w3.df, 0);
         EXPECT_EQ(w2.df, 2*w2.w*w1.w*w1.w);
         EXPECT_EQ(w1.df, 2*w1.w*w2.w*w2.w);
     }

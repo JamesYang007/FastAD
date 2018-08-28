@@ -137,8 +137,8 @@ namespace core {
         ADNode(T w, T* w_ptr, T* df_ptr, T df) 
             : datatype(w, df), w_ptr(w_ptr), df_ptr(df_ptr)
         {}
-        ADNode(T w, T* df_ptr, T df) 
-            : datatype(w, df), w_ptr(&this->w), df_ptr(df_ptr)
+        ADNode(T w, T* df_ptr, T df=static_cast<T>(0)) 
+            : datatype(w, df), w_ptr(&(this->w)), df_ptr(df_ptr)
         {}
         //{std::cout << this << ": LeafNode constructor" << std::endl;}
         //~ADNode()
@@ -159,6 +159,19 @@ namespace core {
         inline void beval(T seed)
         {*df_ptr += (this->df = seed);}
     };
+
+    // Intuitive typedefs
+    template <class T>
+    using LeafNode = ADNode<T>;
+    template <class T, class Unary, class TL>
+    using UnaryNode = ADNode<T, Unary, TL>;
+    template <class T, class Binary, class TL, class TR>
+    using BinaryNode = ADNode<T, Binary, TL, TR>;
+    template <class T, class TR>
+    using EqNode = ADNode<void, Equal, ADNode<T>, TR>;
+    template <class TL, class TR>
+    using GlueNode = ADNode<void, void, TL, TR>;
+
     
 } // namespace core
 
@@ -180,8 +193,8 @@ namespace core {
     // EqNode
     template <class T, class TR>
     inline auto make_node(ADNode<T> const& lhs, TR const& rhs)
-        -> ADNode<void, void, ADNode<T>, TR>
-    {return ADNode<void, void, ADNode<T>, TR>(lhs, rhs);}
+        -> ADNode<void, Equal, ADNode<T>, TR>
+    {return ADNode<void, Equal, ADNode<T>, TR>(lhs, rhs);}
     
     // UnaryNode
     template <class T, class Unary, class TL>
@@ -200,20 +213,13 @@ namespace core {
         -> ADNode<T>
     {return ADNode<T>(x, df_ptr, df);}
 
-    // Testing already uses these names
-    template <class T>
-    using LeafNode = ADNode<T>;
-    template <class T, class Unary, class TL>
-    using UnaryNode = ADNode<T, Unary, TL>;
-    template <class T, class Binary, class TL, class TR>
-    using BinaryNode = ADNode<T, Binary, TL, TR>;
-
 } // namespace core
 
 // Operator overloads
 namespace core {
     // ad::core::operator,(ADNodeExpr)
     // expr, expr
+    // Glues two expressions together by comma
     template <class Derived1, class Derived2>
     inline auto operator,(
             core::ADNodeExpr<Derived1> const& node1
@@ -222,36 +228,6 @@ namespace core {
     {return make_node<void, void>(node1.self(), node2.self());}
 
 }
-
-//====================================================================================================
-// NO GOOD
-template <class T>
-constexpr inline auto make_node(T x, T* df_ptr=nullptr, T df=static_cast<T>(0)) 
-    -> core::ADNode<T>
-{return core::make_node(x, df_ptr, df);}
-
-template <class T>
-constexpr inline auto make_node(T x, T* x_ptr, T* df_ptr=nullptr, T df=static_cast<T>(0)) 
-    -> core::ADNode<T>
-{return core::make_node(x, x_ptr, df_ptr, df);}
-// end no good
-
-// Testing already uses it
-template <class T>
-constexpr inline auto make_leaf(T x, T* df_ptr=nullptr, T df=static_cast<T>(0)) 
-    -> core::ADNode<T>
-{return make_node(x, df_ptr, df);}
-
-// User-friendly (intuitive)
-template <class T>
-constexpr inline auto make_var(T x, T* df_ptr, T df=static_cast<T>(0))
-    -> core::ADNode<T>
-{return make_node(x, df_ptr, df);}
-
-template <class T>
-constexpr inline auto make_var(T x=static_cast<T>(0))
-    -> core::ADNode<T>
-{return make_node(x);}
 
 //====================================================================================================
 // Glue then evaluate
@@ -272,7 +248,6 @@ inline void autodiff(ExprType&& expr)
 
 
 //====================================================================================================
-//
 // User typedefs
 template <class T>
 using Var = core::ADNode<T>;

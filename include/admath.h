@@ -275,7 +275,13 @@ inline auto operator/(
         );}
 
 
-
-
 } // namespace core
+
+
+//========================================================================================
+// ad::sum(Iter start, Iter end, lmda fn)
+template <class Iter, class Lmda>
+inline void sum(Iter start, Iter end, Lmda f)
+{}
+
 } // namespace ad
