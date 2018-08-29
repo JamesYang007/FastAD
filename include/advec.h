@@ -31,7 +31,7 @@ namespace ad {
         Vec(std::initializer_list<T> il, T* memptr, size_t capacity=1e6)
             : vec()
         {if (il.size() > capacity) throw std::length_error("initializer list longer than maximum capacity.");
-            this->vec.reserve(this->maxcap);
+            this->vec.reserve(capacity);
             this->init(il, memptr);}
 
         // [] operator
@@ -49,7 +49,7 @@ namespace ad {
         // emplace_back
         template <class ...Args>
         void emplace_back(Args&&... args)
-        {if (this->vec.size() < this->maxcap) this->vec.emplace_back(args...);
+        {if (this->vec.size() < this->vec.capacity()) this->vec.emplace_back(args...);
             else throw std::length_error("maximum capacity reached.");}
 
         inline size_t size() const
