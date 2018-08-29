@@ -11,28 +11,26 @@ namespace ad {
     {
         using impl_type = std::vector<core::ADNode<T>>;
         impl_type vec;
-        size_t currentN;
-        size_t maxcap;
 
         // default constructor
-        Vec() : vec(), currentN(0), maxcap(1e6) 
-        {this->vec.reserve(maxcap);}
+        Vec() : vec()
+        {this->vec.reserve(1e6);}
         // Construct (default) with preset number of items
         Vec(size_t capacity)
-            : vec(), currentN(0), maxcap(capacity)
-        {this->vec.reserve(maxcap);}
+            : vec()
+        {this->vec.reserve(capacity);}
 
         // Construct with initial values
         Vec(std::initializer_list<T> il, size_t capacity=1e6)
-            : vec(), currentN(il.size()), maxcap(capacity)
-        {if (currentN > maxcap) throw std::length_error("maximum capacity reached.");
-            this->vec.reserve(maxcap);
+            : vec()
+        {if (il.size() > capacity) throw std::length_error("initializer list longer than maximum capacity.");
+            this->vec.reserve(capacity);
             this->init(il);}
 
         // Construct with initial values and memory ptr to adjoints
         Vec(std::initializer_list<T> il, T* memptr, size_t capacity=1e6)
-            : vec(), currentN(il.size()), maxcap(capacity)
-        {if (this->currentN > this->maxcap) throw std::length_error("maximum capacity reached.");
+            : vec()
+        {if (il.size() > capacity) throw std::length_error("initializer list longer than maximum capacity.");
             this->vec.reserve(this->maxcap);
             this->init(il, memptr);}
 
@@ -45,13 +43,13 @@ namespace ad {
         // push_back
         // Note: w/df_ptr will be copied from node.w/df_ptr
         void push_back(core::ADNode<T> const& node)
-        {if (this->currentN < this->maxcap) this->vec.push_back(node);
+        {if (this->vec.size() < this->vec.capacity()) this->vec.push_back(node);
             else throw std::length_error("maximum capacity reached.");}
 
         // emplace_back
         template <class ...Args>
         void emplace_back(Args&&... args)
-        {if (this->currentN < this->maxcap) this->vec.emplace_back(args...);
+        {if (this->vec.size() < this->maxcap) this->vec.emplace_back(args...);
             else throw std::length_error("maximum capacity reached.");}
 
         inline size_t size() const
