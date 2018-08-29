@@ -153,126 +153,90 @@ namespace core {
 
 // ad::core::operator+(ADNode)
 // expr + expr
-template <class Derived1, class Derived2>
+template <
+    class Derived1
+    , class Derived2
+    , typename value_type = 
+        typename std::common_type<
+            typename Derived1::valuetype, typename Derived2::valuetype
+            >::type
+    >
 inline auto operator+(
         ADNodeExpr<Derived1> const& node1
         , ADNodeExpr<Derived2> const& node2)
     -> ADNode<
-        typename std::common_type<
-            typename Derived1::valuetype, typename Derived2::valuetype
-            >::type
-        , typename ad::math::Add<
-            typename std::common_type<
-                typename Derived1::valuetype, typename Derived2::valuetype
-                >::type
-            >
+        value_type
+        , typename ad::math::Add<value_type>
         , Derived1
         , Derived2>
-{return make_node<
-        typename std::common_type<
-            typename Derived1::valuetype, typename Derived2::valuetype
-            >::type
-        , typename ad::math::Add<
-            typename std::common_type<
-                typename Derived1::valuetype, typename Derived2::valuetype
-                >::type
-            >
-        >(
-            node1.self(), node2.self()
-        );}
+{return make_node<value_type, typename ad::math::Add<value_type>>(
+            node1.self(), node2.self());}
 
 //========================================================================================
 // ad::core::operator-(ADNode)
 // expr - expr
-template <class Derived1, class Derived2>
+template <
+    class Derived1
+    , class Derived2
+    , typename value_type = 
+        typename std::common_type<
+            typename Derived1::valuetype, typename Derived2::valuetype
+            >::type
+    >
 inline auto operator-(
         ADNodeExpr<Derived1> const& node1
         , ADNodeExpr<Derived2> const& node2)
     -> ADNode<
-        typename std::common_type<
-            typename Derived1::valuetype, typename Derived2::valuetype
-            >::type
-        , typename ad::math::Sub<
-            typename std::common_type<
-                typename Derived1::valuetype, typename Derived2::valuetype
-                >::type
-            >
+        value_type
+        , typename ad::math::Sub<value_type>
         , Derived1
         , Derived2>
-{return make_node<
-        typename std::common_type<
-            typename Derived1::valuetype, typename Derived2::valuetype
-            >::type
-        , typename ad::math::Sub<
-            typename std::common_type<
-                typename Derived1::valuetype, typename Derived2::valuetype
-                >::type
-            >
-        >(
-            node1.self(), node2.self()
-        );}
+{return make_node<value_type, typename ad::math::Sub<value_type>>(
+            node1.self(), node2.self());}
 
 //========================================================================================
 // ad::core::operator*(ADNode)
 // expr * expr
-template <class Derived1, class Derived2>
+template <
+    class Derived1
+    , class Derived2
+    , typename value_type = 
+        typename std::common_type<
+            typename Derived1::valuetype, typename Derived2::valuetype
+            >::type
+    >
 inline auto operator*(
         ADNodeExpr<Derived1> const& node1
         , ADNodeExpr<Derived2> const& node2)
     -> ADNode<
-        typename std::common_type<
-            typename Derived1::valuetype, typename Derived2::valuetype
-            >::type
-        , typename ad::math::Mul<
-            typename std::common_type<
-                typename Derived1::valuetype, typename Derived2::valuetype
-                >::type
-            >
+        value_type
+        , typename ad::math::Mul<value_type>
         , Derived1
         , Derived2>
-{return make_node<
-        typename std::common_type<
-            typename Derived1::valuetype, typename Derived2::valuetype
-            >::type
-        , typename ad::math::Mul<
-            typename std::common_type<
-                typename Derived1::valuetype, typename Derived2::valuetype
-                >::type
-            >
-        >(
-            node1.self(), node2.self()
-        );}
+{return make_node<value_type, typename ad::math::Mul<value_type>>(
+            node1.self(), node2.self());}
 
 //========================================================================================
 // ad::core::operator/(ADNode)
 // expr / expr
-template <class Derived1, class Derived2>
+template <
+    class Derived1
+    , class Derived2
+    , typename value_type = 
+        typename std::common_type<
+            typename Derived1::valuetype, typename Derived2::valuetype
+            >::type
+    >
 inline auto operator/(
         ADNodeExpr<Derived1> const& node1
         , ADNodeExpr<Derived2> const& node2)
     -> ADNode<
-        typename std::common_type<
-            typename Derived1::valuetype, typename Derived2::valuetype
-            >::type
-        , typename ad::math::Div<
-            typename std::common_type<
-                typename Derived1::valuetype, typename Derived2::valuetype
-                >::type
-            >
+        value_type
+        , typename ad::math::Div<value_type>
         , Derived1
         , Derived2>
-{return make_node<
-        typename std::common_type<
-            typename Derived1::valuetype, typename Derived2::valuetype
-            >::type
-        , typename ad::math::Div<
-            typename std::common_type<
-                typename Derived1::valuetype, typename Derived2::valuetype
-                >::type
-            >
-        >(
-            node1.self(), node2.self()
-        );}
+{return make_node<value_type, typename ad::math::Div<value_type>>(
+            node1.self(), node2.self());}
 
 
 } // namespace core
@@ -280,8 +244,22 @@ inline auto operator/(
 
 //========================================================================================
 // ad::sum(Iter start, Iter end, lmda fn)
-template <class Iter, class Lmda>
-inline void sum(Iter start, Iter end, Lmda f)
-{}
+template <
+    class Iter
+    , class Lmda
+    , class ExprType=typename std::iterator_traits<Iter>::value_type
+    >
+inline auto sum(Iter start, Iter end, Lmda f)
+    -> core::SumNode<
+    typename ExprType::valuetype 
+    , Iter
+    , Lmda
+    >
+{return core::SumNode<
+    typename ExprType::valuetype 
+    , Iter
+    , Lmda
+    >(start, end, f);
+}
 
 } // namespace ad

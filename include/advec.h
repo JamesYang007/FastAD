@@ -14,6 +14,14 @@ namespace ad {
         size_t currentN;
         size_t maxcap;
 
+        // default constructor
+        Vec() : vec(), currentN(0), maxcap(1e6) 
+        {this->vec.reserve(maxcap);}
+        // Construct (default) with preset number of items
+        Vec(size_t capacity)
+            : vec(), currentN(0), maxcap(capacity)
+        {this->vec.reserve(maxcap);}
+
         // Construct with initial values
         Vec(std::initializer_list<T> il, size_t capacity=1e6)
             : vec(), currentN(il.size()), maxcap(capacity)
@@ -45,6 +53,20 @@ namespace ad {
         void emplace_back(Args&&... args)
         {if (this->currentN < this->maxcap) this->vec.emplace_back(args...);
             else throw std::length_error("maximum capacity reached.");}
+
+        inline size_t size() const
+        {return vec.size();}
+
+        inline size_t capacity() const
+        {return vec.capacity();}
+
+        inline auto begin()
+            -> decltype(vec.begin())
+        {return vec.begin();}
+
+        inline auto end()
+            -> decltype(vec.end())
+        {return vec.end();}
 
     private:
         // Init functions

@@ -16,6 +16,10 @@ namespace core {
         {return *static_cast<Derived*>(this);}
     };
 
+    
+//====================================================================================================
+// Basic Node Structures
+
     // Binary Node
     template <class T=void, class Binary=void, class TL=void, class TR=void>
     struct ADNode: 
@@ -27,13 +31,10 @@ namespace core {
         ADNode(TL const& lhs, TR const& rhs)
             : datatype(0,0), lhs(lhs), rhs(rhs)
         {}
-        //{std::cout << this << ": BinaryNode constructor" << std::endl;}
-        //~ADNode()
-        //{std::cout << this << ": BinaryNode destructor" << std::endl;}
 
         inline T feval()
         {return (this->w = Binary::fmap(lhs.feval(), rhs.feval()));}
-        // Takes advantage of fact that feval() is always called before beval()
+        // feval() must be called BEFORE beval()
         inline void beval(T seed=static_cast<T>(1))
         {
             this->df = seed;
@@ -56,9 +57,6 @@ namespace core {
         ADNode(TL const& lhs, TR const& rhs)
             : lhs(lhs), rhs(rhs)
         {}
-        //{std::cout << this << ": BinaryNode constructor" << std::endl;}
-        //~ADNode()
-        //{std::cout << this << ": BinaryNode destructor" << std::endl;}
 
         inline void feval()
         {lhs.feval(); rhs.feval();}
@@ -87,9 +85,6 @@ namespace core {
         ADNode(ADNode<T> const& lhs, TR const& rhs)
             : lhs(lhs), rhs(rhs)
         {}
-        //{std::cout << this << ": BinaryNode constructor" << std::endl;}
-        //~ADNode()
-        //{std::cout << this << ": BinaryNode destructor" << std::endl;}
 
         inline void feval()
         {lhs.w = *lhs.w_ptr = rhs.feval();}
@@ -109,13 +104,9 @@ namespace core {
         ADNode(TL const& lhs)
             : datatype(0,0), lhs(lhs)
         {}
-        //{std::cout << this << ": UnaryNode constructor" << std::endl;}
-        //~ADNode()
-        //{std::cout << this << ": UnaryNode destructor" << std::endl;}
 
         inline T feval()
         {return (this->w = Unary::fmap(lhs.feval()));}
-        // Takes advantage of fact that feval() is always called before beval()
         inline void beval(T seed)
         {this->df = seed; lhs.beval(this->df * Unary::bmap(lhs.w));}
     };
@@ -130,7 +121,6 @@ namespace core {
         T* df_ptr;
         ADNode(): datatype(0,0), w_ptr(&(this->w)), df_ptr(&(this->df))
         {}
-        //{std::cout << this << ": LeafNode default constructor" << std::endl;};
         ADNode(T w) 
             : datatype(w, 0), w_ptr(&(this->w)), df_ptr(&(this->df))
         {}
@@ -140,9 +130,6 @@ namespace core {
         ADNode(T w, T* df_ptr, T df=static_cast<T>(0)) 
             : datatype(w, df), w_ptr(&(this->w)), df_ptr(df_ptr)
         {}
-        //{std::cout << this << ": LeafNode constructor" << std::endl;}
-        //~ADNode()
-        //{std::cout << this << ": LeafNode destructor" << std::endl;}
 
         // leaf = expression returns EqNode
         //          =
@@ -172,6 +159,47 @@ namespace core {
     template <class TL, class TR>
     using GlueNode = ADNode<void, void, TL, TR>;
 
+//====================================================================================================
+// Advanced Nodes
+// General sum expression
+    
+    template <class T, class Iter, class Lmda>
+    struct SumNode:
+        public DualNum<T>, ADNodeExpr<SumNode<T, Iter, Lmda>>
+    {
+        using datatype = DualNum<T>;
+        Iter start, end;
+        Lmda f;
+
+        SumNode(Iter start, Iter end, Lmda f) 
+            : datatype(0,0)
+              , start(start)
+              , end(end)
+              , f(f)
+        {}
+
+        inline T feval()
+        {this->eval(false); return this->w;}
+        
+        inline void beval(T seed)
+        {this->eval(true, seed);}
+
+    private:
+        inline void eval(bool do_grad, T seed=static_cast<T>(0))
+        {
+            this->w = 0; // reset
+            this->df = seed;
+            std::for_each(start, end,
+                [this, do_grad](typename std::iterator_traits<Iter>::value_type& expr)
+                {
+                    auto&& f_expr = f(expr);
+                    this->w += f_expr.feval();
+                    if (do_grad) f_expr.beval(this->df);
+                }
+                );
+        }
+
+    };
     
 } // namespace core
 
@@ -202,16 +230,8 @@ namespace core {
         -> ADNode<T, Unary, TL>
     {return ADNode<T, Unary, TL>(lhs);}
 
-    // LeafNode
-    template <class T>
-    inline auto make_node(T x, T* x_ptr, T* df_ptr, T df)
-        -> ADNode<T>
-    {return ADNode<T>(x, x_ptr, df_ptr, df);}
-
-    template <class T>
-    inline auto make_node(T x, T* df_ptr, T df)
-        -> ADNode<T>
-    {return ADNode<T>(x, df_ptr, df);}
+    // DO NOT MAKE make_node (LeafNode)
+    // Pointers will point to garbage
 
 } // namespace core
 
