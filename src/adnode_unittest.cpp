@@ -11,7 +11,6 @@ namespace {
         Var<double> leaf3(x3 ,dfs+2);
         
         auto res = leaf1 + sin(leaf2 + leaf3);
-        //std::cout << "Mark" << std::endl;
         EXPECT_EQ(res.feval(), x1 + std::sin(x2 + x3));
     }
 

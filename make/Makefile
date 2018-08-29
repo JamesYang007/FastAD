@@ -29,9 +29,7 @@ CXXFLAGS += -g -pthread
 
 # All tests produced by this Makefile.  Remember to add new tests you
 # created to the list.
-TESTS=utils_unittest \
-	  dualnum_unittest \
-	  binaryop_unittest \
+TESTS=dualnum_unittest \
 	  advec_unittest \
 	  admath_unittest \
 	  adnode_unittest \
@@ -93,16 +91,6 @@ OFILES = $(shell echo $(TESTS) | sed "s/[[:space:]]/.o /g;s/\(.*\)/\1.o/g")
 # adtest-valuetypes.o : $(USER_DIR)/src/utils_unittest.cpp $(USER_DIR)/include/utils.h $(GTEST_HEADERS) $(MY_HEADERS)
 # 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/sample1.cc
 
-# utils
-utils_unittest.o : $(USER_DIR)/src/utils_unittest.cpp \
-					$(USER_DIR)/src/utils_unittest.h \
-                     $(USER_DIR)/include/utils.h \
-					 $(GTEST_HEADERS) $(MY_HEADERS)
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/src/utils_unittest.cpp
-
-utils_unittest : utils_unittest.o gtest_main.a
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@
-
 # dualnum
 dualnum_unittest.o : $(USER_DIR)/src/dualnum_unittest.cpp \
 					$(USER_DIR)/src/dualnum_unittest.h \
@@ -111,16 +99,6 @@ dualnum_unittest.o : $(USER_DIR)/src/dualnum_unittest.cpp \
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/src/dualnum_unittest.cpp
 
 dualnum_unittest : dualnum_unittest.o gtest_main.a
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@
-
-# binaryop
-binaryop_unittest.o : $(USER_DIR)/src/binaryop_unittest.cpp \
-					$(USER_DIR)/src/binaryop_unittest.h \
-                     $(USER_DIR)/include/binaryop.h \
-					 $(GTEST_HEADERS) $(MY_HEADERS)
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/src/binaryop_unittest.cpp
-
-binaryop_unittest : binaryop_unittest.o gtest_main.a
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@
 
 # advec
