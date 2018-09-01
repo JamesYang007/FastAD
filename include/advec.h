@@ -16,9 +16,13 @@ namespace ad {
         Vec() : vec()
         {this->vec.reserve(1e6);}
         // Construct (default) with preset number of items
-        Vec(size_t capacity)
+        Vec(size_t n, size_t capacity=1e6)
             : vec()
-        {this->vec.reserve(capacity);}
+        {
+            this->vec.reserve(capacity);
+            auto&& ir = boost::irange<size_t>(0, n);
+            std::for_each(ir.begin(), ir.end(), [this](size_t i) {this->vec.emplace_back();});
+        }
 
         // Construct with initial values
         Vec(std::initializer_list<T> il, size_t capacity=1e6)

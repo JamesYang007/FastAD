@@ -247,19 +247,38 @@ inline auto operator/(
 template <
     class Iter
     , class Lmda
-    , class ExprType=typename std::iterator_traits<Iter>::value_type
     >
 inline auto sum(Iter start, Iter end, Lmda f)
     -> core::SumNode<
-    typename ExprType::valuetype 
+    typename decltype(f(*start))::valuetype
     , Iter
     , Lmda
     >
 {return core::SumNode<
-    typename ExprType::valuetype 
+    typename decltype(f(*start))::valuetype
     , Iter
     , Lmda
     >(start, end, f);
 }
+
+// ad::prod(Iter start, Iter end, lmda fn)
+//template <
+//    class Iter
+//    , class Lmda
+//    , class ExprType=typename std::iterator_traits<Iter>::value_type
+//    >
+//inline auto prod(Iter start, Iter end, Lmda f)
+//    -> core::ProdNode<
+//    typename ExprType::valuetype 
+//    , Iter
+//    , Lmda
+//    >
+//{
+//    return core::ProdNode<
+//    typename ExprType::valuetype 
+//    , Iter
+//    , Lmda
+//    >(start, end, f);
+//}
 
 } // namespace ad
