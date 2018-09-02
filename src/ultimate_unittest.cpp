@@ -90,6 +90,7 @@ namespace {
         auto res = leaf1 * leaf2 + sin(leaf1 + leaf2) * leaf2 - leaf1/leaf2;
         EXPECT_EQ(res.feval(), x1*x2 + std::sin(x1+x2)*x2 - x1/x2);
         res.beval(1);
+        
         EXPECT_EQ(dfs[0], 
                     x2 + std::cos(x1 + x2) * x2 - 1./x2);
         EXPECT_EQ(dfs[1], 
