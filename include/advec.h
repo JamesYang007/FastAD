@@ -44,6 +44,13 @@ namespace ad {
         inline core::ADNode<T> const& operator[](size_t i) const
         {return this->vec[i];}
 
+        // resets the adjoints
+        inline void reset() {
+            std::for_each(this->vec.begin(), this->vec.end(),
+                    [](core::ADNode<T>& v)
+                    {v.df = 0;});
+        }
+
         // push_back
         // Note: w/df_ptr will be copied from node.w/df_ptr
         void push_back(core::ADNode<T> const& node)
@@ -56,19 +63,32 @@ namespace ad {
         {if (this->vec.size() < this->vec.capacity()) this->vec.emplace_back(args...);
             else throw std::length_error("maximum capacity reached.");}
 
+        // size wrapper
         inline size_t size() const
         {return vec.size();}
 
+        // capacity wrapper
         inline size_t capacity() const
         {return vec.capacity();}
 
-        inline auto begin()
+        // begin wrapper
+        inline auto begin() const
             -> decltype(vec.begin())
         {return vec.begin();}
 
-        inline auto end()
+        inline auto begin() 
+            -> decltype(vec.begin())
+        {return vec.begin();}
+
+        // end wrapper
+        inline auto end() const
             -> decltype(vec.end())
         {return vec.end();}
+        
+        inline auto end() 
+            -> decltype(vec.end())
+        {return vec.end();}
+
 
     private:
         // Init functions

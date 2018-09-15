@@ -36,6 +36,45 @@ namespace math {
         static inline T bmap(T x)
         {return -std::sin(x);}
     };
+    // Tan struct
+    template <class T>
+    struct Tan 
+    {
+        static inline T fmap(T x)
+        {return std::tan(x);}
+        static inline T bmap(T x)
+        {auto tmp = Cos<T>::fmap(x); return 1/(tmp * tmp);}
+    };
+
+    // Arcsin (degrees)
+    template <class T>
+    struct Arcsin
+    {
+        static inline T fmap(T x)
+        {return std::asin(x);}
+        static inline T bmap(T x)
+        {return 1 / std::sqrt(1 - x*x);}
+    };
+
+    // Arccos (degrees)
+    template <class T>
+    struct Arccos
+    {
+        static inline T fmap(T x)
+        {return std::acos(x);}
+        static inline T bmap(T x)
+        {return -Arcsin<T>::bmap(x);}
+    };
+    
+    // Arctan (degrees)
+    template <class T>
+    struct Arctan
+    {
+        static inline T fmap(T x)
+        {return std::atan(x);}
+        static inline T bmap(T x)
+        {return 1 / (1 + x*x);}
+    };
 
     // Exp struct
     template <class T>
@@ -47,6 +86,7 @@ namespace math {
         {return fmap(x);}
     };
 
+//================================================================================
     // Binary Operators
 
     // Add
@@ -129,6 +169,58 @@ inline auto cos(core::ADNodeExpr<Derived> const& node)
 {return core::ADNode<
         typename Derived::valuetype
         , typename math::Cos<typename Derived::valuetype>
+        , Derived>(node.self())
+        ;}
+
+// ad::tan(ADNode)
+template <class Derived>
+inline auto cos(core::ADNodeExpr<Derived> const& node)
+    -> core::ADNode<
+        typename Derived::valuetype
+        , typename math::Tan<typename Derived::valuetype>
+        , Derived> 
+{return core::ADNode<
+        typename Derived::valuetype
+        , typename math::Tan<typename Derived::valuetype>
+        , Derived>(node.self())
+        ;}
+
+// ad::asin(ADNode)
+template <class Derived>
+inline auto asin(core::ADNodeExpr<Derived> const& node)
+    -> core::ADNode<
+        typename Derived::valuetype
+        , typename math::Arcsin<typename Derived::valuetype>
+        , Derived> 
+{return core::ADNode<
+        typename Derived::valuetype
+        , typename math::Arcsin<typename Derived::valuetype>
+        , Derived>(node.self())
+        ;}
+
+// ad::acos(ADNode)
+template <class Derived>
+inline auto acos(core::ADNodeExpr<Derived> const& node)
+    -> core::ADNode<
+        typename Derived::valuetype
+        , typename math::Arccos<typename Derived::valuetype>
+        , Derived> 
+{return core::ADNode<
+        typename Derived::valuetype
+        , typename math::Arccos<typename Derived::valuetype>
+        , Derived>(node.self())
+        ;}
+
+// ad::atan(ADNode)
+template <class Derived>
+inline auto atan(core::ADNodeExpr<Derived> const& node)
+    -> core::ADNode<
+        typename Derived::valuetype
+        , typename math::Arctan<typename Derived::valuetype>
+        , Derived> 
+{return core::ADNode<
+        typename Derived::valuetype
+        , typename math::Arctan<typename Derived::valuetype>
         , Derived>(node.self())
         ;}
 
