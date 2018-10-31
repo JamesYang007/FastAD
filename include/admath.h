@@ -174,7 +174,7 @@ inline auto cos(core::ADNodeExpr<Derived> const& node)
 
 // ad::tan(ADNode)
 template <class Derived>
-inline auto cos(core::ADNodeExpr<Derived> const& node)
+inline auto tan(core::ADNodeExpr<Derived> const& node)
     -> core::ADNode<
         typename Derived::valuetype
         , typename math::Tan<typename Derived::valuetype>
