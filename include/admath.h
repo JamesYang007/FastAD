@@ -148,10 +148,6 @@ namespace math {
 // sin(expr)
 template <class Derived>
 inline auto sin(core::ADNodeExpr<Derived> const& node)
-    -> core::ADNode<
-        typename Derived::valuetype
-        , typename math::Sin<typename Derived::valuetype>
-        , Derived> 
 {return core::ADNode<
         typename Derived::valuetype
         , typename math::Sin<typename Derived::valuetype>
@@ -162,10 +158,6 @@ inline auto sin(core::ADNodeExpr<Derived> const& node)
 // Returns a UnaryNode containing Cos as Unary operation
 template <class Derived>
 inline auto cos(core::ADNodeExpr<Derived> const& node)
-    -> core::ADNode<
-        typename Derived::valuetype
-        , typename math::Cos<typename Derived::valuetype>
-        , Derived> 
 {return core::ADNode<
         typename Derived::valuetype
         , typename math::Cos<typename Derived::valuetype>
@@ -175,10 +167,6 @@ inline auto cos(core::ADNodeExpr<Derived> const& node)
 // ad::tan(ADNode)
 template <class Derived>
 inline auto tan(core::ADNodeExpr<Derived> const& node)
-    -> core::ADNode<
-        typename Derived::valuetype
-        , typename math::Tan<typename Derived::valuetype>
-        , Derived> 
 {return core::ADNode<
         typename Derived::valuetype
         , typename math::Tan<typename Derived::valuetype>
@@ -188,10 +176,6 @@ inline auto tan(core::ADNodeExpr<Derived> const& node)
 // ad::asin(ADNode)
 template <class Derived>
 inline auto asin(core::ADNodeExpr<Derived> const& node)
-    -> core::ADNode<
-        typename Derived::valuetype
-        , typename math::Arcsin<typename Derived::valuetype>
-        , Derived> 
 {return core::ADNode<
         typename Derived::valuetype
         , typename math::Arcsin<typename Derived::valuetype>
@@ -201,10 +185,6 @@ inline auto asin(core::ADNodeExpr<Derived> const& node)
 // ad::acos(ADNode)
 template <class Derived>
 inline auto acos(core::ADNodeExpr<Derived> const& node)
-    -> core::ADNode<
-        typename Derived::valuetype
-        , typename math::Arccos<typename Derived::valuetype>
-        , Derived> 
 {return core::ADNode<
         typename Derived::valuetype
         , typename math::Arccos<typename Derived::valuetype>
@@ -214,10 +194,6 @@ inline auto acos(core::ADNodeExpr<Derived> const& node)
 // ad::atan(ADNode)
 template <class Derived>
 inline auto atan(core::ADNodeExpr<Derived> const& node)
-    -> core::ADNode<
-        typename Derived::valuetype
-        , typename math::Arctan<typename Derived::valuetype>
-        , Derived> 
 {return core::ADNode<
         typename Derived::valuetype
         , typename math::Arctan<typename Derived::valuetype>
@@ -228,10 +204,6 @@ inline auto atan(core::ADNodeExpr<Derived> const& node)
 // Returns a UnaryNode containing Exp as Unary operation
 template <class Derived>
 inline auto exp(core::ADNodeExpr<Derived> const& node)
-    -> core::ADNode<
-        typename Derived::valuetype
-        , typename math::Exp<typename Derived::valuetype>
-        , Derived> 
 {return core::ADNode<
         typename Derived::valuetype
         , typename math::Exp<typename Derived::valuetype>
@@ -256,11 +228,6 @@ template <
 inline auto operator+(
         ADNodeExpr<Derived1> const& node1
         , ADNodeExpr<Derived2> const& node2)
-    -> ADNode<
-        value_type
-        , typename ad::math::Add<value_type>
-        , Derived1
-        , Derived2>
 {return make_node<value_type, typename ad::math::Add<value_type>>(
             node1.self(), node2.self());}
 
@@ -278,11 +245,6 @@ template <
 inline auto operator-(
         ADNodeExpr<Derived1> const& node1
         , ADNodeExpr<Derived2> const& node2)
-    -> ADNode<
-        value_type
-        , typename ad::math::Sub<value_type>
-        , Derived1
-        , Derived2>
 {return make_node<value_type, typename ad::math::Sub<value_type>>(
             node1.self(), node2.self());}
 
@@ -300,11 +262,6 @@ template <
 inline auto operator*(
         ADNodeExpr<Derived1> const& node1
         , ADNodeExpr<Derived2> const& node2)
-    -> ADNode<
-        value_type
-        , typename ad::math::Mul<value_type>
-        , Derived1
-        , Derived2>
 {return make_node<value_type, typename ad::math::Mul<value_type>>(
             node1.self(), node2.self());}
 
@@ -322,11 +279,6 @@ template <
 inline auto operator/(
         ADNodeExpr<Derived1> const& node1
         , ADNodeExpr<Derived2> const& node2)
-    -> ADNode<
-        value_type
-        , typename ad::math::Div<value_type>
-        , Derived1
-        , Derived2>
 {return make_node<value_type, typename ad::math::Div<value_type>>(
             node1.self(), node2.self());}
 
@@ -341,11 +293,6 @@ template <
     , class Lmda
     >
 inline auto sum(Iter start, Iter end, Lmda f)
-    -> core::SumNode<
-    typename decltype(f(*start))::valuetype
-    , Iter
-    , Lmda
-    >
 {return core::SumNode<
     typename decltype(f(*start))::valuetype
     , Iter
@@ -359,11 +306,6 @@ template <
     , class Lmda
     >
 inline auto prod(Iter start, Iter end, Lmda f)
-    -> core::ProdNode<
-    typename decltype(f(*start))::valuetype
-    , Iter
-    , Lmda
-    >
 {
     return core::ProdNode<
     typename decltype(f(*start))::valuetype
