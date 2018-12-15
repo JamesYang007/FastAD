@@ -32,6 +32,7 @@ CXXFLAGS += -g -pthread
 TESTS=dualnum_unittest \
 	  admath_unittest \
 	  adnode_unittest \
+	  adeval_unittest \
 	  ultimate_unittest \
 	  all_unittest
 
@@ -128,6 +129,16 @@ adnode_unittest.o : $(USER_DIR)/src/adnode_unittest.cpp \
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/src/adnode_unittest.cpp
 
 adnode_unittest : adnode_unittest.o gtest_main.a
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@
+
+# adeval
+adeval_unittest.o : $(USER_DIR)/src/adeval_unittest.cpp \
+					$(USER_DIR)/src/adeval_unittest.h \
+                     $(USER_DIR)/include/adeval.h \
+					 $(GTEST_HEADERS) $(MY_HEADERS)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/src/adeval_unittest.cpp
+
+adeval_unittest : adeval_unittest.o gtest_main.a
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@
 
 # ultimate
