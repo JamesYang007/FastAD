@@ -25,13 +25,14 @@ inline void autodiff(ExprType&& expr)
 //====================================================================================================
 
 // autodiff on tuple of expressions
-template <size_t I = 0, class... ExprType>
+template <size_t I = 0, class...ExprType>
 inline typename std::enable_if<I == sizeof...(ExprType), void>::type
-autodiff(std::tuple<ExprType...>& tup) {}
+autodiff(std::tuple<ExprType...> tup) {}
 
 template <size_t I = 0, class... ExprType>
 inline typename std::enable_if<I < sizeof...(ExprType), void>::type
-autodiff(std::tuple<ExprType...>& tup)
+autodiff(std::tuple<ExprType...> tup)
 {autodiff(std::get<I>(tup)); autodiff<I+1>(tup);}
+
 
 } // end namespace ad
