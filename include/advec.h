@@ -89,6 +89,13 @@ namespace ad {
             -> decltype(vec.end())
         {return vec.end();}
 
+        // clear
+        inline void clear()
+        {vec.clear();}
+
+        // reserve
+        inline void reserve(size_t n)
+        {vec.reserve(n);}
 
     private:
         // Init functions
