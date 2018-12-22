@@ -5,20 +5,34 @@ namespace {
     // TEST for Function Object
     //
     // Possible user-defined functions
-    auto&& F = FUNCTION(double, 
-            ad::sin(x[0])*ad::cos(x[1]),
-            x[2] + x[3]*x[4], 
-            w[0] + w[1]
+    auto&& F = ad::make_function<double>(
+            [](ad::Vec<double>& x, ad::Vec<double>& w) {
+            return std::make_tuple(
+                ad::sin(x[0])*ad::cos(x[1]),
+                x[2] + x[3]*x[4], 
+                w[0] + w[1]
+                );
+            }
             );
 
-    auto&& G = FUNCTION(double,
-            ad::sum(x.begin(), x.end(), [](ad::Var<double> const& var)
-                {return ad::sin(var);}),
-            w[0]*w[0] - ad::sum(x.begin(), x.end(), [](ad::Var<double> const& var)
-                {return ad::cos(var);})
+    auto&& G = ad::make_function<double>(
+            [](ad::Vec<double>& x, ad::Vec<double>& w) {
+            return std::make_tuple(
+                ad::sum(x.begin(), x.end(), [](ad::Var<double> const& var)
+                    {return ad::sin(var);}),
+                w[0]*w[0] - ad::sum(x.begin(), x.end(), [](ad::Var<double> const& var)
+                    {return ad::cos(var);})
+                );
+            }
             );
 
-    auto&& H = FUNCTION(double, x[0]*x[4]);
+    auto&& H = ad::make_function<double>(
+            [](ad::Vec<double>& x, ad::Vec<double>& w) {
+            return std::make_tuple(
+                x[0]*x[4]
+                );
+            }
+            );
     
     // GTest user-defined functions
     template <class T, class Iter>
@@ -53,7 +67,7 @@ namespace {
         EXPECT_DOUBLE_EQ(res(i,0), *begin);
     }
 
-//                                                           ================================================================================================
+//================================================================================================
     
     // Scalar Function f:R^n -> R
     TEST(adeval_test, function_scalar) {
@@ -61,12 +75,14 @@ namespace {
         double x[] = {0.1, 2.3, -1., 4.1, -5.21};
         double y[] = {2.1, 5.3, -1.23, 0.0012, -5.13};
         arma::Mat<double> res(1,5);
-        auto&& f = FUNCTION(double, 
-                ad::sin(x[0])*ad::cos(x[1]),
-                x[2] + x[3]*x[4], 
-                w[0] + w[1]
+        auto&& F = make_function<double>(
+                [](Vec<double>& x, Vec<double>& w) {
+                return std::make_tuple(
+                    ad::sin(x[0])*ad::cos(x[1]),
+                    x[2] + x[3]*x[4], 
+                    w[0] + w[1]);
+                }
                 );
-        auto&& F = make_function(f);
 
         auto test_core = [&F, &res](double* begin, double* end) mutable {
             auto&& expr = F(begin, end);
@@ -93,7 +109,7 @@ namespace {
 
         auto&& F_long = make_function(F, G, H);
 
-        auto test_core = [&F_long](double* begin, double* end) mutable {
+        auto test_core = [&](double* begin, double* end) mutable {
             auto&& expr = F_long(begin, end);
             autodiff(expr);
             arma::Mat<double> res = jacobian(F_long);

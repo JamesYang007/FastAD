@@ -1,6 +1,6 @@
 #pragma once
 #include "adnode.h"
-#include <vector>
+#include <deque>
 #include <boost/range/irange.hpp>
 #include <boost/range/combine.hpp>
 #include <stdexcept>
@@ -9,34 +9,25 @@ namespace ad {
     template <class T>
     struct Vec
     {
-        using impl_type = std::vector<core::ADNode<T>>;
+        using impl_type = std::deque<core::ADNode<T>>;
         impl_type vec;
 
-        // default constructor
-        Vec() : vec()
-        {this->vec.reserve(1e6);}
+        Vec() : vec() {}
+
         // Construct (default) with preset number of items
-        Vec(size_t n, size_t capacity=1e6)
-            : vec()
-        {
-            this->vec.reserve(capacity);
-            auto&& ir = boost::irange<size_t>(0, n);
-            std::for_each(ir.begin(), ir.end(), [this](size_t i) {this->vec.emplace_back();});
-        }
+        Vec(size_t n)
+            : vec(n)
+        {}
 
         // Construct with initial values
-        Vec(std::initializer_list<T> il, size_t capacity=1e6)
+        Vec(std::initializer_list<T> il)
             : vec()
-        {if (il.size() > capacity) throw std::length_error("initializer list longer than maximum capacity.");
-            this->vec.reserve(capacity);
-            this->init(il);}
+        {this->init(il);}
 
         // Construct with initial values and memory ptr to adjoints
-        Vec(std::initializer_list<T> il, T* memptr, size_t capacity=1e6)
+        Vec(std::initializer_list<T> il, T* memptr)
             : vec()
-        {if (il.size() > capacity) throw std::length_error("initializer list longer than maximum capacity.");
-            this->vec.reserve(capacity);
-            this->init(il, memptr);}
+        {this->init(il, memptr);}
 
         // [] operator
         inline core::ADNode<T>& operator[](size_t i)
@@ -44,32 +35,19 @@ namespace ad {
         inline core::ADNode<T> const& operator[](size_t i) const
         {return this->vec[i];}
 
-        // resets the adjoints
-        inline void reset() {
-            std::for_each(this->vec.begin(), this->vec.end(),
-                    [](core::ADNode<T>& v)
-                    {v.df = 0;});
-        }
-
         // push_back
         // Note: w/df_ptr will be copied from node.w/df_ptr
         void push_back(core::ADNode<T> const& node)
-        {if (this->vec.size() < this->vec.capacity()) this->vec.push_back(node);
-            else throw std::length_error("maximum capacity reached.");}
+        {this->vec.push_back(node);}
 
         // emplace_back
         template <class ...Args>
         void emplace_back(Args&&... args)
-        {if (this->vec.size() < this->vec.capacity()) this->vec.emplace_back(args...);
-            else throw std::length_error("maximum capacity reached.");}
+        {this->vec.emplace_back(args...);}
 
         // size wrapper
         inline size_t size() const
         {return vec.size();}
-
-        // capacity wrapper
-        inline size_t capacity() const
-        {return vec.capacity();}
 
         // begin wrapper
         inline auto begin() const

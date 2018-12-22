@@ -30,6 +30,7 @@ CXXFLAGS += -g -pthread
 # All tests produced by this Makefile.  Remember to add new tests you
 # created to the list.
 TESTS=dualnum_unittest \
+	  advec_unittest \
 	  admath_unittest \
 	  adnode_unittest \
 	  adeval_unittest \

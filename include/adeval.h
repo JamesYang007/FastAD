@@ -2,7 +2,6 @@
 #include "adnode.h"
 #include "admath.h"
 #include "advec.h"
-#include <armadillo>
 
 namespace ad {
 

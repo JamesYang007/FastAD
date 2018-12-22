@@ -50,8 +50,7 @@ namespace {
         // autodiff
         Var<double> z;
         autodiff(
-                z = 
-                    vec[0] * vec[2] + sin(cos(vec[0] + vec[1])) * vec[1] - vec[0]/exp(vec[2])
+                z = vec[0] * vec[2] + sin(cos(vec[0] + vec[1])) * vec[1] - vec[0]/exp(vec[2])
                 );
         EXPECT_EQ(z.w, 
                 x1*x3 + std::sin(std::cos(x1+x2))*x2 - x1/std::exp(x3));
