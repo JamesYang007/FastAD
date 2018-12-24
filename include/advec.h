@@ -71,9 +71,9 @@ namespace ad {
         inline void clear()
         {vec.clear();}
 
-        // reserve
-        inline void reserve(size_t n)
-        {vec.reserve(n);}
+        // resize
+        inline void resize(size_t n)
+        {vec.resize(n);}
 
     private:
         // Init functions
