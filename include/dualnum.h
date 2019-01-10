@@ -7,7 +7,7 @@ namespace core {
     template <class T>
     struct DualNum
     {
-        using valuetype = T;
+        using value_type = T;
         T w, df;   
         DualNum(T w, T df)
             : w(w), df(df)

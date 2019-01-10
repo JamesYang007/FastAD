@@ -1,5 +1,0 @@
-#include "dualnum_unittest.h"
-//#include "advec_unittest.h"
-#include "admath_unittest.h"
-#include "adnode_unittest.h"
-#include "ultimate_unittest.h"

@@ -7,7 +7,7 @@ namespace {
         DualNum<double> dual(2.1, 2.3);
         EXPECT_EQ(dual.w, 2.1);
         EXPECT_EQ(dual.df, 2.3);
-        bool x = std::is_same<DualNum<double>::valuetype, double>::value;
+        bool x = std::is_same<DualNum<double>::value_type, double>::value;
         EXPECT_EQ(x, 1);
     }
 

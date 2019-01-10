@@ -34,8 +34,7 @@ TESTS=dualnum_unittest \
 	  admath_unittest \
 	  adnode_unittest \
 	  adeval_unittest \
-	  ultimate_unittest \
-	  all_unittest
+	  ultimate_unittest
 
 # All Google Test headers.  Usually you shouldn't change this
 # definition.
@@ -96,7 +95,7 @@ OFILES = $(shell echo $(TESTS) | sed "s/[[:space:]]/.o /g;s/\(.*\)/\1.o/g")
 dualnum_unittest.o : $(USER_DIR)/src/dualnum_unittest.cpp \
 					$(USER_DIR)/src/dualnum_unittest.h \
                      $(USER_DIR)/include/dualnum.h \
-					 $(GTEST_HEADERS) $(MY_HEADERS)
+					 $(GTEST_HEADERS)
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/src/dualnum_unittest.cpp
 
 dualnum_unittest : dualnum_unittest.o gtest_main.a
@@ -106,7 +105,8 @@ dualnum_unittest : dualnum_unittest.o gtest_main.a
 advec_unittest.o : $(USER_DIR)/src/advec_unittest.cpp \
 					$(USER_DIR)/src/advec_unittest.h \
                      $(USER_DIR)/include/advec.h \
-					 $(GTEST_HEADERS) $(MY_HEADERS)
+                     $(USER_DIR)/include/adnode.h \
+					 $(GTEST_HEADERS) 
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/src/advec_unittest.cpp
 
 advec_unittest : advec_unittest.o gtest_main.a
@@ -116,7 +116,8 @@ advec_unittest : advec_unittest.o gtest_main.a
 admath_unittest.o : $(USER_DIR)/src/admath_unittest.cpp \
 					$(USER_DIR)/src/admath_unittest.h \
                      $(USER_DIR)/include/admath.h \
-					 $(GTEST_HEADERS) $(MY_HEADERS)
+                     $(USER_DIR)/include/advec.h \
+					 $(GTEST_HEADERS)
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/src/admath_unittest.cpp
 
 admath_unittest : admath_unittest.o gtest_main.a
@@ -126,7 +127,8 @@ admath_unittest : admath_unittest.o gtest_main.a
 adnode_unittest.o : $(USER_DIR)/src/adnode_unittest.cpp \
 					$(USER_DIR)/src/adnode_unittest.h \
                      $(USER_DIR)/include/adnode.h \
-					 $(GTEST_HEADERS) $(MY_HEADERS)
+                     $(USER_DIR)/include/dualnum.h \
+					 $(GTEST_HEADERS)
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/src/adnode_unittest.cpp
 
 adnode_unittest : adnode_unittest.o gtest_main.a
@@ -136,7 +138,9 @@ adnode_unittest : adnode_unittest.o gtest_main.a
 adeval_unittest.o : $(USER_DIR)/src/adeval_unittest.cpp \
 					$(USER_DIR)/src/adeval_unittest.h \
                      $(USER_DIR)/include/adeval.h \
-					 $(GTEST_HEADERS) $(MY_HEADERS)
+                     $(USER_DIR)/include/adnode.h \
+                     $(USER_DIR)/include/admath.h \
+					 $(GTEST_HEADERS)
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/src/adeval_unittest.cpp
 
 adeval_unittest : adeval_unittest.o gtest_main.a
@@ -145,20 +149,8 @@ adeval_unittest : adeval_unittest.o gtest_main.a
 # ultimate
 ultimate_unittest.o : $(USER_DIR)/src/ultimate_unittest.cpp \
 					$(USER_DIR)/src/ultimate_unittest.h \
-					 $(GTEST_HEADERS) $(MY_HEADERS)
+					 $(GTEST_HEADERS) 
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/src/ultimate_unittest.cpp
 
 ultimate_unittest : ultimate_unittest.o gtest_main.a
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@
-
-# all (NO NEED TO MODIFY) 
-all_unittest.o: $(USER_DIR)/src/*.cpp \
-				$(USER_DIR)/src/*.h \
-				$(USER_DIR)/include/*.h \
-				$(GTEST_HEADERS) \
-				$(MY_HEADERS)
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/src/all_unittest.cpp
-
-all_unittest: $(OFILES) \
-				gtest_main.a
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@

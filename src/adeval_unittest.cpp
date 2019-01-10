@@ -33,6 +33,26 @@ namespace {
                 );
             }
             );
+
+    auto&& PHI = ad::make_function<double>(
+            [](ad::Vec<double>& x, ad::Vec<double>& w) {
+            return std::make_tuple(
+                    ad::sin(x[0])*ad::cos(ad::exp(x[1])) + ad::log(x[0]) - x[1],
+                    ad::sin(w[0]) - ad::sum(x.begin(), x.end(), [](ad::Var<double> const& var)
+                        {return ad::cos(var) * ad::exp(var);}),
+                    ad::sin(w[1]) + ad::sum(x.begin(), x.end(), [](ad::Var<double> const& var)
+                        {return ad::sin(var) * ad::exp(var);}),
+                    ad::sin(w[2]) + ad::prod(x.begin(), x.end(), [&](ad::Var<double> const& var) 
+                        {return ad::cos(var);}),
+                    ad::sin(w[3]) + ad::sum(x.begin(), x.end(), [](ad::Var<double> const& var)
+                        {return ad::sin(var) * ad::exp(var);}),
+                    ad::sin(w[4]) + ad::sum(x.begin(), x.end(), [](ad::Var<double> const& var)
+                        {return ad::cos(var) * ad::log(var);}),
+                    ad::sin(w[5]) + ad::sum(x.begin(), x.end(), [](ad::Var<double> const& var)
+                        {return ad::sin(var) * ad::exp(var);})
+                    );
+            }
+            );
     
     // GTest user-defined functions
     template <class T, class Iter>
@@ -110,7 +130,7 @@ namespace {
         auto&& F_long = make_function(F, G, H);
 
         auto test_core = [&](double* begin, double* end) mutable {
-            auto&& expr = F_long(begin, end);
+            auto expr = F_long(begin, end);
             autodiff(expr);
             arma::Mat<double> res = jacobian(F_long);
             f_test(res, 0, begin);
@@ -119,6 +139,9 @@ namespace {
         };
         test_core(x, x+5);
         test_core(y, y+5);
+
+        EXPECT_EQ(F.x.size(), 0);
+        EXPECT_EQ(std::get<0>(F_long.tup).x.size(), 5);
     }
 
     // Complex Vector Function
@@ -134,7 +157,12 @@ namespace {
 
         auto&& F_long = make_function(
                 F, G, H, F, G, H, F, G, H, F,
-                F, G, H, F, G, H, F, G, H, F
+                F, G, H, F, G, H, F, G, H, F,
+                PHI, PHI, PHI, PHI, PHI,
+                PHI, PHI, PHI, PHI, PHI,
+                PHI, PHI, PHI, PHI, PHI,
+                PHI, PHI, PHI, PHI, PHI,
+                PHI, PHI, PHI, PHI, PHI
                 );
 
         using Iter = decltype(x.begin());
