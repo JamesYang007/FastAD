@@ -177,5 +177,64 @@ namespace {
         test_core(x.begin(), x.end());
     }
 
+    // Generic pointer jacobian
+    TEST(adeval_test, generic_jacobian) {
+        using namespace ad;
+        double x[] = {0.1, 2.3, -1., 4.1, -5.21};
+        double y[] = {2.1, 5.3, -1.23, 0.0012, -5.13};
+
+        auto&& F_long = make_function(F, G, H);
+
+        auto test_core = [&](double* begin, double* end) mutable {
+            auto expr = F_long(begin, end);
+            autodiff(expr);
+            arma::Mat<double> res(5,3, arma::fill::zeros);
+            jacobian(res.begin(), F_long);
+            res = res.t();
+            f_test(res, 0, begin);
+            g_test(res, 1, begin);
+            h_test(res, 2, begin);
+        };
+        test_core(x, x+5);
+        test_core(y, y+5);
+
+        EXPECT_EQ(F.x.size(), 0);
+        EXPECT_EQ(std::get<0>(F_long.tup).x.size(), 5);
+    }
+
+    // Complex Generic pointer jacobian
+    TEST(adeval_test, generic_jacobian_complex) {
+        using namespace ad;
+        constexpr size_t n = 1e3;
+        std::vector<double> x;
+        std::default_random_engine gen;
+        std::normal_distribution<double> dist(0.0,1.0);
+
+        for (size_t i = 0; i < n; ++i) 
+            x.push_back(dist(gen));
+
+        auto&& F_long = make_function(
+                F, G, H, F, G, H, F, G, H, F,
+                F, G, H, F, G, H, F, G, H, F,
+                PHI, PHI, PHI, PHI, PHI,
+                PHI, PHI, PHI, PHI, PHI,
+                PHI, PHI, PHI, PHI, PHI,
+                PHI, PHI, PHI, PHI, PHI,
+                PHI, PHI, PHI, PHI, PHI
+                );
+
+        using Iter = decltype(x.begin());
+        auto test_core = [&F_long](Iter begin, Iter end) mutable {
+            auto&& expr = F_long(begin, end);
+            autodiff(expr);
+            arma::Mat<double> res(n, std::tuple_size<decltype(F_long.tup)>::value, arma::fill::zeros);
+            jacobian(res.begin(), F_long);
+            res = res.t();
+            f_test(res, 0, begin);
+            g_test(res, 1, begin);
+            h_test(res, 2, begin);
+        };
+        test_core(x.begin(), x.end());
+    }
 
 } // end namespace
