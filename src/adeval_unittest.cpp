@@ -1,4 +1,5 @@
 #include "adeval_unittest.h"
+#include "utils/array2d/array2d.hpp"
 
 namespace {
 
@@ -55,8 +56,8 @@ namespace {
             );
     
     // GTest user-defined functions
-    template <class T, class Iter>
-    void f_test(arma::Mat<T> const& res, size_t i, Iter begin)
+    template <class Matrix, class Iter>
+    void f_test(Matrix const& res, size_t i, Iter begin)
     {
         EXPECT_DOUBLE_EQ(res(i,0), std::cos(*begin)*std::cos(*std::next(begin)));
         EXPECT_DOUBLE_EQ(res(i,1), -std::sin(*begin)*std::sin(*std::next(begin)));
@@ -66,18 +67,20 @@ namespace {
         EXPECT_DOUBLE_EQ(res(i,3), *(++begin));
     }
 
-    template <class T, class Iter>
-    void g_test(arma::Mat<T> const& res, size_t i, Iter begin)
+    template <class Matrix, class Iter>
+    void g_test(Matrix const& res, size_t i, Iter begin)
     {
-        T sum = 0; auto it = begin;
+        auto it = begin;
+        using T = typename std::iterator_traits<Iter>::value_type;
+        T sum = static_cast<T>(0); 
         for (size_t j = 0; j < res.n_cols; ++it, ++j)
             sum += std::sin(*it);
         for (size_t j = 0; j < res.n_cols; ++begin, ++j)
             EXPECT_DOUBLE_EQ(res(i,j), 2*sum*std::cos(*begin) + std::sin(*begin));
     }
 
-    template <class T, class Iter>
-    void h_test(arma::Mat<T> const& res, size_t i, Iter begin)
+    template <class Matrix, class Iter>
+    void h_test(Matrix const& res, size_t i, Iter begin)
     {
         EXPECT_DOUBLE_EQ(res(i,4), *begin);
         EXPECT_DOUBLE_EQ(res(i,1), 0);
@@ -88,13 +91,44 @@ namespace {
     }
 
 //================================================================================================
+
+    // Scalar Function test
+    // With arma
+    template < bool arma_bool=true, class Iter, class F
+        , class matrix_type = typename std::conditional<arma_bool, arma::Mat<double>, utils::array2d<double>>::type
+        >
+    void test_scalar(Iter begin, Iter end, F& f)
+    {
+        using namespace ad;
+        auto&& expr = f(begin, end);
+        autodiff(expr);
+        matrix_type res;
+        jacobian(res, f);
+        f_test(res, 0, begin);
+    }
+
+    // Vector Function Test
+    // With arma
+    template <bool arma_bool=true, class Iter, class F
+        , class matrix_type = typename std::conditional<arma_bool, arma::Mat<double>, utils::array2d<double>>::type
+        >
+    void test_vector(Iter begin, Iter end, F& f, bool arma=true)
+    {
+        using namespace ad;
+        auto&& expr = f(begin, end);
+        autodiff(expr);
+        matrix_type res;
+        jacobian(res, f);
+        f_test(res, 0, begin);
+        g_test(res, 1, begin);
+        h_test(res, 2, begin);
+    }
     
     // Scalar Function f:R^n -> R
     TEST(adeval_test, function_scalar) {
         using namespace ad;
         double x[] = {0.1, 2.3, -1., 4.1, -5.21};
         double y[] = {2.1, 5.3, -1.23, 0.0012, -5.13};
-        arma::Mat<double> res(1,5);
         auto&& F = make_function<double>(
                 [](Vec<double>& x, Vec<double>& w) {
                 return std::make_tuple(
@@ -103,22 +137,13 @@ namespace {
                     w[0] + w[1]);
                 }
                 );
-
-        auto test_core = [&F, &res](double* begin, double* end) mutable {
-            auto&& expr = F(begin, end);
-            autodiff(expr);
-            for (size_t i = 0; i < 5; ++i) 
-                res(0,i) = *(F.x[i].df_ptr);
-            f_test(res, 0, begin);
-        };
-
         // We try both to see if Function member variable Vector is correctly
         // cleared and re-reserve capacity
 
         // with x
-        test_core(x, x+5);
+        test_scalar(x, x+5, F);
         // with y
-        test_core(y, y+5);
+        test_scalar(y, y+5, F);
     }
 
     // Vector Function f:R^n -> R^m
@@ -129,19 +154,12 @@ namespace {
 
         auto&& F_long = make_function(F, G, H);
 
-        auto test_core = [&](double* begin, double* end) mutable {
-            auto expr = F_long(begin, end);
-            autodiff(expr);
-            arma::Mat<double> res;
-            jacobian(res, F_long);
-            f_test(res, 0, begin);
-            g_test(res, 1, begin);
-            h_test(res, 2, begin);
-        };
-        test_core(x, x+5);
-        test_core(y, y+5);
+        test_vector(x, x+5, F_long);
+        test_vector(y, y+5, F_long);
 
+        // Check if F is properly copied into F_long
         EXPECT_EQ(F.x.size(), 0);
+        // Check if F properly contains tuple of scalar functions
         EXPECT_EQ(std::get<0>(F_long.tup).x.size(), 5);
     }
 
@@ -165,46 +183,22 @@ namespace {
                 PHI, PHI, PHI, PHI, PHI,
                 PHI, PHI, PHI, PHI, PHI
                 );
-
-        using Iter = decltype(x.begin());
-        auto test_core = [&F_long](Iter begin, Iter end) mutable {
-            auto&& expr = F_long(begin, end);
-            autodiff(expr);
-            arma::Mat<double> res;
-            jacobian(res, F_long);
-            f_test(res, 0, begin);
-            g_test(res, 1, begin);
-            h_test(res, 2, begin);
-        };
-        test_core(x.begin(), x.end());
+        test_vector(x.begin(), x.end(), F_long);
     }
 
-    // Generic pointer jacobian
-    TEST(adeval_test, generic_jacobian) {
+    // array2d jacobian
+    TEST(adeval_test, array2d) {
         using namespace ad;
         double x[] = {0.1, 2.3, -1., 4.1, -5.21};
         double y[] = {2.1, 5.3, -1.23, 0.0012, -5.13};
 
         auto&& F_long = make_function(F, G, H);
-
-        auto test_core = [&](double* begin, double* end) mutable {
-            auto expr = F_long(begin, end);
-            autodiff(expr);
-            arma::Mat<double> res;
-            jacobian(res, F_long);
-            f_test(res, 0, begin);
-            g_test(res, 1, begin);
-            h_test(res, 2, begin);
-        };
-        test_core(x, x+5);
-        test_core(y, y+5);
-
-        EXPECT_EQ(F.x.size(), 0);
-        EXPECT_EQ(std::get<0>(F_long.tup).x.size(), 5);
+        test_vector<false>(x, x+5, F_long);
+        test_vector<false>(y, y+5, F_long);
     }
 
-    // Complex Generic pointer jacobian
-    TEST(adeval_test, generic_jacobian_complex) {
+    // Complex array2d jacobian
+    TEST(adeval_test, array2d_complex) {
         using namespace ad;
         constexpr size_t n = 1e3;
         std::vector<double> x;
@@ -223,18 +217,7 @@ namespace {
                 PHI, PHI, PHI, PHI, PHI,
                 PHI, PHI, PHI, PHI, PHI
                 );
-
-        using Iter = decltype(x.begin());
-        auto test_core = [&F_long](Iter begin, Iter end) mutable {
-            auto&& expr = F_long(begin, end);
-            autodiff(expr);
-            arma::Mat<double> res;
-            jacobian(res, F_long);
-            f_test(res, 0, begin);
-            g_test(res, 1, begin);
-            h_test(res, 2, begin);
-        };
-        test_core(x.begin(), x.end());
+        test_vector<false>(x.begin(), x.end(), F_long);
     }
 
 } // end namespace
