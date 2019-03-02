@@ -132,7 +132,8 @@ namespace {
         auto test_core = [&](double* begin, double* end) mutable {
             auto expr = F_long(begin, end);
             autodiff(expr);
-            arma::Mat<double> res = jacobian(F_long);
+            arma::Mat<double> res;
+            jacobian(res, F_long);
             f_test(res, 0, begin);
             g_test(res, 1, begin);
             h_test(res, 2, begin);
@@ -169,7 +170,8 @@ namespace {
         auto test_core = [&F_long](Iter begin, Iter end) mutable {
             auto&& expr = F_long(begin, end);
             autodiff(expr);
-            arma::Mat<double> res = jacobian(F_long);
+            arma::Mat<double> res;
+            jacobian(res, F_long);
             f_test(res, 0, begin);
             g_test(res, 1, begin);
             h_test(res, 2, begin);
@@ -188,9 +190,8 @@ namespace {
         auto test_core = [&](double* begin, double* end) mutable {
             auto expr = F_long(begin, end);
             autodiff(expr);
-            arma::Mat<double> res(5,3, arma::fill::zeros);
-            jacobian(res.begin(), F_long);
-            res = res.t();
+            arma::Mat<double> res;
+            jacobian(res, F_long);
             f_test(res, 0, begin);
             g_test(res, 1, begin);
             h_test(res, 2, begin);
@@ -227,9 +228,8 @@ namespace {
         auto test_core = [&F_long](Iter begin, Iter end) mutable {
             auto&& expr = F_long(begin, end);
             autodiff(expr);
-            arma::Mat<double> res(n, std::tuple_size<decltype(F_long.tup)>::value, arma::fill::zeros);
-            jacobian(res.begin(), F_long);
-            res = res.t();
+            arma::Mat<double> res;
+            jacobian(res, F_long);
             f_test(res, 0, begin);
             g_test(res, 1, begin);
             h_test(res, 2, begin);
