@@ -1,6 +1,6 @@
 #pragma once
-#include "adnode.h"
-#include "admath.h"
+#include "adnode.hpp"
+#include "admath.hpp"
 
 namespace ad {
 

@@ -1,4 +1,4 @@
 #pragma once
-#include "dualnum.h"
+#include "dualnum.hpp"
 #include "gtest/gtest.h"
 

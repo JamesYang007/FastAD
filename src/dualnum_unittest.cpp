@@ -1,4 +1,4 @@
-#include "dualnum_unittest.h"
+#include "dualnum_unittest.hpp"
 
 namespace {
     

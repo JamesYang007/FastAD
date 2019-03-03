@@ -1,5 +1,5 @@
 #pragma once
-#include "admath.h"
+#include "admath.hpp"
 #include <gtest/gtest.h>
 #include <ctime>
 #include <iostream>

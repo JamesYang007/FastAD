@@ -42,14 +42,14 @@ GTEST_HEADERS = $(GTEST_DIR)/include/gtest/*.h \
                 $(GTEST_DIR)/include/gtest/internal/*.h
 
 # My Headers
-MY_HEADERS = $(USER_DIR)/include/*.h
+MY_HEADERS = $(USER_DIR)/include/*.hpp
 
 # House-keeping build targets.
 
 all : $(TESTS)
 
 clean :
-	rm -f $(TESTS) gtest.a gtest_main.a *.o
+	rm -f $(TESTS) gtest.a gtest_main.a *.o 
 
 # Builds gtest.a and gtest_main.a.
 
@@ -93,8 +93,8 @@ OFILES = $(shell echo $(TESTS) | sed "s/[[:space:]]/.o /g;s/\(.*\)/\1.o/g")
 
 # dualnum
 dualnum_unittest.o : $(USER_DIR)/src/dualnum_unittest.cpp \
-					$(USER_DIR)/src/dualnum_unittest.h \
-                     $(USER_DIR)/include/dualnum.h \
+					$(USER_DIR)/src/dualnum_unittest.hpp \
+                     $(USER_DIR)/include/dualnum.hpp \
 					 $(GTEST_HEADERS)
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/src/dualnum_unittest.cpp
 
@@ -103,9 +103,9 @@ dualnum_unittest : dualnum_unittest.o gtest_main.a
 
 # advec
 advec_unittest.o : $(USER_DIR)/src/advec_unittest.cpp \
-					$(USER_DIR)/src/advec_unittest.h \
-                     $(USER_DIR)/include/advec.h \
-                     $(USER_DIR)/include/adnode.h \
+					$(USER_DIR)/src/advec_unittest.hpp \
+                     $(USER_DIR)/include/advec.hpp \
+                     $(USER_DIR)/include/adnode.hpp \
 					 $(GTEST_HEADERS) 
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/src/advec_unittest.cpp
 
@@ -114,9 +114,9 @@ advec_unittest : advec_unittest.o gtest_main.a
 
 # admath
 admath_unittest.o : $(USER_DIR)/src/admath_unittest.cpp \
-					$(USER_DIR)/src/admath_unittest.h \
-                     $(USER_DIR)/include/admath.h \
-                     $(USER_DIR)/include/advec.h \
+					$(USER_DIR)/src/admath_unittest.hpp \
+                     $(USER_DIR)/include/admath.hpp \
+                     $(USER_DIR)/include/advec.hpp \
 					 $(GTEST_HEADERS)
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/src/admath_unittest.cpp
 
@@ -125,9 +125,9 @@ admath_unittest : admath_unittest.o gtest_main.a
 
 # adnode
 adnode_unittest.o : $(USER_DIR)/src/adnode_unittest.cpp \
-					$(USER_DIR)/src/adnode_unittest.h \
-                     $(USER_DIR)/include/adnode.h \
-                     $(USER_DIR)/include/dualnum.h \
+					$(USER_DIR)/src/adnode_unittest.hpp \
+                     $(USER_DIR)/include/adnode.hpp \
+                     $(USER_DIR)/include/dualnum.hpp \
 					 $(GTEST_HEADERS)
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/src/adnode_unittest.cpp
 
@@ -136,10 +136,10 @@ adnode_unittest : adnode_unittest.o gtest_main.a
 
 # adeval
 adeval_unittest.o : $(USER_DIR)/src/adeval_unittest.cpp \
-					$(USER_DIR)/src/adeval_unittest.h \
-                     $(USER_DIR)/include/adeval.h \
-                     $(USER_DIR)/include/adnode.h \
-                     $(USER_DIR)/include/admath.h \
+					$(USER_DIR)/src/adeval_unittest.hpp \
+                     $(USER_DIR)/include/adeval.hpp \
+                     $(USER_DIR)/include/adnode.hpp \
+                     $(USER_DIR)/include/admath.hpp \
 					 $(GTEST_HEADERS)
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/src/adeval_unittest.cpp
 
@@ -148,7 +148,7 @@ adeval_unittest : adeval_unittest.o gtest_main.a
 
 # ultimate
 ultimate_unittest.o : $(USER_DIR)/src/ultimate_unittest.cpp \
-					$(USER_DIR)/src/ultimate_unittest.h \
+					$(USER_DIR)/src/ultimate_unittest.hpp \
 					 $(GTEST_HEADERS) 
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/src/ultimate_unittest.cpp
 
