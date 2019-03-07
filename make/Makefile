@@ -117,6 +117,7 @@ admath_unittest.o : $(USER_DIR)/src/admath_unittest.cpp \
 					$(USER_DIR)/src/admath_unittest.hpp \
                      $(USER_DIR)/include/admath.hpp \
                      $(USER_DIR)/include/advec.hpp \
+					 $(USER_DIR)/include/utility.hpp \
 					 $(GTEST_HEADERS)
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/src/admath_unittest.cpp
 
