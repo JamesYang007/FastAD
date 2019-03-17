@@ -149,10 +149,29 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\include\adeval.hpp" />
+    <ClInclude Include="..\include\admath.hpp" />
+    <ClInclude Include="..\include\adnode.hpp" />
+    <ClInclude Include="..\include\advec.hpp" />
+    <ClInclude Include="..\include\autodiff.hpp" />
+    <ClInclude Include="..\include\dualnum.hpp" />
+    <ClInclude Include="..\include\utility.hpp" />
+    <ClInclude Include="..\src\adeval_unittest.hpp" />
+    <ClInclude Include="..\src\admath_unittest.hpp" />
+    <ClInclude Include="..\src\adnode_unittest.hpp" />
+    <ClInclude Include="..\src\advec_unittest.hpp" />
+    <ClInclude Include="..\src\dualnum_unittest.hpp" />
+    <ClInclude Include="..\src\ultimate_unittest.hpp" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\src\adeval_unittest.cpp" />
+    <ClCompile Include="..\src\admath_unittest.cpp" />
+    <ClCompile Include="..\src\adnode_unittest.cpp" />
+    <ClCompile Include="..\src\advec_unittest.cpp" />
+    <ClCompile Include="..\src\dualnum_unittest.cpp" />
+    <ClCompile Include="..\src\ultimate_unittest.cpp" />
     <ClCompile Include="stdafx.cpp" />
     <ClCompile Include="vs.cpp" />
   </ItemGroup>
