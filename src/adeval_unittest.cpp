@@ -1,5 +1,5 @@
 #include "adeval_unittest.hpp"
-#include "utils/array2d/array2d.hpp"
+//#include "utils/array2d/array2d.hpp"
 
 namespace {
 
@@ -95,7 +95,7 @@ namespace {
     // Scalar Function test
     // With arma
     template < bool arma_bool=true, class Iter, class F
-        , class matrix_type = typename std::conditional<arma_bool, arma::Mat<double>, utils::array2d<double>>::type
+        , class matrix_type = arma::Mat<double>//typename std::conditional<arma_bool, arma::Mat<double>, utils::array2d<double>>::type
         >
     void test_scalar(Iter begin, Iter end, F& f)
     {
@@ -110,7 +110,7 @@ namespace {
     // Vector Function Test
     // With arma
     template <bool arma_bool=true, class Iter, class F
-        , class matrix_type = typename std::conditional<arma_bool, arma::Mat<double>, utils::array2d<double>>::type
+        , class matrix_type = arma::Mat<double>//typename std::conditional<arma_bool, arma::Mat<double>, utils::array2d<double>>::type
         >
     void test_vector(Iter begin, Iter end, F& f, bool arma=true)
     {
