@@ -1,3 +1,4 @@
 *.o
 make/*unittest*
 *.a
+*.VC.opendb
