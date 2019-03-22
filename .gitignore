@@ -3,3 +3,7 @@ make/*unittest*
 *.a
 *.VC.opendb
 *.VC.db
+*Debug/
+*Release/
+*x64/
+*.vs/
