@@ -7,21 +7,21 @@ namespace {
 	//
 	// Possible user-defined functions
 
-	auto& F_lmda = MAKE_LMDA(ad::sin(x[0])*ad::cos(x[1]),
+	auto&& F_lmda = MAKE_LMDA(ad::sin(x[0])*ad::cos(x[1]),
 		x[2] + x[3] * x[4],
 		w[0] + w[1]
 	);
 
-	auto& G_lmda = MAKE_LMDA(
+	auto&& G_lmda = MAKE_LMDA(
 		ad::sum(x.begin(), x.end(), [](auto const& var)
 	{return ad::sin(var); }),
 		w[0] * w[0] - ad::sum(x.begin(), x.end(), [](auto const& var)
 	{return ad::cos(var); })
 	);
 
-	auto& H_lmda = MAKE_LMDA(x[0] * x[4]);
+	auto&& H_lmda = MAKE_LMDA(x[0] * x[4]);
 
-	auto& PHI_lmda = MAKE_LMDA(
+	auto&& PHI_lmda = MAKE_LMDA(
 		ad::sin(x[0])*ad::cos(ad::exp(x[1])) + ad::log(x[0]) - x[1],
 		ad::sin(w[0]) - ad::sum(x.begin(), x.end(), [](auto const& var)
 	{return ad::cos(var) * ad::exp(var); }),
@@ -37,10 +37,10 @@ namespace {
 	{return ad::sin(var) * ad::exp(var); })
 	);
 
-	auto& F = ad::make_function<double>(F_lmda);
-	auto& G = ad::make_function<double>(G_lmda);
-	auto& H = ad::make_function<double>(H_lmda);
-	auto& PHI = ad::make_function<double>(PHI_lmda);
+	auto&& F = ad::make_function<double>(F_lmda);
+	auto&& G = ad::make_function<double>(G_lmda);
+	auto&& H = ad::make_function<double>(H_lmda);
+	auto&& PHI = ad::make_function<double>(PHI_lmda);
 
 	// GTest user-defined functions
 	template <class Matrix, class Iter>

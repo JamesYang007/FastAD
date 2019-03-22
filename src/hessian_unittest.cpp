@@ -3,13 +3,13 @@
 
 namespace {
 
-	auto& F_lmda = MAKE_LMDA(
+	auto&& F_lmda = MAKE_LMDA(
 		ad::sin(x[0]) * ad::exp(x[0]) - x[0] + ad::tan(x[0])
 	);
-	auto& G_lmda = MAKE_LMDA(
+	auto&& G_lmda = MAKE_LMDA(
 		ad::sin(x[0]) * ad::cos(x[1])
 	);
-	auto& H_lmda = MAKE_LMDA(
+	auto&& H_lmda = MAKE_LMDA(
 		ad::sin(x[0]) + x[0] * x[0] + x[1] * x[1] + ad::cos(x[2] * x[3])
 	);
 
@@ -50,7 +50,7 @@ namespace {
 		using T = double;
 		ForwardVar<T> x(2.1, 1);
 
-		auto& F = make_function<ForwardVar<T>>(F_lmda);
+		auto&& F = make_function<ForwardVar<T>>(F_lmda);
 
 		auto&& expr = F(&x, &x + 1);
 		autodiff(expr);
