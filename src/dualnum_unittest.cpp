@@ -2,7 +2,7 @@
 
 namespace {
     
-    TEST(dualnum_test, constructor) {
+    TEST(dualnum, constructor) {
         using namespace ad::core;
         DualNum<double> dual(2.1, 2.3);
         EXPECT_EQ(dual.w, 2.1);

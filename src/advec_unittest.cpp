@@ -3,7 +3,7 @@
 namespace {
 
     // Both xi's and dfs
-    TEST(advec_test, constructor) {
+    TEST(advec, constructor) {
         using namespace ad;
         double dfs[2] = {0};
         double x1 = 1.0, x2 = 2.0;
@@ -19,7 +19,7 @@ namespace {
     }
 
     // Only xi's
-    TEST(advec_test, constructor_2) {
+    TEST(advec, constructor_2) {
         using namespace ad;
         double x1 = -2.0, x2=3.1;
         double xs[2] = {x1, x2};
@@ -34,7 +34,7 @@ namespace {
     }
 
     // push_back, emplace_back, compatibility with other features
-    TEST(advec_test, memory) {
+    TEST(advec, memory) {
         using namespace ad;
         double x1 = 1.5928, x2 = -0.291, x3 = 5.1023;
         double dfs[2] = {0};

@@ -3,7 +3,7 @@
 namespace {
 
     // Sin class
-    TEST(admath_test, Sin) {
+    TEST(admath, Sin) {
         using namespace ad::math;
         double y = Sin<double>::fmap(0);
         EXPECT_EQ(y==0, 1);
@@ -12,7 +12,7 @@ namespace {
     }
 
     // sin function
-    TEST(admath_test, sin) {
+    TEST(admath, sin) {
         using namespace ad;
         bool b;
         core::LeafNode<double> leaf;
@@ -31,7 +31,7 @@ namespace {
     }
 
     // operator+
-    TEST(admath_test, op_add) {
+    TEST(admath, op_add) {
         using namespace ad;
         core::LeafNode<double> leaf1(1.0, 0, 0.0);
         core::LeafNode<double> leaf2(0.0, 0, 0.0);
@@ -52,7 +52,7 @@ namespace {
     }
 
     // Add
-    TEST(admath_test, add) {
+    TEST(admath, add) {
         using namespace ad::math; 
         EXPECT_EQ(Add<double>::fmap(-1.0, 2.1), 1.1);
         EXPECT_EQ(Add<double>::blmap(-2.01, 2341.2131), 1);
