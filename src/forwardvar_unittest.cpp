@@ -1,4 +1,4 @@
-#include "forwardvar.hpp"
+#include "adforward.hpp"
 #include "gtest/gtest.h"
 
 namespace {
@@ -20,8 +20,8 @@ namespace {
 		w[1].df = 1;
 		auto res = exp(w[0]) / log(w[1]) + w[2] * acos(w[1]);
 		EXPECT_DOUBLE_EQ(res.w, std::exp(w[0].w) / std::log(w[1].w) + w[2].w * std::acos(w[1].w));
-		EXPECT_DOUBLE_EQ(res.df, 
-			-std::exp(w[0].w) / (std::log(w[1].w) * std::log(w[1].w) * w[1].w) 
+		EXPECT_DOUBLE_EQ(res.df,
+			-std::exp(w[0].w) / (std::log(w[1].w) * std::log(w[1].w) * w[1].w)
 			- w[2].w / std::sqrt(1 - w[1].w*w[1].w));
 	}
 
