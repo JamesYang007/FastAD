@@ -9,6 +9,7 @@ FastAD was developed in Visual Studio 2017 using C++14 standard.
 ## Demo Code
 The following is a self-contained demo code using the matrix library *armadillo* to store the Jacobian.
 Note that any library supporting 2D-array (matrix) is viable subject to certain properties (documentation).
+We wish to compute the gradient of $\sin(x_0)\cos(x_1) + x_2 + x_3x_4$.
 
 ```cpp
 #include <autodiff.hpp>
