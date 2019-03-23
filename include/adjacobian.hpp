@@ -1,5 +1,6 @@
 #pragma once
 #include "adfunction.hpp"
+#include "adeval.hpp"
 #include "utility.hpp"
 #include <type_traits>
 
@@ -126,12 +127,16 @@ namespace ad {
 	// ============================================================================
 	// Variadic on scalar lambda functions 
 	// Same algorithm for both Matrix or Iter
-	template <class ReturnType, class MatOrIter, class... Fs
-		, class = typename std::enable_if<!core::is_Function<MatOrIter>::value, void>::type
+	template <class ReturnType, class MatOrIter, class Iter, class... Fs
+		, class = std::enable_if_t<
+		!core::is_Function<MatOrIter>::value &&
+		utils::is_pointer_like_dereferenceable<Iter>::value
+		>
 	>
-		inline auto jacobian(MatOrIter& mat_or_iter, Fs&&... fs)
+		inline auto jacobian(MatOrIter& mat_or_iter, Iter begin, Iter end, Fs&&... fs)
 	{
 		auto f_obj = make_function<ReturnType>(std::forward<Fs>(fs)...);
+		autodiff(f_obj(begin, end));
 		jacobian(mat_or_iter, f_obj);
 	}
 

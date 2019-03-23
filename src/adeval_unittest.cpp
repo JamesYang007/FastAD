@@ -213,4 +213,13 @@ namespace {
 	//    test_vector<false>(x.begin(), x.end(), F_long);
 	//}
 
+	// TEST Jacobian for lambda
+	TEST(adeval, jacobian_lambda) {
+		using namespace ad;
+		double x[] = { 0.1, 2.3, -1., 4.1, -5.21 };
+		arma::Mat<double> jacobi;
+		jacobian<double>(jacobi, x, x + 5, F_lmda);
+		f_test(jacobi, 0, x);
+	}
+
 } // end namespace
