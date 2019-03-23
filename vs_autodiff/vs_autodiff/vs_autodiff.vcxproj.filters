@@ -27,9 +27,6 @@
     <ClInclude Include="..\..\include\dualnum.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\forwardvar.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\include\utility.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -39,22 +36,16 @@
     <ClInclude Include="..\..\include\admath.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\adnode_unittest.hpp">
+    <ClInclude Include="..\..\include\adforward.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\advec_unittest.hpp">
+    <ClInclude Include="..\..\include\adfunction.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\dualnum_unittest.hpp">
+    <ClInclude Include="..\..\include\adjacobian.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\ultimate_unittest.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\adeval_unittest.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\admath_unittest.hpp">
+    <ClInclude Include="..\..\include\adhessian.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

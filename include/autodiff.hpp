@@ -6,3 +6,6 @@
 #include "advec.hpp"
 #include "adeval.hpp"
 #include "adforward.hpp"
+#include "adfunction.hpp"
+#include "adhessian.hpp"
+#include "adjacobian.hpp"

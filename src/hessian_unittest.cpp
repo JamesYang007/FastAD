@@ -1,5 +1,10 @@
+#define _USE_MATH_DEFINES
+
+#include "adeval.hpp"
 #include "admath.hpp"
+#include "adhessian.hpp"
 #include "gtest/gtest.h"
+#include <armadillo>
 
 namespace {
 
