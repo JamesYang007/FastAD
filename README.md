@@ -1,12 +1,14 @@
 # FastAD
 
 ## Description
+
 FastAD is a C++ implementation of automatic differentiation providing both forward and reverse mode.
 Reverse mode is based on expression template design and template metaprogramming.
 Forward mode is computed without any expression templates.
 FastAD was developed in Visual Studio 2017 using C++14 standard.
 
 ## Tutorial
+
 The following is a simple use-case of FastAD.
 Var<T> is variable containing datatype T.
 In this example, *expr* is an expression and autodiff evaluates this expression to compute the gradient.
@@ -143,7 +145,6 @@ int main()
 	return 0;
 }
 ```
-
 
 ## Author
 - James Yang
