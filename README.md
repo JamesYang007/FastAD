@@ -246,5 +246,10 @@ int main()
 }
 ```
 
+## Further Implementation
+
+- Create ad::compose(F, G)
+- Think about Delta Function
+
 ## Author
 - James Yang
