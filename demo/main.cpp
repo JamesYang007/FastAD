@@ -1,6 +1,26 @@
 #include <autodiff.hpp>
 #include <armadillo>
 
+// Forward AD
+
+void demo_forward()
+{
+	using namespace ad;
+	double x1 = -0.201, x2 = 1.2241;
+	ForwardVar<double> w1(x1), w2(x2);
+
+	// Take partial w.r.t. w1
+	w1.df = 1;
+	ForwardVar<double> w3 = w1 * sin(w2);
+	auto w4 = w3 + w1 * w2;
+	auto w5 = exp(w4*w3);
+
+	// Partial w.r.t. w1
+	std::cout << w5.df << std::endl;
+}
+
+// Reverse AD
+
 void demo1()
 {
 	using namespace ad;
@@ -97,13 +117,65 @@ void demo5()
 	jacobi.print("Jacobian");					// armadillo feature
 }
 
+// Vector Function
+// Function Object
+void demo6()
+{
+	using namespace ad;
+	auto F_lmda = MAKE_LMDA(
+		x[0] * ad::sin(x[1]),
+		w[0] + x[0] * x[1],
+		ad::exp(w[1] * w[0])
+	);
+	auto G_lmda = MAKE_LMDA(
+		x[0] + ad::exp(ad::sin(x[1])),
+		w[0] * w[0] * x[1]
+	);
+	double x_val[] = { -0.201, 1.2241 };
+	arma::Mat<double> jacobi;
+
+	// Option 1:
+	auto F = make_function<double>(F_lmda, G_lmda);
+	autodiff(F(x_val, x_val + 2));
+	jacobian(jacobi, F);
+	jacobi.print("Jacobian");
+
+	// Option 2:
+	jacobian<double>(jacobi, x_val, x_val + 2, F_lmda, G_lmda); // variadic in last argument
+	jacobi.print("Jacobian");
+}
+
+// Hessian
+void demo7()
+{
+	using namespace ad;
+	auto F_lmda = MAKE_LMDA(
+		x[0] * ad::sin(x[1]),
+		w[0] + x[0] * x[1],
+		ad::exp(w[1] * w[0])
+	);
+	double x_val[] = { -0.201, 1.2241 };
+	arma::Mat<double> hess;
+	arma::Mat<double> jacobi;
+
+	// Computes Hessian and stores into "hess"
+	hessian(hess, F_lmda, x_val, x_val + 2);
+	// Computes Hessian and stores Hessian into "hess" and Jacobian into "jacobi"
+	hessian(hess, jacobi, F_lmda, x_val, x_val + 2);
+
+	hess.print("Hessian");
+	jacobi.print("Jacobian");
+}
 
 int main()
 {
+	demo_forward();
 	demo1();
 	demo2();
 	demo3();
 	demo4();
 	demo5();
+	demo6();
+	demo7();
 	return 0;
 }

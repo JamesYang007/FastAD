@@ -9,6 +9,40 @@ FastAD was developed in Visual Studio 2017 using C++14 standard.
 
 ## Tutorial
 
+### Forward AD
+
+Forward AD only requires the use of **ForwardVar<T>**.
+Each **ForwardVar<T>** variable contains the x-value and directional derivative up to that variable.
+In the following example, **w1.df = 1** and by default all other **df** member variables are **0**.
+This will compute the partial derivative with respect to **w1**.
+There are no expressions used for **ForwardVar<T>**, and each computation will return another **ForwardVar<T>**.
+
+```cpp
+#include <autodiff.hpp>
+
+int main()
+{
+	using namespace ad;
+	double x1 = -0.201, x2 = 1.2241;
+	ForwardVar<double> w1(x1), w2(x2);
+
+	// Take partial w.r.t. w1
+	w1.df = 1;
+	ForwardVar<double> w3 = w1 * sin(w2);
+	auto w4 = w3 + w1 * w2;
+	auto w5 = exp(w4*w3);
+
+	// Partial w.r.t. w1
+	std::cout << w5.df << std::endl; 
+
+	return 0;
+}
+```
+
+### Reverse AD
+
+#### Scalar Function
+
 The following is a simple use-case of FastAD.
 **Var<T>** is variable containing datatype **T**.
 In this example, **expr** is an expression and autodiff evaluates this expression to compute the gradient.
@@ -67,7 +101,7 @@ int main()
 }
 ```
 
-If the access to **Vec<T>** is not needed and user wishes to encapsulate it, user may use Function object.
+If the access to **Vec<T>** is not needed and user wishes to encapsulate it, user may use a Function object.
 Function object requires a special form of lambda function shown below.
 The following code uses Function object to perform the same job as before.
 
@@ -95,7 +129,6 @@ Finally, one may further encapsulate this procedure with **MAKE_LMDA** that crea
 The following uses the matrix library *armadillo* to store the Jacobian.
 Note that any library supporting 2D-array (matrix) is viable subject to certain properties (documentation).
 We may store the Jacobian after performing **autodiff** by passing the matrix object and Function object to **ad::jacobian**.
-Note that this overload is variadic in last argument so multiple lambda functions can be passed.
 
 ```cpp
 #include <armadillo>
@@ -123,6 +156,7 @@ int main()
 
 Finally, one may encapsulate further by calling an overload of **ad::jacobian**.
 We pass the numeric computation type (e.g. double) as template parameter, the 2D-array object, lambda function, begin and end iterators to actual x-values.
+Note that this overload is variadic in last argument so multiple lambda functions can be passed.
 
 ```cpp
 #include <armadillo>
@@ -141,6 +175,72 @@ int main()
 												// (more information in documentation)
 	jacobian<double>(jacobi, F_lmda, x_val, x_val + 2);
 	jacobi.print("Jacobian");					// armadillo feature
+
+	return 0;
+}
+```
+
+#### Vector-Valued Function
+
+With vector-valued function, a tuple of scalar functions, one can manually perform the task for scalar functions for each scalar function of a vector-valued function.
+Using Function Object, the syntax is almost the same as before.
+
+```cpp
+int main()
+{
+	using namespace ad;
+	auto F_lmda = MAKE_LMDA(
+		x[0] * ad::sin(x[1]),
+		w[0] + x[0] * x[1],
+		ad::exp(w[1] * w[0])
+	);
+	auto G_lmda = MAKE_LMDA(
+		x[0] + ad::exp(ad::sin(x[1])),
+		w[0] * w[0] * x[1]
+	);
+	double x_val[] = { -0.201, 1.2241 };
+	arma::Mat<double> jacobi;
+
+	// Option 1: Function object
+	auto F = make_function<double>(F_lmda, G_lmda);
+	autodiff(F(x_val, x_val + 2));
+	jacobian(jacobi, F);
+	jacobi.print("Jacobian");
+
+	// Option 2: ad::jacobian<type>
+	jacobian<double>(jacobi, x_val, x_val + 2, F_lmda, G_lmda); // variadic in last argument
+	jacobi.print("Jacobian");
+	return 0;
+}
+```
+
+### Hessian
+
+We can also compute the Hessian of a scalar function (only).
+The **ad::hessian** function computes the Hessian and stores it into a 2D-array.
+The computation for Hessian requires the computation of the gradient, 
+hence the gradient will be computed and can also be retrieved by passing another 2D-array.
+
+```cpp
+int main()
+{
+	using namespace ad;
+	auto F_lmda = MAKE_LMDA(
+		x[0] * ad::sin(x[1]),
+		w[0] + x[0] * x[1],
+		ad::exp(w[1] * w[0])
+	);
+	double x_val[] = { -0.201, 1.2241 };
+	arma::Mat<double> hess;
+	arma::Mat<double> jacobi;
+
+	// Computes Hessian and stores into "hess"
+	hessian(hess, F_lmda, x_val, x_val + 2);
+	// Computes Hessian and stores Hessian into "hess" and Jacobian into "jacobi"
+	hessian(hess, jacobi, F_lmda, x_val, x_val + 2);
+
+	hess.print("Hessian");
+	jacobi.print("Jacobian");
 
 	return 0;
 }
