@@ -84,7 +84,7 @@ namespace {
 		EXPECT_DOUBLE_EQ(res(i, 0), *begin);
 	}
 
-	//================================================================================================
+	// ================================================================================================
 
 		// Scalar Function test
 		// With arma
@@ -118,26 +118,48 @@ namespace {
 		h_test(res, 2, begin);
 	}
 
+	// ================================================================================================
+
+
 	// Scalar Function f:R^n -> R
 	TEST(adeval, function_scalar) {
 		using namespace ad;
 		double x[] = { 0.1, 2.3, -1., 4.1, -5.21 };
 		double y[] = { 2.1, 5.3, -1.23, 0.0012, -5.13 };
+		auto&& F = make_function<double>(F_lmda);
+		// We try both to see if Function member variable Vector is correctly
+		// cleared and re-reserve capacity
+		// with x
+		test_scalar(x, x + 5, F);
+		// with y
+		test_scalar(y, y + 5, F);
+	}
+
+	// Scalar function with constant
+	TEST(adeval, function_with_constant)
+	{
+		using namespace ad;
+		double x[] = { 0.1, 2.3, -1., 4.1, -5.21 };
+
 		auto&& F = make_function<double>(
 			[](auto& x, auto& w) {
 			return std::make_tuple(
 				ad::sin(x[0])*ad::cos(x[1]),
 				x[2] + x[3] * x[4],
-				w[0] + w[1]);
+				w[0] + w[1] + ad::constant(3.14)
+			);
 		}
 		);
-		// We try both to see if Function member variable Vector is correctly
-		// cleared and re-reserve capacity
-
-		// with x
+		// Gradient should not change from before
 		test_scalar(x, x + 5, F);
-		// with y
-		test_scalar(y, y + 5, F);
+
+		// Function values should differ by 1
+		auto&& F_comp = make_function<double>(F_lmda);
+		auto&& expr = F(x, x + 5);
+		auto&& expr_comp = F_comp(x, x + 5);
+		autodiff(expr);
+		autodiff(expr_comp);
+		EXPECT_DOUBLE_EQ(expr.w - expr_comp.w, 3.14);
 	}
 
 	// Vector Function f:R^n -> R^m
