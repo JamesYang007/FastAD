@@ -153,6 +153,15 @@ namespace {
 		// Gradient should not change from before
 		test_scalar(x, x + 5, F);
 
+		// TEST BS
+		//Vec<double> X(5);
+		//Vec<double> W(3);
+		//auto expr = F_lmda(X, W);
+		//auto&& woah = core::details::glue_many(W, expr);
+		//auto&& res = core::details::glue_many(
+		//	W[0] = std::get<0>(expr), W[1] = std::get<1>(expr), W[2] = std::get<2>(expr)
+		//);
+
 		// Function values should differ by 1
 		auto&& F_comp = make_function<double>(F_lmda);
 		auto&& expr = F(x, x + 5);
