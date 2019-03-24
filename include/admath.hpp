@@ -3,10 +3,14 @@
 #include <cmath>
 #include <utility>
 
+// Allow compiler to choose from namespace std or ad
 #define USING_STD_AD(fname) \
 using std::fname;\
 using ad::fname;
 
+// Unary Struct
+// fmap:	evaluate the function
+// bmap:	evaluate the derivative
 #define UNARY_STRUCT(name, fmap_body, bmap_body) \
 template <class T> \
 struct name \
@@ -21,6 +25,8 @@ struct name \
 	} \
 }; 
 
+// Unary function
+// Creates UnaryNode with corresponding Unary Struct
 #define ADNODE_UNARY_FUNC(name, struct_name) \
 template <class Derived> \
 inline auto name(core::ADNodeExpr<Derived> const& node) \
@@ -30,6 +36,10 @@ inline auto name(core::ADNodeExpr<Derived> const& node) \
         , Derived>(node.self()) \
         ;} 
 
+// Binary Struct
+// fmap:	evaluate binary operation
+// blmap:	evaluate partial derivative w.r.t. lhs argument
+// brmap:	evaluate partial derivative w.r.t. rhs argument
 #define BINARY_STRUCT(name, fmap_body, blmap_body, brmap_body) \
 template <class T> \
 struct name \
@@ -63,35 +73,35 @@ namespace ad {
 		// Unary Operators
 
 		// UnaryMinus struct
-		UNARY_STRUCT(UnaryMinus, return -x; , return -1;)
+		UNARY_STRUCT(UnaryMinus, return -x;, return -1;)
 			// Sin struct
-			UNARY_STRUCT(Sin, USING_STD_AD(sin) return sin(x); , USING_STD_AD(cos)return cos(x);)
+			UNARY_STRUCT(Sin, USING_STD_AD(sin) return sin(x);, USING_STD_AD(cos)return cos(x);)
 			// Cos struct
-			UNARY_STRUCT(Cos, return Sin<T>::bmap(x); , return -Sin<T>::fmap(x);)
+			UNARY_STRUCT(Cos, return Sin<T>::bmap(x);, return -Sin<T>::fmap(x);)
 			// Tan struct
-			UNARY_STRUCT(Tan, USING_STD_AD(tan) return tan(x); , auto tmp = Cos<T>::fmap(x); return T(1) / (tmp * tmp);)
+			UNARY_STRUCT(Tan, USING_STD_AD(tan) return tan(x);, auto tmp = Cos<T>::fmap(x); return T(1) / (tmp * tmp);)
 			// Arcsin (degrees)
-			UNARY_STRUCT(Arcsin, USING_STD_AD(asin) return asin(x); , return 1 / sqrt(1 - x * x);)
+			UNARY_STRUCT(Arcsin, USING_STD_AD(asin) return asin(x);, return 1 / sqrt(1 - x * x);)
 			// Arccos (degrees)
-			UNARY_STRUCT(Arccos, USING_STD_AD(acos) return acos(x); , return -Arcsin<T>::bmap(x);)
+			UNARY_STRUCT(Arccos, USING_STD_AD(acos) return acos(x);, return -Arcsin<T>::bmap(x);)
 			// Arctan (degrees)
-			UNARY_STRUCT(Arctan, USING_STD_AD(atan) return atan(x); , return 1 / (1 + x * x);)
+			UNARY_STRUCT(Arctan, USING_STD_AD(atan) return atan(x);, return 1 / (1 + x * x);)
 			// Exp struct
-			UNARY_STRUCT(Exp, USING_STD_AD(exp) return exp(x);, return fmap(x);)
+			UNARY_STRUCT(Exp, USING_STD_AD(exp) return exp(x); , return fmap(x);)
 			// Log struct
-			UNARY_STRUCT(Log, USING_STD_AD(log) return log(x); , return T(1) / x;)
+			UNARY_STRUCT(Log, USING_STD_AD(log) return log(x);, return T(1) / x;)
 
 			//================================================================================
 			// Binary Operators
 
 			// Add
-			BINARY_STRUCT(Add, return x + y; , return 1; , return 1;)
+			BINARY_STRUCT(Add, return x + y;, return 1;, return 1;)
 			// Subtract
-			BINARY_STRUCT(Sub, return x - y; , return 1; , return -1;)
+			BINARY_STRUCT(Sub, return x - y;, return 1;, return -1;)
 			// Multiply
-			BINARY_STRUCT(Mul, return x * y; , return y; , return x;)
+			BINARY_STRUCT(Mul, return x * y;, return y;, return x;)
 			// Divide
-			BINARY_STRUCT(Div, return x / y; , return T(1) / y; , return T(-1)*x / (y*y);)
+			BINARY_STRUCT(Div, return x / y;, return T(1) / y;, return T(-1)*x / (y*y);)
 
 	} // namespace math
 
