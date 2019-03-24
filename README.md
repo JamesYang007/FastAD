@@ -76,7 +76,7 @@ int main()
 {
 	using namespace ad;
 	double x_val[] = { -0.201, 1.2241 };
-	auto&& F_lmda = [](auto& x, auto& w) {
+	auto F_lmda = [](auto& x, auto& w) {
 		return std::make_tuple(
 			x[0] * ad::sin(x[1]),
 			w[0] + x[0] * x[1],
