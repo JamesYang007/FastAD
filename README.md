@@ -10,9 +10,9 @@ FastAD was developed in Visual Studio 2017 using C++14 standard.
 ## Tutorial
 
 The following is a simple use-case of FastAD.
-Var<T> is variable containing datatype T.
-In this example, *expr* is an expression and autodiff evaluates this expression to compute the gradient.
-The gradient is stored in Var<T> as *df*.
+**Var<T>** is variable containing datatype **T**.
+In this example, **expr** is an expression and autodiff evaluates this expression to compute the gradient.
+The gradient is stored in **Var<T>** as **df**.
 
 ```cpp
 #include <autodiff.hpp>
@@ -41,7 +41,7 @@ int main()
 }
 ```
 
-We may use Vec<T>, vector of Var<T> if the number of variables get longer.
+We may use **Vec<T>**, vector of **Var<T>** if the number of variables get longer.
 The same code using vector is shown below.
 
 ```cpp
@@ -67,7 +67,7 @@ int main()
 }
 ```
 
-If the access to Vec<T> is not needed and user wishes to encapsulate it, user may use Function object.
+If the access to **Vec<T>** is not needed and user wishes to encapsulate it, user may use Function object.
 Function object requires a special form of lambda function shown below.
 The following code uses Function object to perform the same job as before.
 
@@ -91,7 +91,7 @@ int main()
 }
 ```
 
-Finally, one may further encapsulate this procedure with MAKE_LMDA that creates the lambda function in the desired form.
+Finally, one may further encapsulate this procedure with **MAKE_LMDA** that creates the lambda function in the desired form.
 The following uses the matrix library *armadillo* to store the Jacobian.
 Note that any library supporting 2D-array (matrix) is viable subject to certain properties (documentation).
 We may store the Jacobian after performing **autodiff** by passing the matrix object and Function object to **ad::jacobian**.
@@ -122,7 +122,7 @@ int main()
 ```
 
 Finally, one may encapsulate further by calling an overload of **ad::jacobian**.
-We pass the numeric computation type (e.g. double) as template parameter, the 2D-array object, lambda function, and begin/end iterators to actual x-values.
+We pass the numeric computation type (e.g. double) as template parameter, the 2D-array object, lambda function, begin and end iterators to actual x-values.
 
 ```cpp
 #include <armadillo>
