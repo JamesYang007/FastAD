@@ -3,7 +3,7 @@
 
 // Forward AD
 
-void demo_forward()
+void forward()
 {
 	using namespace ad;
 	double x1 = -0.201, x2 = 1.2241;
@@ -21,7 +21,7 @@ void demo_forward()
 
 // Reverse AD
 
-void demo1()
+void reverse_simple()
 {
 	using namespace ad;
 	double x1 = -0.201, x2 = 1.2241;
@@ -44,7 +44,7 @@ void demo1()
 	std::cout << w2.df << std::endl; // partial derivative w.r.t. w2
 }
 
-void demo2()
+void reverse_vec()
 {
 	using namespace ad;
 	Vec<double> x(0);
@@ -65,7 +65,7 @@ void demo2()
 	std::cout << x[1].df << std::endl; // partial derivative w.r.t. w2
 }
 
-void demo3()
+void reverse_function()
 {
 	using namespace ad;
 	double x_val[] = { -0.201, 1.2241 };
@@ -83,7 +83,7 @@ void demo3()
 	std::cout << F.x[1].df << std::endl;
 }
 
-void demo4()
+void reverse_jacobian()
 {
 	using namespace ad;
 	auto F_lmda = MAKE_LMDA(
@@ -101,7 +101,7 @@ void demo4()
 	jacobi.print("Jacobian");					// armadillo feature
 }
 
-void demo5()
+void reverse_jacobian_2()
 {
 	using namespace ad;
 	auto F_lmda = MAKE_LMDA(
@@ -119,7 +119,7 @@ void demo5()
 
 // Vector Function
 // Function Object
-void demo6()
+void reverse_vector()
 {
 	using namespace ad;
 	auto F_lmda = MAKE_LMDA(
@@ -146,7 +146,7 @@ void demo6()
 }
 
 // Hessian
-void demo7()
+void hessian()
 {
 	using namespace ad;
 	auto F_lmda = MAKE_LMDA(
@@ -169,13 +169,13 @@ void demo7()
 
 int main()
 {
-	demo_forward();
-	demo1();
-	demo2();
-	demo3();
-	demo4();
-	demo5();
-	demo6();
-	demo7();
+	forward();
+	reverse_simple();
+	reverse_vec();
+	reverse_function();
+	reverse_jacobian();
+	reverse_jacobian_2();
+	reverse_vector();
+	hessian();
 	return 0;
 }
