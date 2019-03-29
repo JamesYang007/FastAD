@@ -6,9 +6,9 @@ namespace ad {
 	// Glue then evaluate
 	// Forward propagation
 	template <class ExprType>
-	inline void Evaluate(ExprType&& expr)
+	inline auto Evaluate(ExprType&& expr)
 	{
-		expr.feval();
+		return expr.feval();
 	}
 
 	// Backward propagation
@@ -23,16 +23,17 @@ namespace ad {
 	// std::thread argument needs any overloaded function to be specified
 	// workaround: create a non-overloaded fn and autodiff will call this
 	template <class ExprType>
-	inline void EvaluateBoth(ExprType&& expr)
+	inline auto EvaluateBoth(ExprType&& expr)
 	{
-		Evaluate(std::forward<ExprType>(expr));
+		auto t = Evaluate(std::forward<ExprType>(expr));
 		EvaluateAdj(std::forward<ExprType>(expr));
+		return t;
 	}
 
 	template <class ExprType>
-	inline void autodiff(ExprType&& expr)
+	inline auto autodiff(ExprType&& expr)
 	{
-		EvaluateBoth(std::forward<ExprType>(expr));
+		return EvaluateBoth(std::forward<ExprType>(expr));
 	}
 
 	//====================================================================================================

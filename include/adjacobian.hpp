@@ -127,7 +127,7 @@ namespace ad {
 	// ============================================================================
 	// Variadic on scalar lambda functions 
 	// Same algorithm for both Matrix or Iter
-	template <class ReturnType, class MatOrIter, class Iter, class... Fs
+	template <class ReturnType = double, class MatOrIter, class Iter, class... Fs
 		, class = std::enable_if_t<
 		!core::is_Function<MatOrIter>::value &&
 		utils::is_pointer_like_dereferenceable<Iter>::value

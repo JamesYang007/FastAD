@@ -14,9 +14,18 @@ namespace ad {
 
 	namespace core {
 
+		// Function Base
+		struct FunctionBase
+		{
+			size_t n_func;
+			FunctionBase(size_t n_func_)
+				: n_func(n_func_)
+			{}
+		};
+
 		// Scalar Function Base
 		template <class ReturnType>
-		struct ScalarFunctionBase
+		struct ScalarFunctionBase : FunctionBase
 		{
 			// Store values and gradient components
 			Vec<ReturnType> x;
@@ -24,7 +33,7 @@ namespace ad {
 			Vec<ReturnType> w;
 
 			ScalarFunctionBase()
-				: x(0), w(0)
+				: x(0), w(0), FunctionBase(1)
 			{}
 
 			// Initializes x
@@ -47,42 +56,80 @@ namespace ad {
 
 		};
 
+		// =====================================================================================
+		// =====================================================================================
+		// =====================================================================================
+		// MODIFY VECTOR FIELD
+		// Vector Function Base
+
+		struct VectorFunctionBase : FunctionBase
+		{
+			VectorFunctionBase(size_t n)
+				: FunctionBase(n)
+			{}
+
+			// Zip returns of each f_i(begin, end)
+			template <class Tup, class Iter, size_t... I>
+			static inline auto zip_func(Tup&& tup, Iter begin, Iter end, std::index_sequence<I...>) {
+				return std::make_tuple(std::get<I>(tup)(begin, end)...);
+			}
+
+			template <class Iter, class...Fs>
+			static inline auto zip_func(std::tuple<Fs...>& tup, Iter begin, Iter end) {
+				return zip_func(tup, begin, end
+					, std::make_index_sequence<sizeof...(Fs)>()
+				);
+			}
+
+			// Zip functions using expr_eval(Vec<T>&)
+			template <class Tup, class T, size_t...I>
+			static inline auto zip_func(Tup&& tup, Vec<T>& x, std::index_sequence<I...>)
+			{
+				return std::make_tuple(std::get<I>(tup).expr_eval(x)...);
+			}
+
+			template <class T, class...Fs>
+			static inline auto zip_func(std::tuple<Fs...>& tup, Vec<T>& x)
+			{
+				return zip_func(tup, x, std::make_index_sequence<sizeof...(Fs)>());
+			}
+		};
+
 		// Vector Field
 		// Wrapper of tuple of scalar functions
 		// If there are more than threshold number of scalar functions, we use multi-threading
 		template <class ReturnType, class ...Fs>
-		struct Function
+		struct Function : VectorFunctionBase
 		{
+			using base_type = VectorFunctionBase;
 			std::tuple<Function<ReturnType, Fs>...> tup;
-			Function(Fs const&... fs)
+			Function(Fs&&... fs)
 				: tup(std::make_tuple(Function<ReturnType, Fs>(std::forward<Fs>(fs))...))
+				, base_type(sizeof...(Fs))
 			{}
 
 			Function(Function<ReturnType, Fs> const&... fs)
 				: tup(std::make_tuple(fs...))
+				, base_type(sizeof...(Fs))
 			{}
 
 			// Returns tuple of return expression from each scalar function
 			template <class Iter>
 			inline auto operator()(Iter begin, Iter end) {
-				return zip_func(begin, end);
+				return base_type::zip_func(this->tup, begin, end);
 			}
 
-		private:
-
-			// Zip returns of each f_i(begin, end)
-			template <class Iter, size_t... I>
-			auto zip_func(Iter begin, Iter end, std::index_sequence<I...>) {
-				return std::make_tuple(std::get<I>(this->tup)(begin, end)...);
+			template <class T>
+			inline auto expr_eval(Vec<T>& x)
+			{
+				return base_type::zip_func(this->tup, x);
 			}
 
-			template <class Iter>
-			auto zip_func(Iter begin, Iter end) {
-				return zip_func(begin, end
-					, std::make_index_sequence<sizeof...(Fs)>()
-				);
-			}
 		};
+
+		// =====================================================================================
+		// =====================================================================================
+		// =====================================================================================
 
 		// Scalar Function (specialization of Vector Field)
 
@@ -114,18 +161,19 @@ namespace ad {
 				return glue_many((w[I] = std::get<I>(tup))...);
 			}
 
+			// glue with vector w, and tuple of expressions
 			template <class T, class... ExprType>
 			inline auto glue_many(ad::Vec<T>& w, std::tuple<ExprType...>& tup)
 			{
 				return glue_many(w, tup, std::make_index_sequence<sizeof...(ExprType)>());
 			}
 
-			// Compute full expression from lambda function
-			template <class T, class F>
-			inline auto compute_expr(ad::Vec<T>& x, ad::Vec<T>& w, F&& f)
+			// glue with vector w, and one expression
+			template <class T, class ExprType>
+			inline auto glue_many(ad::Vec<T>& w, ExprType&& expr)
 			{
-				auto&& exprs = f(x, w);
-				return glue_many(w, exprs);
+				auto tup = std::make_tuple(std::forward<ExprType>(expr));
+				return glue_many(w, tup);
 			}
 
 		} // end details
@@ -136,60 +184,86 @@ namespace ad {
 			// Lambda Function
 			F f;
 
-			Function(F const& f)
+			Function(F&& f)
 				: ScalarFunctionBase<ReturnType>(), f(f)
 			{}
 
 			// Returns GlueNode glueing w[i] = expr_i
 			template <class Iter>
 			inline auto operator()(Iter begin, Iter end) {
-				constexpr size_t w_capacity = std::tuple_size<
-					typename std::result_of<
-					F(Vec<ReturnType>&, Vec<ReturnType>&)
-					>::type
-				>::value;
 				this->init_x(this->x, begin, end);
+				return expr_eval(this->x);
+			}
+
+			// Returns correct expression reprsenting f(x)
+			template <class T>
+			inline auto expr_eval(Vec<T>& x)
+			{
+				// Initialize this->w
+				constexpr size_t w_capacity = std::tuple_size<
+					std::result_of_t<F(Vec<ReturnType>&, Vec<ReturnType>&)>
+				>::value;
 				this->init_w(this->w, w_capacity);
-				return details::compute_expr(this->x, this->w, this->f);
+				// Create expression
+				auto&& exprs = this->f(x, this->w);
+				return details::glue_many(this->w, exprs);
 			}
 
 		};
 
-
 		// Composition: Vector Function of Vector Function
-		template <class ReturnType, class FComposed, class FComposer
-			, bool scalar = std::is_base_of_v<ScalarFunctionBase<ReturnType>, FComposer>
+		template <class ReturnType, class FComposer, class FComposed
+			, bool scalar = std::is_base_of_v<
+			ScalarFunctionBase<ReturnType>
+			, std::remove_reference_t<FComposer> // VERY IMPORTANT TO REMOVE REF
+			>
 		>
-			struct ComposedFunction;
+			struct ComposedFunction : VectorFunctionBase
+		{
+
+		};
 
 
 		// Composition: Scalar Function of Vector Function
-		template <class ReturnType, class FComposed, class FComposer>
-		struct ComposedFunction <ReturnType, FComposed, FComposer, true>
+		template <class ReturnType, class FComposer, class FComposed>
+		struct ComposedFunction <ReturnType, FComposer, FComposed, true>
 			: ScalarFunctionBase<ReturnType>
 		{
+			using base_type = ScalarFunctionBase<ReturnType>;
 			FComposed composed;
 			FComposer composer;
 
 			// Copy construct is OK because before any calculations, this->x/this->w will be cleared.
-			ComposedFunction(FComposer const& fcomposer, FComposed const& fcomposed)
-				: composer(fcomposer), composed(fcomposed)
+			ComposedFunction(FComposer&& fcomposer, FComposed&& fcomposed)
+				: composer(std::forward<FComposer>(fcomposer))
+				, composed(std::forward<FComposed>(fcomposed))
 			{}
 
+			// Return expression representing FComposer(FComposed)
 			template <class Iter
 				, class T = typename std::iterator_traits<Iter>::value_type
 			>
 				inline auto operator()(Iter begin, Iter end) {
-				this->init_x(this->x, begin, end);
-				this->init_w(this->w, 1);
-				this->compute_expr(this->x, composed.w, composed.f);
-				return details::compute_expr(this->x, this->w, this->f);
+				base_type::init_x(this->x, begin, end);
+				return expr_eval(this->x);
 			}
 
 			template <class T>
-			inline auto operator()(Vec<T>& x, Vec<T>& w)
+			inline auto expr_eval(Vec<T>& x)
 			{
-				auto&& expr = composed(x, w);
+				// Initialize this->w
+				base_type::init_w(this->w, this->composed.n_func);
+				// Get correct expr from composed function
+				// This may be 1 expression or tuple of expressions
+				// Output type does not matter since glue_many has respective overloads
+				auto&& expr_composed = this->composed.expr_eval(x);
+				// Glue nodes with this->w
+				auto&& expr_composed_glued = details::glue_many(this->w, expr_composed);
+				// Get correct expr from composer function
+				auto&& expr_composer = this->composer.expr_eval(this->w);
+				// Finally, glue expr_composed_glued, expr_composer
+				// Note that expr_composer must be a single expression by specialization
+				return details::glue_many(expr_composed_glued, expr_composer);
 			}
 
 		};
@@ -211,11 +285,29 @@ namespace ad {
 	} // namespace core
 
 	// Make Function Object with lambda functions
-	template <class ReturnType, class... Fs>
+	template <class ReturnType = double, class... Fs>
 	inline auto make_function(Fs&&... fs)
 	{
 		return core::Function<ReturnType, Fs...>(std::forward<Fs>(fs)...);
 	}
 
+	// =====================================================================================
+	// Make ComposedFunction with Function Objects
+
+	// F o G
+	template <class ReturnType = double, class FComposer, class FComposed>
+	inline auto compose(FComposer&& f, FComposed&& g)
+	{
+		return core::ComposedFunction<ReturnType, FComposer, FComposed>
+			(std::forward<FComposer>(f), std::forward<FComposed>(g));
+	}
+
+	// F1 o F2 o ... o Fn
+	template <class ReturnType = double, class F, class... Fs>
+	inline auto compose(F&& f, Fs&&... fs)
+	{
+		return compose(std::forward<F>(f)
+			, compose(std::forward<Fs>(fs)...));
+	}
 
 } // end ad
