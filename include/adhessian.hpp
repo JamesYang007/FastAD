@@ -46,10 +46,9 @@ namespace ad {
 
 		// Compute only the hessian
 		template <class HessIter, class Iter, class F>
-		inline auto hessian_(HessIter hess_begin, F&& f, Iter begin, Iter end)
+		inline auto hessian_(HessIter hess_begin, F&& f_hess, Iter begin, Iter end)
 		{
 			using ReturnType = typename std::iterator_traits<Iter>::value_type;
-			auto&& f_hess = make_function<ForwardVar<ReturnType>>(std::forward<F>(f));
 			auto it = hess_begin;
 
 			for (size_t i = 0; i < static_cast<size_t>(std::distance(begin, end)); ++i)
@@ -61,7 +60,6 @@ namespace ad {
 				// Get iterator at next column of matrix
 				it = core::hessian_(it, f_hess);
 			}
-			return f_hess;
 		}
 
 		// Copies gradient components from hessian computation
@@ -84,9 +82,11 @@ namespace ad {
 		utils::is_pointer_like_dereferenceable<Iter>::value
 		>
 	>
-		inline auto hessian(HessIter hess_begin, F&& f, Iter begin, Iter end)
+		inline void hessian(HessIter hess_begin, F&& f, Iter begin, Iter end)
 	{
-		return core::hessian_(hess_begin, std::forward<F>(f), begin, end);
+		using T = std::iterator_traits<Iter>::value_type;
+		auto f_hess = make_function<ForwardVar<T>>(std::forward<F>(f));
+		core::hessian_(hess_begin, f_hess, begin, end);
 	}
 
 	// Both Hessian and Gradient
@@ -97,13 +97,14 @@ namespace ad {
 		utils::is_pointer_like_dereferenceable<Iter>::value
 		>
 	>
-		inline auto hessian(HessIter hess_begin, GradIter grad_begin, F&& f, Iter begin, Iter end)
+		inline void hessian(HessIter hess_begin, GradIter grad_begin, F&& f, Iter begin, Iter end)
 	{
+		using T = std::iterator_traits<Iter>::value_type;
+		auto f_hess = make_function<ForwardVar<T>>(std::forward<F>(f));
 		// Copy hessian
-		auto&& f_hess = core::hessian_(hess_begin, std::forward<F>(f), begin, end);
+		core::hessian_(hess_begin, f_hess, begin, end);
 		// Copy gradient component
 		core::hessian_grad_(grad_begin, f_hess);
-		return f_hess;
 	}
 
 
@@ -116,11 +117,11 @@ namespace ad {
 		utils::is_pointer_like_dereferenceable<Iter>::value
 		>
 	>
-		inline auto hessian(Matrix& hess_mat, F&& f, Iter begin, Iter end)
+		inline void hessian(Matrix& hess_mat, F&& f, Iter begin, Iter end)
 	{
 		const size_t n = static_cast<size_t>(std::distance(begin, end));
 		hess_mat.zeros(n, n);
-		return hessian(hess_mat.begin(), std::forward<F>(f), begin, end);
+		hessian(hess_mat.begin(), std::forward<F>(f), begin, end);
 	}
 
 	template <class Matrix, class F, class Iter
@@ -128,12 +129,12 @@ namespace ad {
 		utils::is_pointer_like_dereferenceable<Iter>::value
 		>
 	>
-		inline auto hessian(Matrix& hess_mat, Matrix& grad_mat, F&& f, Iter begin, Iter end)
+		inline void hessian(Matrix& hess_mat, Matrix& grad_mat, F&& f, Iter begin, Iter end)
 	{
 		const size_t n = static_cast<size_t>(std::distance(begin, end));
 		hess_mat.zeros(n, n);
 		grad_mat.zeros(1, n);
-		return hessian(hess_mat.begin(), grad_mat.begin(), std::forward<F>(f), begin, end);
+		hessian(hess_mat.begin(), grad_mat.begin(), std::forward<F>(f), begin, end);
 	}
 
 } // end ad
