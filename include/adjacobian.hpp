@@ -11,24 +11,15 @@ namespace ad {
 	// Guarnatees compile-time substitution error on Jacobian_
 	namespace core {
 
-		// Jacobian_ Struct
-		template <class F>
-		struct Jacobian_ {};
-
-		// Specialized Jacobian_ for Scalar Function 
-		template <class ReturnType, class F>
-		struct Jacobian_<Function<ReturnType, F>>
+		template <class ReturnType, class Iter>
+		static Iter compute(Iter it, ScalarFunctionBase<ReturnType> const& f)
 		{
-			template <class Iter>
-			static Iter compute(Iter it, Function<ReturnType, F> const& f)
-			{
-				std::for_each(f.x.begin(), f.x.end(),
-					[&it](decltype(*(f.x.begin())) const& xi) mutable
-				{*(it++) = *(xi.df_ptr); }
-				);
-				return it;
-			}
-		};
+			std::for_each(f.x.begin(), f.x.end(),
+				[&it](decltype(*(f.x.begin())) const& xi) mutable
+			{*(it++) = *(xi.df_ptr); }
+			);
+			return it;
+		}
 
 		// This is a generic jacobian_ core function
 		// Parameter type F or Fs is generic (lambda or Function Obj)
@@ -37,8 +28,7 @@ namespace ad {
 		template <class F, class Iter>
 		inline Iter jacobian_(Iter it, F&& f)
 		{
-			using F_pure = std::remove_cv_t<std::remove_reference_t<F>>;
-			return Jacobian_<F_pure>::compute(it, std::forward<F>(f));
+			return compute(it, std::forward<F>(f));
 		}
 
 		// Variadic on Scalar Function
@@ -68,10 +58,10 @@ namespace ad {
 	// Iterator must iterate over elements column by column
 
 	// Scalar Function Object
-	template <class ReturnType, class F, class Iter
+	template <class ReturnType, class Iter
 		, class = std::enable_if_t<utils::is_pointer_like_dereferenceable<Iter>::value, void>
 	>
-		inline void jacobian(Iter it, core::Function<ReturnType, F> const& f)
+		inline void jacobian(Iter it, core::ScalarFunctionBase<ReturnType> const& f)
 	{
 		core::jacobian_(it, f);
 	}
@@ -80,7 +70,7 @@ namespace ad {
 	template <class ReturnType, class... Fs, class Iter
 		, class = std::enable_if_t<(sizeof...(Fs) > 1) && utils::is_pointer_like_dereferenceable<Iter>::value, void>
 	>
-		inline void jacobian(Iter it, core::Function<ReturnType, Fs...> const& f)
+		inline void jacobian(Iter it, core::VectorFunctionBase<ReturnType, Fs...> const& f)
 	{
 		core::jacobian_(it, f.tup, std::make_index_sequence<sizeof...(Fs)>());
 	}
@@ -103,23 +93,23 @@ namespace ad {
 	}
 
 	// Scalar Function Object
-	template <class ReturnType, class F, class Matrix
+	template <class ReturnType, class Matrix
 		, class = typename std::enable_if<!core::is_Function<Matrix>::value, void>::type
 	>
 		inline auto jacobian(
 			Matrix& mat
-			, core::Function<ReturnType, F> const& f)
+			, core::ScalarFunctionBase<ReturnType> const& f)
 	{
 		jacobian_mat_helper(mat, f.x.size(), 1, f);
 	}
 
 	// Vector Function Object
 	template <class ReturnType, class Matrix, class... Fs
-		, class = typename std::enable_if<(sizeof...(Fs) > 1) && !core::is_Function<Matrix>::value, void>::type
+		, class = std::enable_if_t<(sizeof...(Fs) > 1) && !core::is_Function<Matrix>::value>
 	>
 		inline auto jacobian(
 			Matrix& mat
-			, core::Function<ReturnType, Fs...> const& f)
+			, core::VectorFunctionBase<ReturnType, Fs...> const& f)
 	{
 		jacobian_mat_helper(mat, std::get<0>(f.tup).x.size(), std::tuple_size<decltype(f.tup)>::value, f);
 	}
