@@ -52,10 +52,12 @@ namespace {
 		EXPECT_DOUBLE_EQ(H_G_F.x[1].df, tmp2 * tmp * (2 * x[1] + std::sin(x[0])));
 	}
 
+
 	// Scalar of Vector(x_0, x_1)
 	TEST(adcompose, scalar_vector) {
 		using namespace ad;
 		double x[] = { 0.268 * M_PI, 2.3 };
+		auto F = make_function(F_lmda);
 		auto FG = make_function(F_lmda, G_lmda);
 		auto F_FG = compose(F, FG);
 
@@ -80,7 +82,34 @@ namespace {
 	// Vector of Vector
 	TEST(adcompose, vector_vector) {
 		using namespace ad;
+		double x[] = { 0.2, 1.59 };
+		auto FG = make_function(F_lmda, G_lmda);
+		auto GH = make_function(G_lmda, H_lmda);
+		auto FG_GH = compose(FG, GH);
+		auto&& expr = FG_GH(x, x + 2);
+		autodiff(expr);
 
+		arma::Mat<double> FG_GH_jacobi;
+		jacobian(FG_GH_jacobi, FG_GH);
+
+		// test
+		double x_tilde[2] = { 0 };
+		auto G = make_function(G_lmda);
+		auto H = make_function(H_lmda);
+
+		x_tilde[0] = Evaluate(G(x, x + 2));
+		x_tilde[1] = Evaluate(H(x, x + 2));
+
+		arma::Mat<double> FG_jacobi;
+		arma::Mat<double> GH_jacobi;
+		jacobian(FG_jacobi, x_tilde, x_tilde + 2, F_lmda, G_lmda);
+		jacobian(GH_jacobi, x, x + 2, G_lmda, H_lmda);
+		arma::Mat<double> comp = FG_jacobi * GH_jacobi;
+
+		// Compare
+		for (size_t i = 0; i < 2; ++i)
+			for (size_t j = 0; j < 2; ++j)
+				EXPECT_DOUBLE_EQ(FG_GH_jacobi(i, j), comp(i, j));
 	}
 
 } // end namespace 
