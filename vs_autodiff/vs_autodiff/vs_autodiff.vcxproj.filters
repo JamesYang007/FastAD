@@ -51,5 +51,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\README.md" />
+    <None Include="..\..\examples\README.md" />
   </ItemGroup>
 </Project>
