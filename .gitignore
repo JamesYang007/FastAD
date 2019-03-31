@@ -7,3 +7,6 @@ make/*unittest*
 *Release/
 *x64/
 *.vs/
+armadillo/
+boost_1_69_0/
+googletest-master/
