@@ -12,7 +12,7 @@ FastAD was developed in Visual Studio 2017 using C++14 standard.
 Change directory to installation directory and run the following command:
 
 ```
-git clone https://JamesYang007@bitbucket.org/JamesYang007/autodiff.git
+git clone https://JamesYang007@bitbucket.org/JamesYang007/fastad.git
 ```
 
 ## Dependencies
