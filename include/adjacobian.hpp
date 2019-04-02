@@ -8,11 +8,10 @@ namespace ad {
 
 	// Get Jacobian
 	// Written Generically for any "Function"
-	// Guarnatees compile-time substitution error on Jacobian_
 	namespace core {
 
 		template <class ReturnType, class Iter>
-		static Iter compute(Iter it, ScalarFunctionBase<ReturnType> const& f)
+		inline Iter compute(Iter it, ScalarFunctionBase<ReturnType> const& f)
 		{
 			std::for_each(f.x.begin(), f.x.end(),
 				[&it](decltype(*(f.x.begin())) const& xi) mutable
@@ -59,7 +58,7 @@ namespace ad {
 
 	// Scalar Function Object
 	template <class ReturnType, class Iter
-		, class = std::enable_if_t<utils::is_pointer_like_dereferenceable<Iter>::value, void>
+		, class = std::enable_if_t<utils::is_pointer_like_dereferenceable<Iter>::value>
 	>
 		inline void jacobian(Iter it, core::ScalarFunctionBase<ReturnType> const& f)
 	{
@@ -68,7 +67,7 @@ namespace ad {
 
 	// Vector Function Object
 	template <class ReturnType, class... Fs, class Iter
-		, class = std::enable_if_t<(sizeof...(Fs) > 1) && utils::is_pointer_like_dereferenceable<Iter>::value, void>
+		, class = std::enable_if_t<utils::is_pointer_like_dereferenceable<Iter>::value>
 	>
 		inline void jacobian(Iter it, core::VectorFunctionBase<ReturnType, Fs...> const& f)
 	{
@@ -81,11 +80,7 @@ namespace ad {
 	// .zeros(m, n), .t(), .begin()
 
 	template <class Matrix, class F>
-	inline void jacobian_mat_helper(
-		Matrix& mat
-		, size_t m
-		, size_t n
-		, F&& f)
+	inline void jacobian_mat_helper(Matrix& mat, size_t m, size_t n, F&& f)
 	{
 		mat.zeros(m, n);
 		jacobian(mat.begin(), std::forward<F>(f));
@@ -94,7 +89,7 @@ namespace ad {
 
 	// Scalar Function Object
 	template <class ReturnType, class Matrix
-		, class = typename std::enable_if<!core::is_Function<Matrix>::value, void>::type
+		, class = std::enable_if_t<!core::is_Function<Matrix>::value>
 	>
 		inline auto jacobian(
 			Matrix& mat
@@ -105,13 +100,13 @@ namespace ad {
 
 	// Vector Function Object
 	template <class ReturnType, class Matrix, class... Fs
-		, class = std::enable_if_t<(sizeof...(Fs) > 1) && !core::is_Function<Matrix>::value>
+		, class = std::enable_if_t<!core::is_Function<Matrix>::value>
 	>
 		inline auto jacobian(
 			Matrix& mat
 			, core::VectorFunctionBase<ReturnType, Fs...> const& f)
 	{
-		jacobian_mat_helper(mat, std::get<0>(f.tup).x.size(), std::tuple_size<decltype(f.tup)>::value, f);
+		jacobian_mat_helper(mat, std::get<0>(f.tup).x.size(), f.n_func, f);
 	}
 
 	// ============================================================================
@@ -119,7 +114,7 @@ namespace ad {
 	// Same algorithm for both Matrix or Iter
 	template <class ReturnType = double, class MatOrIter, class Iter, class... Fs
 		, class = std::enable_if_t<
-		!core::is_Function<MatOrIter>::value &&
+		!core::is_Function<MatOrIter>::value &
 		utils::is_pointer_like_dereferenceable<Iter>::value
 		>
 	>
