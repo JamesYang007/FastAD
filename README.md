@@ -19,7 +19,7 @@ git clone https://JamesYang007@bitbucket.org/JamesYang007/fastad.git
 
 - [Boost](https://www.boost.org/users/download/)
 
-### Additional Dependencies for *Test* and *examples*
+### Additional Dependencies for *test/* and *examples/*
 
 - [armadillo](http://arma.sourceforge.net/download.html)
 - [googletest](https://github.com/google/googletest)
