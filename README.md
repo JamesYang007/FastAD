@@ -26,7 +26,7 @@ git clone https://JamesYang007@bitbucket.org/JamesYang007/fastad.git
 - Implementation of LAPACK/BLAS 
 	- [Intel MKL](https://software.intel.com/en-us/mkl/choose-download) (Windows, Intel machine)
 
-Visual Studio 2017 users may use solutions located in folder *vs_autodiff*.
+Visual Studio 2017 users may use solutions located in folder **vs_autodiff/**.
 If LAPACK/BLAS is required, open Property page Configuration Properties/Intel Performance Libraries.
 Set "Use Intel MKL" to the desired choice (sequential is recommended if parallel is not possible).
 To build/run tests or examples, user must follow one of two options:
@@ -44,7 +44,7 @@ The folder **googletest-master/** should contain only one folder: **googletest-m
 
 ## Tutorial
 
-See *example/* folder.
+See **example/** folder.
 
 ## Further Implementation
 
