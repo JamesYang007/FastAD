@@ -90,18 +90,20 @@ namespace ad {
 			UNARY_STRUCT(Exp, USING_STD_AD(exp) return exp(x); , return fmap(x);)
 			// Log struct
 			UNARY_STRUCT(Log, USING_STD_AD(log) return log(x);, return T(1) / x;)
+			// Identity struct
+			UNARY_STRUCT(Id, return x; , return T(1);)
 
 			//================================================================================
 			// Binary Operators
 
 			// Add
-			BINARY_STRUCT(Add, return x + y;, return 1;, return 1;)
+			BINARY_STRUCT(Add, return x + y; , return 1; , return 1;)
 			// Subtract
-			BINARY_STRUCT(Sub, return x - y;, return 1;, return -1;)
+			BINARY_STRUCT(Sub, return x - y; , return 1; , return -1;)
 			// Multiply
-			BINARY_STRUCT(Mul, return x * y;, return y;, return x;)
+			BINARY_STRUCT(Mul, return x * y; , return y; , return x;)
 			// Divide
-			BINARY_STRUCT(Div, return x / y;, return T(1) / y;, return T(-1)*x / (y*y);)
+			BINARY_STRUCT(Div, return x / y; , return T(1) / y; , return T(-1)*x / (y*y);)
 
 	} // namespace math
 
@@ -128,6 +130,8 @@ namespace ad {
 		ADNODE_UNARY_FUNC(exp, Exp)
 		// ad::log(ADNode)
 		ADNODE_UNARY_FUNC(log, Log)
+		// ad::id(ADNode)
+		ADNODE_UNARY_FUNC(id, Id)
 
 		//================================================================================
 
