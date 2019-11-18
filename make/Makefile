@@ -22,7 +22,7 @@ USER_DIR = ../
 # Flags passed to the preprocessor.
 # Set Google Test's header directory as a system directory, such that
 # the compiler doesn't generate warnings in Google Test headers.
-CPPFLAGS += -std=c++14 -isystem $(GTEST_DIR)/include
+CPPFLAGS += -std=c++17 -isystem $(GTEST_DIR)/include
 
 # Flags passed to the C++ compiler.
 CXXFLAGS += -g -pthread 
@@ -34,6 +34,10 @@ TESTS=dualnum_unittest \
 	  admath_unittest \
 	  adnode_unittest \
 	  adeval_unittest \
+	  adcompose_unittest \
+	  adfunction_unittest \
+	  hessian_unittest \
+	  forwardvar_unittest \
 	  ultimate_unittest
 
 # All Google Test headers.  Usually you shouldn't change this
@@ -46,6 +50,7 @@ MY_HEADERS = $(USER_DIR)/include/*.hpp
 
 # House-keeping build targets.
 
+.PHONY: all
 all : $(TESTS)
 
 clean :
@@ -79,7 +84,9 @@ gtest_main.a : gtest-all.o gtest_main.o
 # gtest_main.a, depending on whether it defines its own main()
 # function.
 
-CXXFLAGS += -I$(USER_DIR)/include
+CXXFLAGS += -g -Wall -I$(USER_DIR)/include -I/usr/local/include
+LDLIBS += -larmadillo -llapack -lblas
+
 #CPPFILEPATHS = $(shell echo $TEST | sed "s/^\(.*\)/$(USER_DIR)\/src\/\1/g;
 #				s/[[:space:]]/ $(USER_DIR)\/src\//g;
 #				s/[[:space:]]/.o /g;
@@ -92,66 +99,102 @@ OFILES = $(shell echo $(TESTS) | sed "s/[[:space:]]/.o /g;s/\(.*\)/\1.o/g")
 # 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/sample1.cc
 
 # dualnum
-dualnum_unittest.o : $(USER_DIR)/src/dualnum_unittest.cpp \
-					$(USER_DIR)/src/dualnum_unittest.hpp \
+dualnum_unittest.o : $(USER_DIR)/test/dualnum_unittest.cpp \
                      $(USER_DIR)/include/dualnum.hpp \
 					 $(GTEST_HEADERS)
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/src/dualnum_unittest.cpp
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/test/dualnum_unittest.cpp
 
 dualnum_unittest : dualnum_unittest.o gtest_main.a
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@
 
 # advec
-advec_unittest.o : $(USER_DIR)/src/advec_unittest.cpp \
-					$(USER_DIR)/src/advec_unittest.hpp \
+advec_unittest.o : $(USER_DIR)/test/advec_unittest.cpp \
                      $(USER_DIR)/include/advec.hpp \
                      $(USER_DIR)/include/adnode.hpp \
 					 $(GTEST_HEADERS) 
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/src/advec_unittest.cpp
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/test/advec_unittest.cpp
 
 advec_unittest : advec_unittest.o gtest_main.a
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@
 
 # admath
-admath_unittest.o : $(USER_DIR)/src/admath_unittest.cpp \
-					$(USER_DIR)/src/admath_unittest.hpp \
+admath_unittest.o : $(USER_DIR)/test/admath_unittest.cpp \
                      $(USER_DIR)/include/admath.hpp \
                      $(USER_DIR)/include/advec.hpp \
 					 $(USER_DIR)/include/utility.hpp \
 					 $(GTEST_HEADERS)
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/src/admath_unittest.cpp
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/test/admath_unittest.cpp
 
 admath_unittest : admath_unittest.o gtest_main.a
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@
 
 # adnode
-adnode_unittest.o : $(USER_DIR)/src/adnode_unittest.cpp \
-					$(USER_DIR)/src/adnode_unittest.hpp \
+adnode_unittest.o : $(USER_DIR)/test/adnode_unittest.cpp \
                      $(USER_DIR)/include/adnode.hpp \
                      $(USER_DIR)/include/dualnum.hpp \
 					 $(GTEST_HEADERS)
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/src/adnode_unittest.cpp
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/test/adnode_unittest.cpp
 
 adnode_unittest : adnode_unittest.o gtest_main.a
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@
 
 # adeval
-adeval_unittest.o : $(USER_DIR)/src/adeval_unittest.cpp \
-					$(USER_DIR)/src/adeval_unittest.hpp \
+adeval_unittest.o : $(USER_DIR)/test/adeval_unittest.cpp \
                      $(USER_DIR)/include/adeval.hpp \
                      $(USER_DIR)/include/adnode.hpp \
                      $(USER_DIR)/include/admath.hpp \
 					 $(GTEST_HEADERS)
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/src/adeval_unittest.cpp
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/test/adeval_unittest.cpp
 
 adeval_unittest : adeval_unittest.o gtest_main.a
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@
 
+# adcompose
+adcompose_unittest.o : $(USER_DIR)/test/adcompose_unittest.cpp \
+                     $(USER_DIR)/include/adnode.hpp \
+                     $(USER_DIR)/include/admath.hpp \
+					 $(GTEST_HEADERS)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/test/adcompose_unittest.cpp
+
+adcompose_unittest : adcompose_unittest.o gtest_main.a
+	$(CXX) $(CPPFLAGS) $(LDLIBS) -lpthread $^ -o $@
+
+# adfunction
+adfunction_unittest.o : $(USER_DIR)/test/adfunction_unittest.cpp \
+                     $(USER_DIR)/include/adfunction.hpp \
+                     $(USER_DIR)/include/adnode.hpp \
+                     $(USER_DIR)/include/admath.hpp \
+					 $(GTEST_HEADERS)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/test/adfunction_unittest.cpp
+
+adfunction_unittest : adfunction_unittest.o gtest_main.a
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@
+
+# hessian
+hessian_unittest.o : $(USER_DIR)/test/hessian_unittest.cpp \
+                     $(USER_DIR)/include/adhessian.hpp \
+                     $(USER_DIR)/include/adnode.hpp \
+                     $(USER_DIR)/include/admath.hpp \
+					 $(GTEST_HEADERS)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/test/hessian_unittest.cpp
+
+hessian_unittest : hessian_unittest.o gtest_main.a
+	$(CXX) $(CPPFLAGS) $(LDFLAGS) -lpthread $^ -o $@
+
+# forwardvar
+forwardvar_unittest.o : $(USER_DIR)/test/forwardvar_unittest.cpp \
+                     $(USER_DIR)/include/adforward.hpp \
+					 $(GTEST_HEADERS)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/test/forwardvar_unittest.cpp
+
+forwardvar_unittest : forwardvar_unittest.o gtest_main.a
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@
+
+
 # ultimate
-ultimate_unittest.o : $(USER_DIR)/src/ultimate_unittest.cpp \
-					$(USER_DIR)/src/ultimate_unittest.hpp \
+ultimate_unittest.o : $(USER_DIR)/test/ultimate_unittest.cpp \
 					 $(GTEST_HEADERS) 
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/src/ultimate_unittest.cpp
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/test/ultimate_unittest.cpp
 
 ultimate_unittest : ultimate_unittest.o gtest_main.a
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@

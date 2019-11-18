@@ -48,7 +48,7 @@ namespace ad {
 		template <class HessIter, class Iter, class F>
 		inline auto hessian_(HessIter hess_begin, F&& f_hess, Iter begin, Iter end)
 		{
-			using ReturnType = typename std::iterator_traits<Iter>::value_type;
+			//using ReturnType = typename std::iterator_traits<Iter>::value_type;
 			auto it = hess_begin;
 
 			for (size_t i = 0; i < static_cast<size_t>(std::distance(begin, end)); ++i)
@@ -84,7 +84,7 @@ namespace ad {
 	>
 		inline void hessian(HessIter hess_begin, F&& f, Iter begin, Iter end)
 	{
-		using T = std::iterator_traits<Iter>::value_type;
+		using T = typename std::iterator_traits<Iter>::value_type;
 		auto f_hess = make_function<ForwardVar<T>>(std::forward<F>(f));
 		core::hessian_(hess_begin, f_hess, begin, end);
 	}
@@ -99,7 +99,7 @@ namespace ad {
 	>
 		inline void hessian(HessIter hess_begin, GradIter grad_begin, F&& f, Iter begin, Iter end)
 	{
-		using T = std::iterator_traits<Iter>::value_type;
+		using T = typename std::iterator_traits<Iter>::value_type;
 		auto f_hess = make_function<ForwardVar<T>>(std::forward<F>(f));
 		// Copy hessian
 		core::hessian_(hess_begin, f_hess, begin, end);
