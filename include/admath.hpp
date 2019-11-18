@@ -85,6 +85,7 @@ ADNODE_UNARY_FUNC_DECL(acos);
 ADNODE_UNARY_FUNC_DECL(atan);
 ADNODE_UNARY_FUNC_DECL(exp);
 ADNODE_UNARY_FUNC_DECL(log);
+ADNODE_UNARY_FUNC_DECL(id);
 
 namespace math {
 
@@ -106,6 +107,8 @@ UNARY_STRUCT(Arctan, USING_STD_AD(atan) return atan(x);, return 1 / (1 + x * x);
 UNARY_STRUCT(Exp, USING_STD_AD(exp) return exp(x); , return fmap(x);)
 // Log struct
 UNARY_STRUCT(Log, USING_STD_AD(log) return log(x);, return T(1) / x;)
+// Identity struct
+UNARY_STRUCT(Id, return x; , return T(1);)
 
 //================================================================================
 // Binary Operators
@@ -144,6 +147,8 @@ ADNODE_UNARY_FUNC_DEF(atan, Arctan)
 ADNODE_UNARY_FUNC_DEF(exp, Exp)
 // ad::log(ADNode)
 ADNODE_UNARY_FUNC_DEF(log, Log)
+// ad::id(ADNode)
+ADNODE_UNARY_FUNC_DEF(id, Id)
 
 //================================================================================
 
