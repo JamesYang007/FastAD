@@ -13,14 +13,17 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 # if CMAKE_BUILD_TYPE not defined
 if (NOT CMAKE_BUILD_TYPE)
-# if directory above ends with "debug", use debug mode
-if (${CMAKE_CURRENT_SOURCE_DIR}/.. MATCHES "debug$")
-    set(CMAKE_BUILD_TYPE DEBUG)
-# otherwise, use release mode
-else()
+
+# if binary directory ends with "release", use release mode
+if (${PROJECT_BINARY_DIR} MATCHES "release$")
     set(CMAKE_BUILD_TYPE RELEASE)
+# otherwise, use debug mode
+else()
+    set(CMAKE_BUILD_TYPE DEBUG)
 endif()
+
 endif()
+
 message(STATUS "Compiling in ${CMAKE_BUILD_TYPE} mode")
 
 option(USE_ARMA "Use armadillo as matrix library" OFF)

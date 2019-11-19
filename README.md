@@ -42,8 +42,25 @@ Change all directories corresponding to `Boost`, `armadillo`, `googletest` to th
 
 ### Linux/MacOS
 
+It is recommended to perform a clean build and specify the mode (`debug` or `release`).
+Simply run the following to build only:
+
 ```
-./clean-build.sh && cd build/release && cmake ../../ && make -j12 && ctest -j12
+./clean-build.sh <mode>
+```
+
+To execute the tests run the following:
+
+```
+./clean-build.sh <mode> run
+```
+
+Alternatively,
+
+```
+./clean-build.sh <mode>
+cd build/<mode>
+ctest -j12
 ```
 
 ## Tutorial
