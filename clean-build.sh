@@ -5,8 +5,6 @@ shift   # shift command-line arguments
 run=$1  # run ctest
 shift
 
-echo "$mode $run $@"
-
 # other cmake arguments
 
 # if build directory does not exist, create it
