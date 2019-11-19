@@ -34,7 +34,7 @@ if [ "$mode" = "debug" ]; then
 elif [ "$mode" = "release" ]; then
     cd release
 else
-    echo "Usage: ./clean-build.sh <debug/release> ..." 1>&2
+    echo "Usage: ./clean-build.sh <debug/release> [run] ..." 1>&2
     exit 1
 fi
 
