@@ -10,3 +10,4 @@ make/*unittest*
 armadillo/
 boost_1_69_0/
 googletest-master/
+*build/
