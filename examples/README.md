@@ -1,5 +1,8 @@
 # Tutorial
 
+This tutorial is slightly outdated. 
+This should be updated after finalizing the structure.
+
 ## Forward AD
 
 Forward AD only requires the use of **ForwardVar<T>**.
