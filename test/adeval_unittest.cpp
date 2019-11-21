@@ -1,6 +1,6 @@
-#include "adeval.hpp"
-#include "admath.hpp"
-#include "adjacobian.hpp"
+#include <fastad/adeval.hpp>
+#include <fastad/admath.hpp>
+#include <fastad/adjacobian.hpp>
 #include "gtest/gtest.h"
 #include <random>
 #include <time.h>
@@ -205,41 +205,7 @@ TEST(adeval, function_vector_complex) {
     test_vector(x.begin(), x.end(), F_long);
 }
 
-// array2d jacobian
-//TEST(adeval, array2d) {
-//    using namespace ad;
-//    double x[] = {0.1, 2.3, -1., 4.1, -5.21};
-//    double y[] = {2.1, 5.3, -1.23, 0.0012, -5.13};
-
-//    auto&& F_long = make_function(F, G, H);
-//    test_vector<false>(x, x+5, F_long);
-//    test_vector<false>(y, y+5, F_long);
-//}
-
-// Complex array2d jacobian
-//TEST(adeval, array2d_complex) {
-//    using namespace ad;
-//    constexpr size_t n = 1000;
-//    std::vector<double> x;
-//    std::default_random_engine gen;
-//    std::normal_distribution<double> dist(0.0,1.0);
-
-//    for (size_t i = 0; i < n; ++i) 
-//        x.push_back(dist(gen));
-
-//    auto&& F_long = make_function(
-//            F, G, H, F, G, H, F, G, H, F,
-//            F, G, H, F, G, H, F, G, H, F,
-//            PHI, PHI, PHI, PHI, PHI,
-//            PHI, PHI, PHI, PHI, PHI,
-//            PHI, PHI, PHI, PHI, PHI,
-//            PHI, PHI, PHI, PHI, PHI,
-//            PHI, PHI, PHI, PHI, PHI
-//            );
-//    test_vector<false>(x.begin(), x.end(), F_long);
-//}
-
-// TEST Jacobian for lambda
+// Jacobian for lambda
 TEST(adeval, jacobian_lambda) {
     using namespace ad;
     double x[] = { 0.1, 2.3, -1., 4.1, -5.21 };
