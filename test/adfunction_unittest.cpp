@@ -1,6 +1,6 @@
-#include <fastad/adeval.hpp>
-#include <fastad/admath.hpp>
-#include <fastad/adfunction.hpp>
+#include <fastad_bits/adeval.hpp>
+#include <fastad_bits/admath.hpp>
+#include <fastad_bits/adfunction.hpp>
 #include "gtest/gtest.h"
 
 namespace {

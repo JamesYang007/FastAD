@@ -1,4 +1,4 @@
-#include <fastad/dualnum.hpp>
+#include <fastad_bits/dualnum.hpp>
 #include "gtest/gtest.h"
 
 namespace {
