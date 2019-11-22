@@ -23,6 +23,23 @@ using ad::fname;
 //
 // This struct is acts as a functor that will be passed as a type to Unary Nodes.
 // @tparam T    underlying data type (ex. double, float, ADForward)
+//
+// Example generation:
+//
+// UNARY_STRUCT(UnaryMinus, return -x;, return -1;)
+// =>
+// template <class T>
+// struct UnaryMinus
+// {
+// 	    static T fmap(T x)
+// 	    {
+// 	        return -x;
+// 	    }
+// 	    static T bmap(T x)
+// 	    {
+// 	        return -1;
+// 	    }
+// }; 
 #define UNARY_STRUCT(name, fmap_body, bmap_body) \
 template <class T> \
 struct name \
@@ -41,6 +58,19 @@ struct name \
 // @tparam  Derived     the actual type of node in CRTP
 // @return  Unary Node that will evaluate forward and backward direction 
 //          defined by "struct_name"'s fmap and bmap acting on "node"
+//
+// Example generation:
+//
+// ADNODE_UNARY_FUNC(operator-, UnaryMinus)
+// =>
+// template <class Derived>
+// inline auto operator-(ad::core::ADNodeExpr<Derived> const& node)
+// {
+//     return ad::core::ADNode<
+//         typename Derived::value_type
+//         , typename ad::math::UnaryMinus<typename Derived::value_type>
+//         , Derived>(node.self());
+// } 
 #define ADNODE_UNARY_FUNC(name, struct_name) \
 template <class Derived> \
 inline auto name(ad::core::ADNodeExpr<Derived> const& node) \
@@ -60,16 +90,41 @@ inline auto name(ad::core::ADNodeExpr<Derived> const& node) \
 // brmap evaluates the partial derivative w.r.t. y.
 // The definition is provided by "brmap_body".
 // @tparam T    underlying data type (ex. double, float, ADForward)
+//
+// BINARY_STRUCT(Add, return x + y;, return 1;, return 1;)
+// =>
+// template <class T>
+// struct Add
+// {
+// 	    static T fmap(T x, T y)
+// 	    {
+// 	        return x + y;
+// 	    }
+// 	    static T blmap(T x, T y)
+// 	    {
+// 	        return 1;
+// 	    }
+// 	    static T brmap(T x, T y)
+// 	    {
+// 	        return 1;
+// 	    }
+// }; 
 #define BINARY_STRUCT(name, fmap_body, blmap_body, brmap_body) \
 template <class T> \
 struct name \
 { \
 	static T fmap(T x, T y) \
-	{fmap_body} \
+	{ \
+        fmap_body \
+    } \
 	static T blmap(T x, T y) \
-	{blmap_body} \
+	{ \
+        blmap_body \
+    } \
 	static T brmap(T x, T y) \
-	{brmap_body} \
+	{ \
+        brmap_body \
+    } \
 }; 
 
 // Defines function with name associated with struct_name.
@@ -79,6 +134,25 @@ struct name \
 //                      By default, it is the common value_type of Derived1 and Derived2.
 // @return  Binary Node that will evaluate forward and backward direction
 //          defined by "struct_name"'s fmap, blmap, and brmap acting on node1 and node2
+//
+// ADNODE_BINARY_FUNC(operator+, Add)
+// =>
+// 
+// template <
+//     class Derived1
+//     , class Derived2
+//     , typename value_type = 
+//         typename std::common_type<
+//             typename Derived1::value_type, typename Derived2::value_type
+//             >::type
+//     >
+// inline auto operator+(
+//         const ADNodeExpr<Derived1>& node1
+//         , const ADNodeExpr<Derived2>& node2)
+// {
+//      return make_node<value_type, typename ad::math::Add<value_type>>(
+//             node1.self(), node2.self());
+// } 
 #define ADNODE_BINARY_FUNC(name, struct_name) \
 template < \
     class Derived1 \
@@ -91,8 +165,10 @@ template < \
 inline auto name( \
         const ADNodeExpr<Derived1>& node1 \
         , const ADNodeExpr<Derived2>& node2) \
-{return make_node<value_type, typename ad::math::struct_name<value_type>>( \
-            node1.self(), node2.self());} 
+{ \
+    return make_node<value_type, typename ad::math::struct_name<value_type>>( \
+            node1.self(), node2.self()); \
+} 
 
 namespace ad {
 namespace math {
