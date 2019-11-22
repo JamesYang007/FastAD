@@ -64,7 +64,7 @@ struct name \
 // ADNODE_UNARY_FUNC(operator-, UnaryMinus)
 // =>
 // template <class Derived>
-// inline auto operator-(ad::core::ADNodeExpr<Derived> const& node)
+// inline auto operator-(const ad::core::ADNodeExpr<Derived>& node)
 // {
 //     return ad::core::ADNode<
 //         typename Derived::value_type
@@ -73,7 +73,7 @@ struct name \
 // } 
 #define ADNODE_UNARY_FUNC(name, struct_name) \
 template <class Derived> \
-inline auto name(ad::core::ADNodeExpr<Derived> const& node) \
+inline auto name(const ad::core::ADNodeExpr<Derived>& node) \
 { \
     return ad::core::ADNode< \
         typename Derived::value_type \
