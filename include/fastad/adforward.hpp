@@ -19,7 +19,7 @@
 // FORWARD_UNARY_FUNC(sin, std::sin(x.w), std::cos(x.w) * x.df)
 // =>
 // template <class T> 
-// inline auto sin(ad::core::ADForward<T> const& x) 
+// inline auto sin(const ad::core::ADForward<T>& x) 
 // { 
 //      return ad::core::ADForward<T>(std::sin(x.w), std::cos(x.w) * x.df); 
 // } 
@@ -29,7 +29,7 @@
 // FORWARD_UNARY_FUNC(exp, tmp, tmp * x.df, auto tmp = std::exp(x.w);)
 // =>
 // template <class T> 
-// inline auto exp(ad::core::ADForward<T> const& x) 
+// inline auto exp(const ad::core::ADForward<T>& x) 
 // { 
 //      auto tmp = std::exp(x.w);
 //      return ad::core::ADForward<T>(tmp, tmp * x.df); 
@@ -38,7 +38,7 @@
 // Note that we only compute std::exp(x.w) once and reuse to compute both "first" and "second".
 #define FORWARD_UNARY_FUNC(f, first, second, ...) \
 template <class T> \
-inline auto f(ad::core::ADForward<T> const& x) \
+inline auto f(const ad::core::ADForward<T>& x) \
 { \
 	__VA_ARGS__ \
 	return ad::core::ADForward<T>(first, second); \
@@ -60,13 +60,13 @@ inline auto f(ad::core::ADForward<T> const& x) \
 // FORWARD_BINARY_FUNC(operator+, x.w + y.w, x.df + y.df)
 // =>
 // template <class T>
-// inline auto operator+(ADForward<T> const& x, ADForward<T> const& y)
+// inline auto operator+(const ad::core::ADForward<T>& x, ad::core::ADForward<T>& y)
 // {
 //      return ad::core::ADForward<T>(x.w + y.w, x.df + y.df);
 // }
 #define FORWARD_BINARY_FUNC(f, first, second) \
 template <class T> \
-inline auto f(ADForward<T> const& x, ADForward<T> const& y) \
+inline auto f(ad::core::ADForward<T> const& x, ad::core::ADForward<T> const& y) \
 { \
 	return ad::core::ADForward<T>(first, second); \
 } \
