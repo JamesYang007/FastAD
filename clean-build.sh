@@ -43,7 +43,7 @@ fi
 
 rm -rf *
 
-# if $run is set to "run" or no other arguments were passed
+# if $run is set to "run" or not set to anything
 if [ "$run" = "run" ] || [ "$run" = "" ]; then
     cmake ../../ "$@"   # append other cmake command-line arguments
 else
