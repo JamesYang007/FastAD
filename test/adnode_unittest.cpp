@@ -182,7 +182,7 @@ TEST(adnode, glue) {
         );
     //EXPECT_EQ(expr.lhs.lhs.w, 3.0);
 
-    ad::Evaluate(expr);
+    ad::evaluate(expr);
     EXPECT_EQ(w4.w, 4.0);
     EXPECT_EQ(w3.w, 2.0);
     //EXPECT_EQ(w3.w, 3.0);
@@ -194,7 +194,7 @@ TEST(adnode, glue) {
     EXPECT_NE(w2.df_ptr, nullptr);
     EXPECT_NE(w1.df_ptr, nullptr);
 
-    ad::EvaluateAdj(expr);
+    ad::evaluate_adj(expr);
     EXPECT_EQ(w4.df, 1.0);
     EXPECT_EQ(w3.df, 2 * w3.w);
     //EXPECT_EQ(w3.df, 0);
@@ -218,13 +218,13 @@ TEST(adnode, use_case) {
         , w5 = exp(w4*w3)
         );
     autodiff(expr);
-    //Evaluate(expr);
+    //evaluate(expr);
 
     EXPECT_EQ(w5.w, std::exp((x1*std::sin(x2) + x1 * x2)*(x1*std::sin(x2))));
     EXPECT_EQ(w4.w, x1*std::sin(x2) + x1 * x2);
     EXPECT_EQ(w3.w, x1*std::sin(x2));
 
-    //EvaluateAdj(expr);
+    //evaluate_adj(expr);
     EXPECT_EQ(w5.df, 1);
     EXPECT_EQ(w4.df, w3.w * w5.w);
     EXPECT_EQ(w3.df, (w3.w + w4.w) * w5.w);
