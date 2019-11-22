@@ -1,4 +1,4 @@
-#include <fastad/autodiff.hpp>
+#include <fastad>
 #include <armadillo>
 
 // Forward AD

@@ -1,8 +1,8 @@
 #define _USE_MATH_DEFINES
 
-#include <fastad/adeval.hpp>
-#include <fastad/admath.hpp>
-#include <fastad/adhessian.hpp>
+#include <fastad_bits/adeval.hpp>
+#include <fastad_bits/admath.hpp>
+#include <fastad_bits/adhessian.hpp>
 #include "gtest/gtest.h"
 #include <armadillo>
 
