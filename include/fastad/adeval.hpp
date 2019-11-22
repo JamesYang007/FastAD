@@ -1,120 +1,148 @@
 #pragma once
-#include <thread>
-#include <boost/asio/thread_pool.hpp>
-#include <boost/asio.hpp>
-#include "adnode.hpp"
+#include <thread>                       // hardware_concurrency
+#include <boost/asio/thread_pool.hpp>   // thread_pool
+#include <boost/asio.hpp>               // post
 
 namespace ad {
 
+// Minimum number of expressions in tuple to evaluate to use thread pool.
+// See autodiff(std::tuple) for more details.
 static constexpr size_t THR_THRESHOLD = 10;
 
-// Glue then evaluate
-// Forward propagation
+// Evaluates expression in the forward direction of reverse-mode AD.
+// @tparam ExprType expression type
+// @param expr  expression to forward evaluate
+// @return the expression value
 template <class ExprType>
-inline auto Evaluate(ExprType&& expr)
+inline auto evaluate(ExprType&& expr)
 {
     return expr.feval();
 }
 
-// Backward propagation
+// Evaluates expression in the backward direction of reverse-mode AD.
+// @tparam ExprType expression type
+// @param expr  expression to backward evaluate
 template <class ExprType>
-inline void EvaluateAdj(ExprType&& expr)
+inline void evaluate_adj(ExprType&& expr)
 {
     expr.beval(1);
 }
 
-// Both forward and backward
-// This is primarily for details_tuple namespace usage
-// std::thread argument needs any overloaded function to be specified
-// workaround: create a non-overloaded fn and autodiff will call this
-template <class ExprType>
-inline auto EvaluateBoth(ExprType&& expr)
-{
-    auto t = Evaluate(expr);
-    EvaluateAdj(expr);
-    return t;
-}
-
+// Evaluates expression both in the forward and backward direction of reverse-mode AD.
+// @tparam ExprType expression type
+// @param expr  expression to forward and backward evaluate
+// Returns the forward expression value
 template <class ExprType>
 inline auto autodiff(ExprType&& expr)
 {
-    return EvaluateBoth(expr);
+    auto t = evaluate(expr);
+    evaluate_adj(expr);
+    return t;
 }
 
 //====================================================================================================
 
-// autodiff on tuple of expressions
-namespace details_tuple {
+namespace eval {
+namespace details {
 
-// No multi-threading
-// Lvalue
-template <size_t I, class...ExprType>
-inline typename std::enable_if<I == sizeof...(ExprType), void>::type
-    autodiff_(std::tuple<ExprType...>& tup) {}
+///////////////////////////////////////////////////////
+// Sequential autodiff
+///////////////////////////////////////////////////////
 
-template <size_t I, class... ExprType>
-inline typename std::enable_if < I < sizeof...(ExprType), void>::type
-    autodiff_(std::tuple<ExprType...>& tup)
+// This function is the ending condition when number of expressions is equal to I.
+// @tparam I    index of first expression to auto-differentiate
+// @tparam ExprTypes expression types
+template <size_t I, class... ExprTypes>
+inline typename std::enable_if<I == sizeof...(ExprTypes)>::type
+autodiff(std::tuple<ExprTypes...>&) 
+{}
+
+// This function calls ad::autodiff from the Ith expression to the last expression in tup.
+// @tparam I    index of first expression to auto-differentiate
+// @tparam ExprTypes    expression types
+// @param tup   the tuple of expressions to auto-differentiate
+template <size_t I, class... ExprTypes>
+inline typename std::enable_if < I < sizeof...(ExprTypes)>::type
+autodiff(std::tuple<ExprTypes...>& tup)
 {
-    ad::autodiff(std::get<I>(tup)); autodiff_<I + 1>(tup);
+    ad::autodiff(std::get<I>(tup)); 
+    autodiff<I + 1>(tup);
 }
 
-// multi-threading using boost thread_pool
-template <class ExprType>
-inline void autodiff_(boost::asio::thread_pool& pool, ExprType& expr)
+///////////////////////////////////////////////////////
+// Multi-threaded autodiff
+///////////////////////////////////////////////////////
+
+// This function is the ending condition when there are no expressions to auto-differentiate.
+template <size_t I, class... ExprTypes>
+inline typename std::enable_if<(I == sizeof...(ExprTypes))>::type 
+autodiff(boost::asio::thread_pool&, std::tuple<ExprTypes...>&)
+{}
+
+// This function auto-differentiates from the Ith expression by posting as jobs to pool.
+// @tparam ExprTypes    rest of the expression types
+// @tparam I    index of first expression to auto-differentiate
+// @param   pool    thread pool in which to post auto-differentiating job
+// @param   tup tuple of expressions to auto-differentiate
+template <size_t I, class... ExprTypes>
+inline typename std::enable_if<(I < sizeof...(ExprTypes))>::type
+autodiff(boost::asio::thread_pool& pool, std::tuple<ExprTypes...>& tup)
 {
     boost::asio::post(pool, [&](){
-            ad::EvaluateBoth(expr);
+            ad::autodiff(std::get<I>(tup));
             });
+    autodiff<I+1>(pool, tup);
 }
 
-template <class ExprType1, class...ExprType>
-inline void autodiff_(boost::asio::thread_pool& pool, ExprType1& expr1, ExprType&... expr)
-{
-    boost::asio::post(pool, [&](){
-            ad::EvaluateBoth(expr1);
-            });
-    autodiff_(pool, expr...);
-}
+} // namespace details 
 
-template <class...ExprType, size_t...I>
-inline void autodiff_(std::tuple<ExprType...>& tup, std::index_sequence<I...>)
+///////////////////////////////////////////////////////
+// Sequential/Multi-threaded Chooser 
+///////////////////////////////////////////////////////
+
+// This function initializes a thread pool with the hardware max number of threads
+// and auto-differentiates every expression in tup.
+// It is a blocking call since it waits until pool finishes executing all jobs.
+// @tparam  ExprTypes   expression types
+// @param   tup tuple of expressions to auto-differentiate
+template <class... ExprTypes>
+inline void autodiff(std::tuple<ExprTypes...>& tup, std::true_type)
 {
     const int thread_num = std::thread::hardware_concurrency();
     boost::asio::thread_pool pool(thread_num);
-    autodiff_(pool, std::get<I>(tup)...);
+    details::autodiff<0>(pool, tup);
     pool.join();
 }
 
-// use multi-threading to compute autodiff on tuple of expressions
-template <class...ExprType>
-inline void autodiff_(std::tuple<ExprType...>& tup, std::true_type)
+// This function auto-differentiates every expression in tup.
+// @tparam  ExprTypes   expression types
+// @param   tup tuple of expressions to auto-differentiate
+template <class... ExprTypes>
+inline void autodiff(std::tuple<ExprTypes...>& tup, std::false_type)
 {
-    autodiff_(tup, std::make_index_sequence<sizeof...(ExprType)>());
+    details::autodiff<0>(tup);
 }
 
-// false_type
-template <class...ExprType>
-inline void autodiff_(std::tuple<ExprType...>& tup, std::false_type)
+} // namespace eval
+
+// Auto-differentiator for lvalue reference of tuple of expressions
+// @tparam  ExprTypes   expression types
+// @param   tup tuple of expressions to auto-differentiate
+template <class... ExprTypes>
+inline void autodiff(std::tuple<ExprTypes...>& tup)
 {
-    autodiff_<0>(tup);
+    eval::autodiff(tup
+        , std::integral_constant<bool, (sizeof...(ExprTypes) >= THR_THRESHOLD)>());
 }
 
-} // namespace details_tuple
-
-// USER-CALLABLE autodiff 
-template <class...ExprType>
-inline void autodiff(std::tuple<ExprType...>& tup)
+// Auto-differentiator for rvalue reference of tuple of expressions
+// @tparam  ExprTypes   expression types
+// @param   tup tuple of expressions to auto-differentiate
+template <class... ExprTypes>
+inline void autodiff(std::tuple<ExprTypes...>&& tup)
 {
-    details_tuple::autodiff_(tup
-        , std::integral_constant<bool, (sizeof...(ExprType) >= THR_THRESHOLD)>());
-}
-
-template <class...ExprType>
-inline void autodiff(std::tuple<ExprType...>&& tup)
-{
-    details_tuple::autodiff_(tup
-        , std::integral_constant<bool, (sizeof...(ExprType) >= THR_THRESHOLD)>());
+    eval::autodiff(tup
+        , std::integral_constant<bool, (sizeof...(ExprTypes) >= THR_THRESHOLD)>());
 }
 
 } // end namespace ad

@@ -66,8 +66,8 @@ TEST(adcompose, scalar_vector) {
 
     // check
     double x_tilde[2] = { 0 };
-    x_tilde[0] = Evaluate(F(x, x + 2));
-    x_tilde[1] = Evaluate(G(x, x + 2));
+    x_tilde[0] = evaluate(F(x, x + 2));
+    x_tilde[1] = evaluate(G(x, x + 2));
 
     arma::Mat<double> grad_F;
     arma::Mat<double> jacobi_FG;
@@ -97,8 +97,8 @@ TEST(adcompose, vector_vector) {
     auto G = make_function(G_lmda);
     auto H = make_function(H_lmda);
 
-    x_tilde[0] = Evaluate(G(x, x + 2));
-    x_tilde[1] = Evaluate(H(x, x + 2));
+    x_tilde[0] = evaluate(G(x, x + 2));
+    x_tilde[1] = evaluate(H(x, x + 2));
 
     arma::Mat<double> FG_jacobi;
     arma::Mat<double> GH_jacobi;
