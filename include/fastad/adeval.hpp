@@ -145,4 +145,4 @@ inline void autodiff(std::tuple<ExprTypes...>&& tup)
         , std::integral_constant<bool, (sizeof...(ExprTypes) >= THR_THRESHOLD)>());
 }
 
-} // end namespace ad
+} // namespace ad
