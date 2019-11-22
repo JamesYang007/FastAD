@@ -277,12 +277,12 @@ TEST(adnode, sumnode) {
     using namespace ad;
     auto init = { 0.203104, 1.4231, -1.231 };
     Vec<double> vec(init);
-    auto expr = sum(vec.vec.begin(), vec.vec.end(),
+    auto expr = sum(vec.begin(), vec.end(),
         [](Var<double> const& v) {return ad::cos(ad::sin(v)*v); });
     EXPECT_EQ(expr.w, 0);
     EXPECT_EQ(expr.df, 0);
-    EXPECT_EQ(expr.start, vec.vec.begin());
-    EXPECT_EQ(expr.end, vec.vec.end());
+    EXPECT_EQ(expr.start, vec.begin());
+    EXPECT_EQ(expr.end, vec.end());
 
     double actual_sum = 0;
     for (size_t i = 0; i < vec.size(); ++i)

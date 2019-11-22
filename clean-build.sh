@@ -24,13 +24,11 @@ cd build
 if [ ! -d "debug" ]; then
     mkdir debug
 fi
-cd debug && rm -rf * && cd ..
 
 # if release directory does not exist, create it
 if [ ! -d "release" ]; then
     mkdir release
 fi
-cd release && rm -rf * && cd ..
 
 # if debug mode
 if [ "$mode" = "debug" ]; then
@@ -43,7 +41,16 @@ else
     exit 1
 fi
 
-cmake ../../ "$@"   # append other cmake command-line arguments
+rm -rf *
+
+# if $run is set to "run" or no other arguments were passed
+if [ "$run" = "run" ] || [ "$run" = "" ]; then
+    cmake ../../ "$@"   # append other cmake command-line arguments
+else
+    cmake ../../ "$run $@"   # append $run (assumed to be first cmake command-line argument if not run)
+                             # and other cmake command-line arguments
+fi
+
 make -j12           # make with 12 threads
 
 if [ "$run" = "run" ]; then
