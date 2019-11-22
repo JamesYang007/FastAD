@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# directory where current shell script resides
+PROJECTDIR=$(dirname "$BASH_SOURCE")
+
+cd $PROJECTDIR
+
 mode=$1 # debug/release mode
 shift   # shift command-line arguments
 run=$1  # run ctest

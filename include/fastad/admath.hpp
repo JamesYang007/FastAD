@@ -1,18 +1,45 @@
 #pragma once
-#include "adnode.hpp"
-#include "adforward.hpp"    // USING_STD_AD requires all overloads of ad::fname
-                            // adforward defines these overloads
 #include <cmath>
 #include <utility>
+#include "adnode.hpp"
+#include "adforward.hpp"    // USING_STD_AD requires all overloads of ad::fname for various fname's
+                            // Ex. ad::sin, ad::cos, ad::tan.
+                            // adforward.hpp defines some of these overloads.
+                            // Rest of the overloads are in this header
 
-// Allow compiler to choose from namespace std or ad
+// Expose fname from namespace std and ad for look-up.
 #define USING_STD_AD(fname) \
 using std::fname;\
 using ad::fname;
 
-// Unary Struct
-// fmap:	evaluate the function
-// bmap:	evaluate the derivative
+// Defines a unary struct with name "name".
+// Unary struct contains two static functions: fmap and bmap.
+// fmap evaluates the function that the unary struct represents 
+// in the forward direction of reverse-mode AD.
+// fmap definition is given by "fmap_body".
+// bmap evaluates the directional derivative of function that struct represents
+// in the backward direction of reverse-mode AD.
+// bmap definition is given by "bmap_body".
+//
+// This struct is acts as a functor that will be passed as a type to Unary Nodes.
+// @tparam T    underlying data type (ex. double, float, ADForward)
+//
+// Example generation:
+//
+// UNARY_STRUCT(UnaryMinus, return -x;, return -1;)
+// =>
+// template <class T>
+// struct UnaryMinus
+// {
+// 	    static T fmap(T x)
+// 	    {
+// 	        return -x;
+// 	    }
+// 	    static T bmap(T x)
+// 	    {
+// 	        return -1;
+// 	    }
+// }; 
 #define UNARY_STRUCT(name, fmap_body, bmap_body) \
 template <class T> \
 struct name \
@@ -27,37 +54,105 @@ struct name \
 	} \
 }; 
 
-// Unary function
-// Declares function with name associated with struct_name
-#define ADNODE_UNARY_FUNC_DECL(name) \
+// Defines function with name associated with struct_name.
+// @tparam  Derived     the actual type of node in CRTP
+// @return  Unary Node that will evaluate forward and backward direction 
+//          defined by "struct_name"'s fmap and bmap acting on "node"
+//
+// Example generation:
+//
+// ADNODE_UNARY_FUNC(operator-, UnaryMinus)
+// =>
+// template <class Derived>
+// inline auto operator-(const ad::core::ADNodeExpr<Derived>& node)
+// {
+//     return ad::core::ADNode<
+//         typename Derived::value_type
+//         , typename ad::math::UnaryMinus<typename Derived::value_type>
+//         , Derived>(node.self());
+// } 
+#define ADNODE_UNARY_FUNC(name, struct_name) \
 template <class Derived> \
-inline auto name(core::ADNodeExpr<Derived> const& node) 
-
-// Defines function with name associated with struct_name
-#define ADNODE_UNARY_FUNC_DEF(name, struct_name) \
-ADNODE_UNARY_FUNC_DECL(name) \
-{return ad::core::ADNode< \
+inline auto name(const ad::core::ADNodeExpr<Derived>& node) \
+{ \
+    return ad::core::ADNode< \
         typename Derived::value_type \
         , typename ad::math::struct_name<typename Derived::value_type> \
-        , Derived>(node.self()) \
-        ;} 
+        , Derived>(node.self()); \
+} 
 
-// Binary Struct
-// fmap:	evaluate binary operation
-// blmap:	evaluate partial derivative w.r.t. lhs argument
-// brmap:	evaluate partial derivative w.r.t. rhs argument
+// Defines a binary struct with name "name".
+// Binary struct contains three static functions: fmap, blmap, brmap.
+// fmap evaluates the binary function on x and y in the forward direction.
+// The definition is provided by "fmap_body".
+// blmap evaluates the partial derivative w.r.t. x. 
+// The definition is provided by "blmap_body".
+// brmap evaluates the partial derivative w.r.t. y.
+// The definition is provided by "brmap_body".
+// @tparam T    underlying data type (ex. double, float, ADForward)
+//
+// BINARY_STRUCT(Add, return x + y;, return 1;, return 1;)
+// =>
+// template <class T>
+// struct Add
+// {
+// 	    static T fmap(T x, T y)
+// 	    {
+// 	        return x + y;
+// 	    }
+// 	    static T blmap(T x, T y)
+// 	    {
+// 	        return 1;
+// 	    }
+// 	    static T brmap(T x, T y)
+// 	    {
+// 	        return 1;
+// 	    }
+// }; 
 #define BINARY_STRUCT(name, fmap_body, blmap_body, brmap_body) \
 template <class T> \
 struct name \
 { \
 	static T fmap(T x, T y) \
-	{fmap_body} \
+	{ \
+        fmap_body \
+    } \
 	static T blmap(T x, T y) \
-	{blmap_body} \
+	{ \
+        blmap_body \
+    } \
 	static T brmap(T x, T y) \
-	{brmap_body} \
+	{ \
+        brmap_body \
+    } \
 }; 
 
+// Defines function with name associated with struct_name.
+// @tparam  Derived1    the actual type of node1 in CRTP
+// @tparam  Derived2    the actual type of node2 in CRTP
+// @tparam  value_type  the underlying data type.
+//                      By default, it is the common value_type of Derived1 and Derived2.
+// @return  Binary Node that will evaluate forward and backward direction
+//          defined by "struct_name"'s fmap, blmap, and brmap acting on node1 and node2
+//
+// ADNODE_BINARY_FUNC(operator+, Add)
+// =>
+// 
+// template <
+//     class Derived1
+//     , class Derived2
+//     , typename value_type = 
+//         typename std::common_type<
+//             typename Derived1::value_type, typename Derived2::value_type
+//             >::type
+//     >
+// inline auto operator+(
+//         const ADNodeExpr<Derived1>& node1
+//         , const ADNodeExpr<Derived2>& node2)
+// {
+//      return make_node<value_type, typename ad::math::Add<value_type>>(
+//             node1.self(), node2.self());
+// } 
 #define ADNODE_BINARY_FUNC(name, struct_name) \
 template < \
     class Derived1 \
@@ -68,31 +163,22 @@ template < \
             >::type \
     > \
 inline auto name( \
-        ADNodeExpr<Derived1> const& node1 \
-        , ADNodeExpr<Derived2> const& node2) \
-{return make_node<value_type, typename ad::math::struct_name<value_type>>( \
-            node1.self(), node2.self());} 
+        const ADNodeExpr<Derived1>& node1 \
+        , const ADNodeExpr<Derived2>& node2) \
+{ \
+    return make_node<value_type, typename ad::math::struct_name<value_type>>( \
+            node1.self(), node2.self()); \
+} 
 
 namespace ad {
-
-// Unary Operators
-
-ADNODE_UNARY_FUNC_DECL(sin);
-ADNODE_UNARY_FUNC_DECL(cos);
-ADNODE_UNARY_FUNC_DECL(tan);
-ADNODE_UNARY_FUNC_DECL(asin);
-ADNODE_UNARY_FUNC_DECL(acos);
-ADNODE_UNARY_FUNC_DECL(atan);
-ADNODE_UNARY_FUNC_DECL(exp);
-ADNODE_UNARY_FUNC_DECL(log);
-ADNODE_UNARY_FUNC_DECL(id);
-
 namespace math {
+
+// Unary struct definitions 
 
 // UnaryMinus struct
 UNARY_STRUCT(UnaryMinus, return -x;, return -1;)
 // Sin struct
-UNARY_STRUCT(Sin, USING_STD_AD(sin) return sin(x);, USING_STD_AD(cos)return cos(x);)
+UNARY_STRUCT(Sin, USING_STD_AD(sin) return sin(x);, USING_STD_AD(cos) return cos(x);)
 // Cos struct
 UNARY_STRUCT(Cos, return Sin<T>::bmap(x);, return -Sin<T>::fmap(x);)
 // Tan struct
@@ -110,8 +196,7 @@ UNARY_STRUCT(Log, USING_STD_AD(log) return log(x);, return T(1) / x;)
 // Identity struct
 UNARY_STRUCT(Id, return x; , return T(1);)
 
-//================================================================================
-// Binary Operators
+// Binary struct definitions
 
 // Add
 BINARY_STRUCT(Add, return x + y;, return 1;, return 1;)
@@ -125,35 +210,34 @@ BINARY_STRUCT(Div, return x / y;, return T(1) / y;, return T(-1)*x / (y*y);)
 } // namespace math
 
 //================================================================================
-// ADNodeExpr ONLY
-
-// Unary functions 
+// Unary function definitions
 
 // Unary minus
-ADNODE_UNARY_FUNC_DEF(operator-, UnaryMinus)
+ADNODE_UNARY_FUNC(operator-, UnaryMinus)
 // ad::sin(ADNode)
-ADNODE_UNARY_FUNC_DEF(sin, Sin)
+ADNODE_UNARY_FUNC(sin, Sin)
 // ad::cos(ADNode)
-ADNODE_UNARY_FUNC_DEF(cos, Cos)
+ADNODE_UNARY_FUNC(cos, Cos)
 // ad::tan(ADNode)
-ADNODE_UNARY_FUNC_DEF(tan, Tan)
+ADNODE_UNARY_FUNC(tan, Tan)
 // ad::asin(ADNode)
-ADNODE_UNARY_FUNC_DEF(asin, Arcsin)
+ADNODE_UNARY_FUNC(asin, Arcsin)
 // ad::acos(ADNode)
-ADNODE_UNARY_FUNC_DEF(acos, Arccos)
+ADNODE_UNARY_FUNC(acos, Arccos)
 // ad::atan(ADNode)
-ADNODE_UNARY_FUNC_DEF(atan, Arctan)
+ADNODE_UNARY_FUNC(atan, Arctan)
 // ad::exp(ADNode)
-ADNODE_UNARY_FUNC_DEF(exp, Exp)
+ADNODE_UNARY_FUNC(exp, Exp)
 // ad::log(ADNode)
-ADNODE_UNARY_FUNC_DEF(log, Log)
+ADNODE_UNARY_FUNC(log, Log)
 // ad::id(ADNode)
-ADNODE_UNARY_FUNC_DEF(id, Id)
+ADNODE_UNARY_FUNC(id, Id)
 
 //================================================================================
 
-// Binary operator functions 
 namespace core {
+
+// Binary operators 
 
 // ad::core::operator+(ADNode)
 ADNODE_BINARY_FUNC(operator+, Add)
