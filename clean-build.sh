@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # directory where current shell script resides
-PROJECTDIR=$(dirname "$0")
+PROJECTDIR=$(dirname "$BASH_SOURCE")
 
 cd $PROJECTDIR
 
