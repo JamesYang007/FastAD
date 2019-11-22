@@ -50,7 +50,7 @@ namespace details {
 ///////////////////////////////////////////////////////
 
 // This function is the ending condition when number of expressions is equal to I.
-// @tparam I    index of first expression to auto-differeniate
+// @tparam I    index of first expression to auto-differentiate
 // @tparam ExprTypes expression types
 template <size_t I, class... ExprTypes>
 inline typename std::enable_if<I == sizeof...(ExprTypes)>::type
@@ -58,7 +58,7 @@ autodiff(std::tuple<ExprTypes...>&)
 {}
 
 // This function calls ad::autodiff from the Ith expression to the last expression in tup.
-// @tparam I    index of first expression to auto-differeniate
+// @tparam I    index of first expression to auto-differentiate
 // @tparam ExprTypes    expression types
 // @param tup   the tuple of expressions to auto-differentiate
 template <size_t I, class... ExprTypes>
@@ -73,7 +73,7 @@ autodiff(std::tuple<ExprTypes...>& tup)
 // Multi-threaded autodiff
 ///////////////////////////////////////////////////////
 
-// This function is the ending condition when there are no expressions to auto-differeniate.
+// This function is the ending condition when there are no expressions to auto-differentiate.
 template <size_t I, class... ExprTypes>
 inline typename std::enable_if<(I == sizeof...(ExprTypes))>::type 
 autodiff(boost::asio::thread_pool&, std::tuple<ExprTypes...>&)
@@ -81,7 +81,7 @@ autodiff(boost::asio::thread_pool&, std::tuple<ExprTypes...>&)
 
 // This function auto-differentiates from the Ith expression by posting as jobs to pool.
 // @tparam ExprTypes    rest of the expression types
-// @tparam I    index of first expression to auto-differeniate
+// @tparam I    index of first expression to auto-differentiate
 // @param   pool    thread pool in which to post auto-differentiating job
 // @param   tup tuple of expressions to auto-differentiate
 template <size_t I, class... ExprTypes>
@@ -114,7 +114,7 @@ inline void autodiff(std::tuple<ExprTypes...>& tup, std::true_type)
     pool.join();
 }
 
-// This function auto-differeniates every expression in tup.
+// This function auto-differentiates every expression in tup.
 // @tparam  ExprTypes   expression types
 // @param   tup tuple of expressions to auto-differentiate
 template <class... ExprTypes>
