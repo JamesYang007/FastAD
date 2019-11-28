@@ -35,7 +35,7 @@ script:
   - cd build
   - mkdir debug
   - cd debug
-  - cmake -E evn CXXFLAGS="-ftest-coverage -fprofile-arcs" cmake ../../
+  - cmake -E env CXXFLAGS="-ftest-coverage -fprofile-arcs" cmake ../../
   - make -j4
   - ctest -j4
   
