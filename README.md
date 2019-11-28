@@ -1,76 +1,90 @@
-# FastAD [![Build Status](https://travis-ci.org/JamesYang007/FastAD.svg?branch=master)](https://travis-ci.org/JamesYang007/FastAD)
+# FastAD [![Build Status](https://travis-ci.org/JamesYang007/FastAD.svg?branch=master)](https://travis-ci.org/JamesYang007/FastAD) [![License](http://img.shields.io/:license-mit-blue.svg?style=flat-square)](http://badges.mit-license.org)
 
-## Description
+> FastAD is a light-weight, header-only C++ library of automatic differentiation providing both forward and reverse mode.
 
-FastAD is a C++ implementation of automatic differentiation providing both forward and reverse mode.
-Reverse mode is based on expression template design and template metaprogramming.
-Forward mode is computed without any expression templates.
-FastAD supports build in Visual Studio 2017 and Linux/MacOS.
+---
+
+## Table of contents
+* [Example](#example)
+* [Installation](#installation)
+* [Features](#features)
+* [Tests](#tests)
+* [Team](#team)
+* [FAQ](#faq)
+* [Support](#support)
+* [License](#license)
+
+---
+
+## Example
+
+---
 
 ## Installation
-
 Change directory to installation directory and run the following command:
 
+### Clone
+```shell
+$ git clone --recurse-submodules https://github.com/JamesYang007/FastAD.git 
 ```
-git clone --recurse-submodules https://github.com/JamesYang007/FastAD.git 
-```
 
-## Dependencies
+### Setup
+* Install a compiler with full support for C++17 standard.
+* Recommended to install [armadillo](http://arma.sourceforge.net/download.html) and its dependencies.
+* (Linux/MacOS) Install cmake >= 3.9
 
-- [Boost](https://www.boost.org/users/download/)
+---
 
-### Additional Dependencies 
+## Features
+* Forward-mode automatic differentiation
+* Reverse-mode automatic differentiation
+* Easy way to compute and store jacobian
+* Easy way to compute and store hessian
+* Supports differentiation of polynomials and most elementary functions in standard library
 
-Although FastAD is generic, certain features assume an interface for a matrix library.
-We modeled after `armadillo` in terms of syntax.
-It is recommended that the user installs `armadillo` to compute Jacobian and Hessian.
+---
 
-- [armadillo](http://arma.sourceforge.net/download.html)
-- Implementation of LAPACK/BLAS 
-	- [Intel MKL](https://software.intel.com/en-us/mkl/choose-download) (Windows, Intel machine)
-
-Visual Studio 2017 users may use solutions located in `vs_autodiff` directory.
-If `LAPACK`/`BLAS` is required, open `Property page` and go to `Configuration Properties/Intel Performance Libraries`.
-Set `Use Intel MKL` to the desired choice (sequential is recommended if parallel is not possible).
-
-## Build and Run
-
-### Windows
-
-For the respective project, open `Properties/ C/C++ /Additional Include Directories`.
-Change all directories corresponding to `Boost`, `armadillo`, `googletest` to the absolute directories on local machine.
+## Tests
 
 ### Linux/MacOS
-
-It is recommended to perform a clean build and specify the mode (`debug` or `release`).
-Simply run the following to build only:
-
+> to build
 ```
-./clean-build.sh <mode>
-```
-
-To execute the tests run the following:
-
-```
-./clean-build.sh <mode> run
+mkdir build && cd build
+cmake ../
+make
 ```
 
-Alternatively,
-
+> to run tests
 ```
-./clean-build.sh <mode>
-cd build/<mode>
-ctest -j12
+ctest
 ```
 
-## Tutorial
+---
 
-See `example` directory.
+## Team
 
-## Further Implementation
+| **JamesYang007** |
+| :---: |
+| [![JamesYang007](https://avatars3.githubusercontent.com/u/5008832?s=100&v=4)](https://github.com/JamesYang007) |
+| <a href="http://github.com/JamesYang007" target="_blank">`github.com/JamesYang007`</a> |
 
-- Delta Function
+---
 
-## Author
+## FAQ
 
-- James Yang
+* **How do I build my project with FastAD as a dependency**?
+
+---
+
+## Support
+Feel free to contact me via:
+* Email: jamesyang916 at gmail.com
+
+---
+
+## License
+
+[![License](http://img.shields.io/:license-mit-blue.svg?style=flat-square)](http://badges.mit-license.org)
+
+- **[MIT license](http://opensource.org/licenses/mit-license.php)**
+- Copyright 2015 ©JamesYang007.
