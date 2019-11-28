@@ -1,6 +1,6 @@
 # FastAD [![Build Status](https://travis-ci.org/JamesYang007/FastAD.svg?branch=master)](https://travis-ci.org/JamesYang007/FastAD) [![License](http://img.shields.io/:license-mit-blue.svg?style=flat-square)](http://badges.mit-license.org)
 
-> FastAD is a light-weight, header-only C++ library of automatic differentiation providing both forward and reverse mode.
+FastAD is a light-weight, header-only C++ library of automatic differentiation providing both forward and reverse mode.
 
 ---
 
