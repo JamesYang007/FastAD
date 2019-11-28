@@ -34,3 +34,4 @@ script:
   - cd debug
   - cmake ../../
   - make -j4
+  - ctest -j4
