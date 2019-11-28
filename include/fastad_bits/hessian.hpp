@@ -7,7 +7,6 @@
 #include "forward.hpp"
 #include "utility.hpp"
 
-// Hessian
 namespace ad {
 namespace core {
 
@@ -21,16 +20,6 @@ Iter compute_hess(Iter it, const Vec<ForwardVar<T>>& x)
         });
     return it;
 }
-
-//template <class Iter, class T>
-//void compute_grad(Iter it, const Vec<ForwardVar<T>>& x)
-//{
-//    std::for_each(x.begin(), x.end(),
-//        [&it](const ForwardVar<T>& xi) mutable {
-//            *it = xi.get_adjoint().get_value();
-//            ++it;
-//        });
-//}
 
 template <size_t... opt_sizes, class HessIter, class T, class Exgen>
 inline void hessian_gen(HessIter hess_begin, Vec<ForwardVar<T>>& x, Exgen&& gen)
@@ -98,7 +87,6 @@ inline void hessian(HessIter hess_begin, Iter begin, Iter end, F&& f)
     using T = typename std::iterator_traits<Iter>::value_type;
     auto gen = make_exgen<ForwardVar<T>>(std::forward<F>(f));
     Vec<ForwardVar<T>> x(begin, end);
-    // Copy only hessian
     core::hessian_gen<opt_sizes...>(hess_begin, x, gen);
 }
 
@@ -124,7 +112,6 @@ inline void hessian(HessIter hess_begin, GradIter grad_begin, Iter begin, Iter e
     using T = typename std::iterator_traits<Iter>::value_type;
     auto gen = make_exgen<ForwardVar<T>>(std::forward<F>(f));
     Vec<ForwardVar<T>> x(begin, end);
-    // Copy hessian and gradient component
     core::hessian_gen<opt_sizes...>(hess_begin, grad_begin, x, gen);
 }
 
