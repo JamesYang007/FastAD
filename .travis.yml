@@ -1,22 +1,33 @@
+dist: trusty
+sudo: required
 os:
   - linux
 
 addons:
   apt:
+    sources:
+      - ubuntu-toolchain-r-test
     packages:
       - gcc-7
       - g++-7
+      - cmake
 
-language: cpp
+language: 
+  - cpp
 
 compiler:
   - gcc
 
 script:
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
-      export CC=gcc-7 ;
-      export CXX=g++-7 ;
-      source /opt/qt510/bin/qt510-env.sh ;
+      # Link gcc-7 and g++-7 to their standard commands
+      - ln -s /usr/bin/gcc-7 /usr/local/bin/gcc
+      - ln -s /usr/bin/g++-7 /usr/local/bin/g++
+      # Export CC and CXX to tell cmake which compiler to use
+      - export CC=/usr/bin/gcc-7
+      - export CXX=/usr/bin/g++-7
+      # Check versions of gcc, g++ and cmake
+      - gcc -v && g++ -v && cmake --version
     fi 
   - mkdir build
   - cd build
