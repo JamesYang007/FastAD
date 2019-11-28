@@ -40,4 +40,4 @@ script:
   - ctest -j4
   
 after_success:
-  - coveralls --exclude lib --exclude tests --gcov-options '\-lp'
+  - coveralls --exclude lib --gcov-options '\-lp'
