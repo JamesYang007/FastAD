@@ -96,14 +96,18 @@ endif()
 
 # Check if boost library exists
 find_path_generic(LIBBOOST_SYSTEM_MT_PATH "boost_system-mt" "library")
+find_path_generic(LIBBOOST_SYSTEM_PATH "boost_system" "library")
 find_path_generic(LIBBOOST_THREAD_MT_PATH "boost_thread-mt" "library")
+find_path_generic(LIBBOOST_THREAD_PATH "boost_thread" "library")
 
 # if boost include, and both mt libs exist
 # add compiler flag USE_BOOST_THREAD_MT
 # if boost include not exist, only use subset of boost in deps/ and no mt libs.
-if (BOOST_PATH AND LIBBOOST_SYSTEM_MT_PATH AND LIBBOOST_THREAD_MT_PATH)
-    add_definitions(-DUSE_BOOST_THREAD_MT)
-elseif (NOT BOOST_PATH)
+if (BOOST_PATH)
+    if (LIBBOOST_THREAD_MT_PATH OR LIBBOOST_THREAD_PATH)
+        add_definitions(-DUSE_BOOST_THREAD_MT)
+    endif()
+else()
     set(BOOST_PATH ${PROJECT_SOURCE_DIR}/deps/boost)
     include_directories(${BOOST_PATH})
 endif()
