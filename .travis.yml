@@ -22,11 +22,11 @@ compiler:
 
 script:
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
-      sudo ln -s /usr/bin/gcc-7 /usr/local/bin/gcc
-      sudo ln -s /usr/bin/g++-7 /usr/local/bin/g++
-      export CC=/usr/bin/gcc-7
-      export CXX=/usr/bin/g++-7
-      gcc -v && g++ -v && cmake --version
+      sudo ln -s /usr/bin/gcc-7 /usr/local/bin/gcc;
+      sudo ln -s /usr/bin/g++-7 /usr/local/bin/g++;
+      export CC=/usr/bin/gcc-7;
+      export CXX=/usr/bin/g++-7;
+      gcc -v && g++ -v && cmake --version;
     fi 
   - mkdir build
   - cd build
