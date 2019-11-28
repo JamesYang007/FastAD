@@ -20,7 +20,11 @@ language:
 compiler:
   - gcc
 
+before_install:
+  - pip install --user cpp-coveralls
+
 script:
+  - ./configure --enable-gcov && make && make check
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
       sudo ln -s /usr/bin/gcc-7 /usr/local/bin/gcc;
       sudo ln -s /usr/bin/g++-7 /usr/local/bin/g++;
@@ -35,3 +39,6 @@ script:
   - cmake ../../
   - make -j4
   - ctest -j4
+  
+after_success:
+  - coveralls --exclude lib --exclude tests --gcov-options '\-lp'
