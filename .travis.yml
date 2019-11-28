@@ -4,4 +4,9 @@ compiler:
   - gcc
  
 script:
-  - ./clean-build.sh debug
+  - mkdir build
+  - cd build
+  - mkdir debug
+  - cd debug
+  - cmake ../../
+  - make -j4
