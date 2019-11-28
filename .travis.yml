@@ -1,0 +1,7 @@
+language: cpp
+
+compiler:
+  - gcc
+ 
+build:
+  - ./clean-build.sh debug
