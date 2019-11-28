@@ -3,5 +3,5 @@ language: cpp
 compiler:
   - gcc
  
-build:
+script:
   - ./clean-build.sh debug
