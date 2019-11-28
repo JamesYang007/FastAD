@@ -3,11 +3,12 @@ make/*unittest*
 *.a
 *.VC.opendb
 *.VC.db
-*Debug/
-*Release/
+vs_autodiff/Debug/
+vs_autodiff/Release/
 *x64/
 *.vs/
 armadillo/
 boost_1_69_0/
 googletest-master/
 *build/
+*.DS_Store

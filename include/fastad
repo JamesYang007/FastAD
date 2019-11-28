@@ -1,11 +1,14 @@
 // Export header file
 
 #pragma once
-#include "fastad_bits/admath.hpp"
-#include "fastad_bits/adnode.hpp"
-#include "fastad_bits/advec.hpp"
-#include "fastad_bits/adeval.hpp"
-#include "fastad_bits/adforward.hpp"
-#include "fastad_bits/adfunction.hpp"
-#include "fastad_bits/adhessian.hpp"
-#include "fastad_bits/adjacobian.hpp"
+#include "fastad_bits/utility.hpp"
+#include "fastad_bits/dualnum.hpp"
+#include "fastad_bits/math.hpp"
+#include "fastad_bits/node.hpp"
+#include "fastad_bits/vec.hpp"
+#include "fastad_bits/eval.hpp"
+#include "fastad_bits/forward.hpp"
+#include "fastad_bits/exgen.hpp"
+#include "fastad_bits/prod.hpp"
+#include "fastad_bits/hessian.hpp"
+#include "fastad_bits/jacobian.hpp"
