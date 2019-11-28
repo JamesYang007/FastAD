@@ -1,4 +1,4 @@
-# FastAD
+# FastAD [![Build Status](https://travis-ci.org/JamesYang007/FastAD.svg?branch=master)](https://travis-ci.org/JamesYang007/FastAD)
 
 ## Description
 
