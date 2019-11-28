@@ -51,8 +51,8 @@ else
                              # and other cmake command-line arguments
 fi
 
-make -j12           # make with 12 threads
+make -j6           # make with 12 threads
 
 if [ "$run" = "run" ]; then
-    ctest -j12
+    ctest -j6
 fi

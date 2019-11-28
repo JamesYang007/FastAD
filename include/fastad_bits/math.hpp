@@ -3,9 +3,9 @@
 #include <utility>
 #include "node.hpp"
 #include "forward.hpp"    // USING_STD_AD requires all overloads of ad::fname for various fname's
-                            // Ex. ad::sin, ad::cos, ad::tan.
-                            // adforward.hpp defines some of these overloads.
-                            // Rest of the overloads are in this header
+                          // Ex. ad::sin, ad::cos, ad::tan.
+                          // adforward.hpp defines some of these overloads.
+                          // Rest of the overloads are in this header
 
 // Expose fname from namespace std and ad for look-up.
 #define USING_STD_AD(fname) \
