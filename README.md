@@ -180,7 +180,7 @@ $ ctest
 
 ### How do I build my project with FastAD as a dependency?
 - Add the compiler flag `-I<path-to-FastAD>/include`
-- In CMake, add `include_directories(<path-to-FastAD>/include)`
+- Or in CMake, add `include_directories(<path-to-FastAD>/include)`
 
 ---
 
@@ -195,4 +195,4 @@ Feel free to contact me via:
 [![License](http://img.shields.io/:license-mit-blue.svg?style=flat-square)](http://badges.mit-license.org)
 
 - **[MIT license](http://opensource.org/licenses/mit-license.php)**
-- Copyright 2015 ©JamesYang007.
+- Copyright 2019 ©JamesYang007.
