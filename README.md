@@ -154,15 +154,15 @@ $ git clone --recurse-submodules https://github.com/JamesYang007/FastAD.git
 
 ### Linux/MacOS
 > to build
-```
-mkdir build && cd build
-cmake ../
-make
+```shell
+$ mkdir build && cd build
+$ cmake ../
+$ make
 ```
 
 > to run tests
-```
-ctest
+```shell
+$ ctest
 ```
 
 ---
