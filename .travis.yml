@@ -33,5 +33,5 @@ script:
   - mkdir debug
   - cd debug
   - cmake ../../
-  - make -j4
-  - ctest -j4
+  - make -j12
+  - ctest -j12
