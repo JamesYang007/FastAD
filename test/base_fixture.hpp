@@ -11,7 +11,7 @@ struct MockUnary
         return 2 * x;
     }
 
-    static T bmap(T x) 
+    static T bmap(T) 
     {
         return 2; 
     }
@@ -26,12 +26,12 @@ struct MockBinary
         return x + y;
     }
 
-    static T blmap(T x, T y) 
+    static T blmap(T, T) 
     {
         return 1; 
     }
 
-    static T brmap(T x, T y)
+    static T brmap(T, T)
     {
         return 1;
     }

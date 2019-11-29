@@ -65,7 +65,7 @@ function (find_path_generic PATH_VAR NAME_VAR TYPE_VAR)
 endfunction(find_path_generic)
 
 # Flags passed to the C++ compiler.
-add_compile_options(-g -Wall -Werror -pthread -isystem ${GTEST_DIR}/include)
+add_compile_options(-g -Wall -Werror -Wextra -pthread -isystem ${GTEST_DIR}/include)
 
 # Builds gtest_main.a.
 # For simplicity and to avoid depending on Google Test's

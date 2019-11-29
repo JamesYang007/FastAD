@@ -430,7 +430,7 @@ struct ConstNode :
 
     // Backward evaluation does not do anything since
     // adjoint is always initialized to 0 and user cannot modify it.
-    void beval(ValueType x) 
+    void beval(ValueType) 
     {}
 
 private:

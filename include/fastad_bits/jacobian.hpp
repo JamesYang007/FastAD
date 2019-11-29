@@ -19,6 +19,9 @@ inline void jacobian_unpack(RowIter it, Vec<ValueType>& x
                      , std::tuple<ExprTypes...>& tup)
 {
     if constexpr (I == sizeof...(ExprTypes)) {
+        static_cast<void>(it);
+        static_cast<void>(x);
+        static_cast<void>(tup);
         return;
     }
     else {

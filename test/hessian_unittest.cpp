@@ -11,15 +11,15 @@
 
 namespace ad {
 
-auto F_lmda = [](const auto& x, const auto& w) {
+auto F_lmda = [](const auto& x, const auto&) {
     return ad::sin(x[0]) * ad::exp(x[0]) - x[0] + ad::tan(x[0]);
 };
 
-auto G_lmda = [](const auto& x, const auto& w) {
+auto G_lmda = [](const auto& x, const auto&) {
     return ad::sin(x[0]) * ad::cos(x[1]);
 };
 
-auto H_lmda = [](const auto& x, const auto& w) {
+auto H_lmda = [](const auto& x, const auto&) {
     return ad::sin(x[0]) + x[0] * x[0] + x[1] * x[1] + ad::cos(x[2] * x[3]);
 };
 
