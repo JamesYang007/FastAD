@@ -176,7 +176,7 @@ namespace math {
 // Unary struct definitions 
 
 // UnaryMinus struct
-UNARY_STRUCT(UnaryMinus, return -x;, return -1;)
+UNARY_STRUCT(UnaryMinus, return -x;, static_cast<void>(x); return -1;)
 // Sin struct
 UNARY_STRUCT(Sin, USING_STD_AD(sin) return sin(x);, USING_STD_AD(cos) return cos(x);)
 // Cos struct
@@ -194,18 +194,26 @@ UNARY_STRUCT(Exp, USING_STD_AD(exp) return exp(x); , return fmap(x);)
 // Log struct
 UNARY_STRUCT(Log, USING_STD_AD(log) return log(x);, return T(1) / x;)
 // Identity struct
-UNARY_STRUCT(Id, return x; , return T(1);)
+UNARY_STRUCT(Id, return x;, static_cast<void>(x); return T(1);)
 
 // Binary struct definitions
 
 // Add
-BINARY_STRUCT(Add, return x + y;, return 1;, return 1;)
+BINARY_STRUCT(Add, return x + y;, 
+        static_cast<void>(x); static_cast<void>(y); return 1;, 
+        static_cast<void>(x); static_cast<void>(y); return 1;)
 // Subtract
-BINARY_STRUCT(Sub, return x - y;, return 1;, return -1;)
+BINARY_STRUCT(Sub, return x - y;, 
+        static_cast<void>(x); static_cast<void>(y); return 1;, 
+        static_cast<void>(x); static_cast<void>(y); return -1;)
 // Multiply
-BINARY_STRUCT(Mul, return x * y;, return y;, return x;)
+BINARY_STRUCT(Mul, return x * y;, 
+        static_cast<void>(x); return y;, 
+        static_cast<void>(y); return x;)
 // Divide
-BINARY_STRUCT(Div, return x / y;, return T(1) / y;, return T(-1)*x / (y*y);)
+BINARY_STRUCT(Div, return x / y;, 
+        static_cast<void>(x); return T(1) / y;, 
+        return T(-1)*x / (y*y);)
 
 } // namespace math
 
