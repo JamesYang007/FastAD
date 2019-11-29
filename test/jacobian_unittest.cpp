@@ -45,7 +45,7 @@ TEST_F(jacobian_fixture, jacobian_unpack_twice)
 TEST_F(jacobian_fixture, jacobian_one_lmda_exgen)
 {
     double values[2] = {1., 2.};
-    jacobian(values, values + 2, adj_ptr, make_exgen<double>(core::f_lmda_no_opt));
+    jacobian(adj_ptr, values, values + 2, make_exgen<double>(core::f_lmda_no_opt));
     EXPECT_DOUBLE_EQ(adj[0], 1.);
     EXPECT_DOUBLE_EQ(adj[1], 0.);
 }
@@ -53,8 +53,8 @@ TEST_F(jacobian_fixture, jacobian_one_lmda_exgen)
 TEST_F(jacobian_fixture, jacobian_two_lmda_exgen)
 {
     double values[2] = {1., 2.};
-    jacobian(values, values + 2, 
-            adj_ptr, make_exgen<double>(core::f_lmda_no_opt, core::f_lmda_no_opt));
+    jacobian(adj_ptr, values, values + 2, 
+            make_exgen<double>(core::f_lmda_no_opt, core::f_lmda_no_opt));
     EXPECT_DOUBLE_EQ(adj[0], 1.);
     EXPECT_DOUBLE_EQ(adj[1], 0.);
     EXPECT_DOUBLE_EQ(adj[2], 1.);
@@ -64,7 +64,7 @@ TEST_F(jacobian_fixture, jacobian_two_lmda_exgen)
 TEST_F(jacobian_fixture, jacobian_one_lmda)
 {
     double values[2] = {1., 2.};
-    jacobian(values, values + 2, adj_ptr, core::f_lmda_no_opt);
+    jacobian(adj_ptr, values, values + 2, core::f_lmda_no_opt);
     EXPECT_DOUBLE_EQ(adj[0], 1.);
     EXPECT_DOUBLE_EQ(adj[1], 0.);
 }
@@ -72,7 +72,7 @@ TEST_F(jacobian_fixture, jacobian_one_lmda)
 TEST_F(jacobian_fixture, jacobian_two_lmda)
 {
     double values[2] = {1., 2.};
-    jacobian(values, values + 2, adj_ptr, core::f_lmda_no_opt, core::f_lmda_no_opt);
+    jacobian(adj_ptr, values, values + 2, core::f_lmda_no_opt, core::f_lmda_no_opt);
     EXPECT_DOUBLE_EQ(adj[0], 1.);
     EXPECT_DOUBLE_EQ(adj[1], 0.);
     EXPECT_DOUBLE_EQ(adj[2], 1.);

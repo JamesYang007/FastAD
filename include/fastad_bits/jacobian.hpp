@@ -42,9 +42,9 @@ inline void jacobian_unpack(RowIter it, Vec<ValueType>& x
 // @param   end     end iterator of underlying data for x-values
 // @param   it      matrix iterator that iterates by rows (in increasing column).
 // @param   f       lambda function to get jacobian of
-template <size_t... opt_sizes, class Iter, class RowIter, class ExgenType
+template <size_t... opt_sizes, class RowIter, class Iter, class ExgenType
         , class = std::enable_if_t<core::is_exgen<std::decay_t<ExgenType>>> >
-inline void jacobian(Iter begin, Iter end, RowIter it, ExgenType&& exgen)
+inline void jacobian(RowIter it, Iter begin, Iter end, ExgenType&& exgen)
 {
     using value_t = typename std::iterator_traits<Iter>::value_type;
     // initialize x with given values
@@ -62,13 +62,16 @@ inline void jacobian(Iter begin, Iter end, RowIter it, ExgenType&& exgen)
 // @param   end     end iterator of underlying data for x-values
 // @param   it      matrix iterator that iterates by rows (in increasing column).
 // @param   f       lambda function to get jacobian of
-template <size_t... opt_sizes, class Iter, class RowIter, class... Fs
-        , class = std::enable_if_t<(!core::is_exgen<std::decay_t<Fs>> ||...)>>
-inline void jacobian(Iter begin, Iter end, RowIter it, Fs&&... fs)
+template <size_t... opt_sizes, class RowIter, class Iter, class... Fs
+        , class = std::enable_if_t<
+            (!core::is_exgen<std::decay_t<Fs>> ||...) &&
+            (utils::is_pointer_like_dereferenceable<std::decay_t<RowIter>>::value)
+        >>
+inline void jacobian(RowIter it, Iter begin, Iter end, Fs&&... fs)
 {
     using value_t = typename std::iterator_traits<Iter>::value_type;
     auto&& exgen = make_exgen<value_t>(std::forward<Fs>(fs)...);
-    jacobian<opt_sizes...>(begin, end, it, std::move(exgen));
+    jacobian<opt_sizes...>(it, begin, end, std::move(exgen));
 }
 
 #ifdef USE_ARMA
@@ -81,7 +84,7 @@ template <size_t... opt_sizes, class Matrix, class Iter, class... Fs
 inline void jacobian(Matrix& mat, Iter begin, Iter end, Fs&&... fs)
 {
     mat.zeros(std::distance(begin, end), sizeof...(Fs));
-    jacobian<opt_sizes...>(begin, end, mat.begin(), std::forward<Fs>(fs)...);
+    jacobian<opt_sizes...>(mat.begin(), begin, end, std::forward<Fs>(fs)...);
     mat = mat.t();
 }
 
