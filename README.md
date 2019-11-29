@@ -179,6 +179,8 @@ ctest
 ## FAQ
 
 * **How do I build my project with FastAD as a dependency**?
+          * Simply add the compiler flag `-I<path-to-FastAD>/include` when compiling
+          * For CMake, simply add `include_directories(<path-to-FastAD>/include)` before creating executable.
 
 ---
 
