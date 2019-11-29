@@ -34,6 +34,14 @@ inline void jacobian_unpack(RowIter it, Vec<ValueType>& x
 
 } // namespace details
 
+// This function computes the jacobian of f (scalar or vector-valued function)
+// given by expression generator exgen and stores the partial derivatives using iterator it.
+// If f is vector-valued, it is assumed that "it" iterates by rows.
+// Users can pass in optimization placeholder sizes as described in exgen. 
+// @param   begin   begin iterator of underlying data for x-values
+// @param   end     end iterator of underlying data for x-values
+// @param   it      matrix iterator that iterates by rows (in increasing column).
+// @param   f       lambda function to get jacobian of
 template <size_t... opt_sizes, class Iter, class RowIter, class ExgenType
         , class = std::enable_if_t<core::is_exgen<std::decay_t<ExgenType>>> >
 inline void jacobian(Iter begin, Iter end, RowIter it, ExgenType&& exgen)
@@ -52,8 +60,8 @@ inline void jacobian(Iter begin, Iter end, RowIter it, ExgenType&& exgen)
 // Users can pass in optimization placeholder sizes as described in exgen. 
 // @param   begin   begin iterator of underlying data for x-values
 // @param   end     end iterator of underlying data for x-values
-// @param   it  matrix iterator that iterates by rows (in increasing column).
-// @param   f   lambda function to get jacobian of
+// @param   it      matrix iterator that iterates by rows (in increasing column).
+// @param   f       lambda function to get jacobian of
 template <size_t... opt_sizes, class Iter, class RowIter, class... Fs
         , class = std::enable_if_t<(!core::is_exgen<std::decay_t<Fs>> ||...)>>
 inline void jacobian(Iter begin, Iter end, RowIter it, Fs&&... fs)

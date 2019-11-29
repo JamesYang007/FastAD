@@ -59,7 +59,7 @@ function (find_path_generic PATH_VAR NAME_VAR TYPE_VAR)
                 include_directories(${${PATH_VAR}})
             endif()
         else()
-            message(WARNING "Check for ${TYPE_VAR} path to ${NAME_VAR}: NOT FOUND")
+            message(STATUS "Check for ${TYPE_VAR} path to ${NAME_VAR}: NOT FOUND")
         endif()
     endif()
 endfunction(find_path_generic)
@@ -87,7 +87,7 @@ find_path_generic(BOOST_PATH "boost" "include")
 # Check if armadillo library exists
 find_path_generic(LIBARMA_PATH "armadillo" "library")
 
-# If arma include path exists, can use arma
+# If arma include path and library exists, can use arma
 if (ARMA_PATH AND LIBARMA_PATH)
     add_definitions(-DUSE_ARMA)
 endif()
