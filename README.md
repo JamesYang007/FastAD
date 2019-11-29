@@ -10,7 +10,8 @@ FastAD is a light-weight, header-only C++ library of automatic differentiation p
 * [Features](#features)
 * [Tests](#tests)
 * [Team](#team)
-* [FAQ](#faq)
+- [FAQ](#faq)
+  - [How do I build my project with FastAD as a dependency?](#how-do-i-build-my-project-with-fastad-as-a-dependency)
 * [Support](#support)
 * [License](#license)
 
@@ -19,7 +20,6 @@ FastAD is a light-weight, header-only C++ library of automatic differentiation p
 ## Example
 
 ### Include
-> include header
 ```cpp
 #include <fastad>
 ```
@@ -129,9 +129,9 @@ hess.print("Hessian of f(x, y)");
 ---
 
 ## Installation
-Change directory to installation directory and run the following command:
 
 ### Clone
+Change directory to installation directory and run the following command:
 ```shell
 $ git clone --recurse-submodules https://github.com/JamesYang007/FastAD.git 
 ```
@@ -178,9 +178,9 @@ $ ctest
 
 ## FAQ
 
-* **How do I build my project with FastAD as a dependency**?
-  * Simply add the compiler flag `-I<path-to-FastAD>/include` when compiling
-  * For CMake, simply add `include_directories(<path-to-FastAD>/include)` before creating executable.
+### How do I build my project with FastAD as a dependency?
+- Add the compiler flag `-I<path-to-FastAD>/include`
+- In CMake, add `include_directories(<path-to-FastAD>/include)`
 
 ---
 
