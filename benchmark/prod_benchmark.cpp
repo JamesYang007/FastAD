@@ -5,7 +5,6 @@
 #include <fastad_bits/math.hpp>
 #include <fastad_bits/vec.hpp>
 #include <fastad_bits/eval.hpp>
-#include <boost/iterator/counting_iterator.hpp>
 #include "gtest/gtest.h"
 
 namespace ad {
@@ -24,10 +23,10 @@ TEST(benchmark, prod) {
     }
 
     Var<long double> w4, w5;
-    auto&& expr = ad::prod(
-        boost::counting_iterator<size_t>(0)
-        , boost::counting_iterator<size_t>(vec.size())
-        , [&vec](size_t i) {return vec[i] * vec[i]; });
+    auto expr = ad::prod(vec.begin(), vec.end()
+        , [](const Vec<long double>::value_type& x) {
+            return x * x;
+        });
 
     time = std::clock();
     autodiff((w4 = expr, w5 = w4 * w4 + vec[0]));

@@ -4,7 +4,6 @@
 #include <fastad_bits/math.hpp>
 #include <fastad_bits/node.hpp>
 #include <fastad_bits/eval.hpp>
-#include <boost/iterator/counting_iterator.hpp>
 #include "gtest/gtest.h"
 
 namespace ad {
@@ -22,11 +21,11 @@ TEST(benchmark, sumnode) {
 
     Var<double> w4, w5;
 
-    auto&& expr = ad::for_each(
-            boost::counting_iterator<size_t>(1)
-            , boost::counting_iterator<size_t>(vec.size())
-            , [&](size_t i) {
-                return sumvec[i] = sumvec[i-1] + vec[i];
+    auto sumvec_prev = sumvec.begin();
+    auto vec_it = vec.begin();
+    auto expr = ad::for_each(std::next(sumvec.begin()), sumvec.end()
+            , [&](const typename Vec<double>::value_type& curr) {
+                return curr = *(sumvec_prev++) + *(++vec_it);
             });
 
     std::clock_t time;

@@ -81,9 +81,6 @@ target_include_directories(gtest_main PRIVATE ${GTEST_DIR})
 # Check if armadillo include path exists
 find_path_generic(ARMA_PATH "armadillo" "include")
 
-# Check if boost include path exists
-find_path_generic(BOOST_PATH "boost" "include")
-
 # Check if armadillo library exists
 find_path_generic(LIBARMA_PATH "armadillo" "library")
 
@@ -93,20 +90,6 @@ if (ARMA_PATH AND LIBARMA_PATH)
 endif()
 
 # TODO: if no ARMA_PATH or no LIBARMA_PATH, implement and use my 2D array; set compiler def
-
-# Check if boost library exists
-find_path_generic(LIBBOOST_SYSTEM_MT_PATH "boost_system-mt" "library")
-find_path_generic(LIBBOOST_THREAD_MT_PATH "boost_thread-mt" "library")
-
-# if boost include, and both mt libs exist
-# add compiler flag USE_BOOST_THREAD_MT
-# if boost include not exist, only use subset of boost in deps/ and no mt libs.
-if (BOOST_PATH AND LIBBOOST_SYSTEM_MT_PATH AND LIBBOOST_THREAD_MT_PATH)
-    add_definitions(-DUSE_BOOST_THREAD_MT)
-elseif (NOT BOOST_PATH)
-    set(BOOST_PATH ${PROJECT_SOURCE_DIR}/deps/boost)
-    include_directories(${BOOST_PATH})
-endif()
 
 # add test subdirectory
 add_subdirectory(${PROJECT_SOURCE_DIR}/test ${PROJECT_BINARY_DIR}/test)
