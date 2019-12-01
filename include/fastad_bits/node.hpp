@@ -1,7 +1,7 @@
 #pragma once
 #include <vector>
 #include <algorithm>
-#include <boost/iterator/counting_iterator.hpp>
+#include <stdexcept>
 #include "dualnum.hpp"
 
 namespace ad {
