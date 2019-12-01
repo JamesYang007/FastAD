@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include <algorithm>
+#include <stdexcept>
 #include "dualnum.hpp"
 
 namespace ad {
