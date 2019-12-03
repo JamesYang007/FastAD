@@ -1,11 +1,6 @@
 #include <fastad>
 #include <iostream>
 
-#ifdef USE_ARMA
-
-#include <armadillo>
-
-#endif
 
 // Forward AD
 void forward()
@@ -91,8 +86,6 @@ void reverse_function()
             << "df/dy = " << x[1].get_adjoint() << std::endl;
 }
 
-#ifdef USE_ARMA
-
 void reverse_jacobian()
 {
 	using namespace ad;
@@ -102,12 +95,11 @@ void reverse_jacobian()
                 w[2] = ad::exp(w[1] * w[0]));
 	};
 	double x_val[] = { -0.201, 1.2241 };		// substitute for any data structure that is iterable
-	arma::Mat<double> jacobi;					// substitute for a 2D-array data structure
-												// satisfying certain properties
+	Mat<double> jacobi;					// substitute for a 2D-array data structure
 												// (more information in documentation)
 	jacobian(jacobi, x_val, x_val + 2, F_lmda);
 	std::cout << "f(x, y) = exp((x * sin(y) + x * y) * x * sin(y))" << std::endl;
-	jacobi.print("Jacobian of f(x, y)");		// armadillo feature
+	jacobi.print("Jacobian of f(x, y)");
 }
 
 void reverse_vector()
@@ -124,7 +116,7 @@ void reverse_vector()
     };
 
 	double x_val[] = { -0.201, 1.2241 };
-	arma::Mat<double> jacobi;
+	Mat<double> jacobi;
 
 	jacobian(jacobi, x_val, x_val + 2, F_lmda, G_lmda); 
 	std::cout << "f(x, y) = exp((x * sin(y) + x * y) * x * sin(y))\n"
@@ -142,8 +134,8 @@ void hessian()
                 w[2] = ad::exp(w[1] * w[0]));
 	};
 	double x_val[] = { -0.201, 1.2241 };
-	arma::Mat<double> hess;
-	arma::Mat<double> jacobi;
+	Mat<double> hess;
+	Mat<double> jacobi;
 
 	// Computes Hessian and stores into "hess"
 	hessian(hess, x_val, x_val + 2, F_lmda);
@@ -155,8 +147,6 @@ void hessian()
 	jacobi.print("Jacobian of f(x, y)");
 }
 
-#endif
-
 int main()
 {
 	forward();
@@ -164,12 +154,9 @@ int main()
 	reverse_vec();
 	reverse_function();
 
-#ifdef USE_ARMA
-
 	reverse_jacobian();
 	reverse_vector();
 	hessian();
 
-#endif
 	return 0;
 }
