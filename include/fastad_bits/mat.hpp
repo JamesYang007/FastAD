@@ -19,21 +19,20 @@ public:
 	Mat(const std::vector< std::vector<T> >& dat) : data(dat) {}
 	Mat(size_t size, T fill) : data(size, std::vector<T>(size, fill)) {}
 	Mat(size_t rows, size_t cols, T fill) : data(rows, std::vector<T>(cols, fill)) {}
-	~Mat() {}
 
-	friend std::ostream& operator<< <T>(std::ostream& os, const Mat<T>& mat);
+	friend std::ostream& operator<< <T>(std::ostream& os, const Mat& mat);
 	std::vector<T>& operator[](int i) { return data[i];  }
-	const std::vector<T>& operator[](int i) const { return ((Mat<T>&)*this)[i]; }
+	const std::vector<T>& operator[](int i) const { return ((Mat&)*this)[i]; }
 
-	const inline std::vector< std::vector<T> >& vecs() const { return data; }
-	inline size_t rows() const { return data.size(); }
-	inline size_t cols() const { return data.begin() != data.end() ? data.begin()->size() : 0; }	
+	const std::vector< std::vector<T> >& vecs() const { return data; }
+	size_t rows() const { return data.size(); }
+	size_t cols() const { return data.begin() != data.end() ? data.begin()->size() : 0; }	
 
-	inline void print(std::ostream& os, std::string header) { os << header << std::endl << *this; }
-	inline void print(std::string header) { print(std::cout, header);  }
+	void print(std::ostream& os, std::string header) { os << header << std::endl << *this; }
+	void print(std::string header) { print(std::cout, header);  }
 
-	inline void fill(size_t rows, size_t cols, T fill) { *this = Mat<T>(rows, cols, fill); }
-	inline void zeros(size_t rows, size_t cols) { fill(rows, cols, 0); }	
+	void fill(size_t rows, size_t cols, T fill) { *this = Mat(rows, cols, fill); }
+	void zeros(size_t rows, size_t cols) { fill(rows, cols, 0); }	
 
 	Mat t();	
 
@@ -60,8 +59,8 @@ public:
 
 	iterator begin() { return iterator(data.begin()->begin(), data.begin(), data.end()); }
 	iterator end() { return iterator((data.end() - 1)->end(), data.end(), data.end()); }
-	const iterator begin() const { return ((Mat<T>&)*this).begin(); }
-	const iterator end() const { return ((Mat<T>&)*this).end(); }
+	const iterator begin() const { return ((Mat&)*this).begin(); }
+	const iterator end() const { return ((Mat&)*this).end(); }
 
 private:
 
