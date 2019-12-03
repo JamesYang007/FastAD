@@ -1,29 +1,29 @@
 #pragma once
-#include <ostream>
+#include <iostream>
 #include <vector>
 
 namespace ad {
 
 template <typename T>
-class Matrix;
+class Mat;
 template <typename T>
-std::ostream& operator<<(std::ostream& os, const Matrix<T>& mat);
+std::ostream& operator<<(std::ostream& os, const Mat<T>& mat);
 
 template <typename T>
-class Matrix {
+class Mat {
 
 public:
 
-	Matrix() : data() {}
-	Matrix(const Matrix& mat) : data(mat.data) {}
-	Matrix(const std::vector< std::vector<T> >& dat) : data(dat) {}
-	Matrix(size_t size, T fill) : data(size, std::vector<T>(size, fill)) {}
-	Matrix(size_t rows, size_t cols, T fill) : data(rows, std::vector<T>(cols, fill)) {}
-	~Matrix() {}
+	Mat() : data() {}
+	Mat(const Mat& mat) : data(mat.data) {}
+	Mat(const std::vector< std::vector<T> >& dat) : data(dat) {}
+	Mat(size_t size, T fill) : data(size, std::vector<T>(size, fill)) {}
+	Mat(size_t rows, size_t cols, T fill) : data(rows, std::vector<T>(cols, fill)) {}
+	~Mat() {}
 
-	friend std::ostream& operator<< <T>(std::ostream& os, const Matrix<T>& mat);
+	friend std::ostream& operator<< <T>(std::ostream& os, const Mat<T>& mat);
 	std::vector<T>& operator[](int i) { return data[i];  }
-	const std::vector<T>& operator[](int i) const { return ((Matrix<T>&)*this)[i]; }
+	const std::vector<T>& operator[](int i) const { return ((Mat<T>&)*this)[i]; }
 
 	const inline std::vector< std::vector<T> >& vecs() const { return data; }
 	inline size_t rows() const { return data.size(); }
@@ -32,10 +32,10 @@ public:
 	inline void print(std::ostream& os, std::string header) { os << header << std::endl << *this; }
 	inline void print(std::string header) { print(std::cout, header);  }
 
-	inline void fill(size_t rows, size_t cols, T fill) { *this = Matrix<T>(rows, cols, fill); }
+	inline void fill(size_t rows, size_t cols, T fill) { *this = Mat<T>(rows, cols, fill); }
 	inline void zeros(size_t rows, size_t cols) { fill(rows, cols, 0); }	
 
-	Matrix t();	
+	Mat t();	
 
 	class iterator {
 
@@ -60,8 +60,8 @@ public:
 
 	iterator begin() { return iterator(data.begin()->begin(), data.begin(), data.end()); }
 	iterator end() { return iterator((data.end() - 1)->end(), data.end(), data.end()); }
-	const iterator begin() const { return ((Matrix<T>&)*this).begin(); }
-	const iterator end() const { return ((Matrix<T>&)*this).end(); }
+	const iterator begin() const { return ((Mat<T>&)*this).begin(); }
+	const iterator end() const { return ((Mat<T>&)*this).end(); }
 
 private:
 
@@ -70,7 +70,7 @@ private:
 };
 
 template <typename T>
-Matrix<T> Matrix<T>::t() {
+Mat<T> Mat<T>::t() {
 	std::vector< std::vector<T> > cols(this->cols(), std::vector<T>());
 
 	typename std::vector< std::vector<T> >::iterator col_it;
@@ -82,11 +82,11 @@ Matrix<T> Matrix<T>::t() {
 		}
 	}
 
-	return Matrix<T>(cols);
+	return Mat<T>(cols);
 }
 
 template <typename T>
-std::ostream& operator<<(std::ostream& os, const Matrix<T>& mat) {
+std::ostream& operator<<(std::ostream& os, const Mat<T>& mat) {
 	for (const std::vector<T>& row : mat.vecs()) {
 		for (const T& item : row) { os << item << '\t'; }
 		os << std::endl;
