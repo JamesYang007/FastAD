@@ -38,17 +38,11 @@ public:
 
 	public:
 
-		iterator(typename std::vector<T>::iterator it, typename std::vector< std::vector<T> >::iterator row_it, typename std::vector< std::vector<T> >::iterator row_it_end) {
-			iter = it;
-			row_iter = row_it;
-			row_end_iter = row_it_end;
-		}
+		iterator(typename std::vector<T>::iterator it, typename std::vector< std::vector<T> >::iterator row_it, typename std::vector< std::vector<T> >::iterator row_it_end)
+			: iter(it), row_iter(row_it), row_end_iter(row_it_end) {}
 		~iterator() {}
 		iterator& operator=(const iterator& it) { iter = it.iter; row_iter = it.row_iter; row_end_iter = it.row_end_iter; return *this; }
-		iterator& operator++() {
-			if (++iter == row_iter->end() && ++row_iter != row_end_iter) { iter = row_iter->begin(); }
-			return *this;
-		}
+		iterator& operator++() { if (++iter == row_iter->end() && ++row_iter != row_end_iter) { iter = row_iter->begin(); } return *this; }
 		T& operator*() const { return *iter; }
 		bool operator==(const iterator& it) const { return row_iter == it.row_iter && iter == it.iter; }
 		bool operator!=(const iterator& it) const { return !(*this == it); }
