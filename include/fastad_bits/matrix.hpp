@@ -38,23 +38,31 @@ public:
 
 	public:
 
-		iterator(typename std::vector<T>::iterator it, typename std::vector< std::vector<T> >::iterator row_it) { iter = it; row_iter = row_it; }
+		iterator(typename std::vector<T>::iterator it, typename std::vector< std::vector<T> >::iterator row_it, typename std::vector< std::vector<T> >::iterator row_it_end) {
+			iter = it;
+			row_iter = row_it;
+			row_end_iter = row_it_end;
+		}
 		~iterator() {}
-		iterator& operator=(const iterator& it) { iter = it.iter; row_iter = it.row_iter; return *this; }
-		iterator& operator++() { if (std::distance(++iter, row_iter->end()) <= 0) { iter = (++row_iter)->begin(); } return *this; }
+		iterator& operator=(const iterator& it) { iter = it.iter; row_iter = it.row_iter; row_end_iter = it.row_end_iter; return *this; }
+		iterator& operator++() {
+			if (++iter == row_iter->end() && ++row_iter != row_end_iter) { iter = row_iter->begin(); }
+			return *this;
+		}
 		T& operator*() const { return *iter; }
-		bool operator==(const iterator& it) const { return row_iter == it.row_iter; }
+		bool operator==(const iterator& it) const { return row_iter == it.row_iter && iter == it.iter; }
 		bool operator!=(const iterator& it) const { return !(*this == it); }
 
 	private:
 
 		typename std::vector<T>::iterator iter;				
 		typename std::vector< std::vector<T> >::iterator row_iter;
+		typename std::vector< std::vector<T> >::iterator row_end_iter;
 
 	};
 
-	iterator begin() { return iterator(data.begin()->begin(), data.begin()); }
-	iterator end() { return iterator((data.end() - 1)->end(), data.end()); }
+	iterator begin() { return iterator(data.begin()->begin(), data.begin(), data.end()); }
+	iterator end() { return iterator((data.end() - 1)->end(), data.end(), data.end()); }
 	const iterator begin() const { return ((Matrix<T>&)*this).begin(); }
 	const iterator end() const { return ((Matrix<T>&)*this).end(); }
 
