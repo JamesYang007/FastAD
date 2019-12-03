@@ -27,12 +27,15 @@ public:
 
 	const inline std::vector< std::vector<T> >& vecs() const { return data; }
 	inline size_t rows() const { return data.size(); }
-	inline size_t cols() const { return data.begin() != data.end() ? data.begin()->size() : 0; }
+	inline size_t cols() const { return data.begin() != data.end() ? data.begin()->size() : 0; }	
+
+	inline void print(std::ostream& os, std::string header) { os << header << std::endl << *this; }
+	inline void print(std::string header) { print(std::cout, header);  }
 
 	inline void fill(size_t rows, size_t cols, T fill) { *this = Matrix<T>(rows, cols, fill); }
 	inline void zeros(size_t rows, size_t cols) { fill(rows, cols, 0); }	
 
-	Matrix t();
+	Matrix t();	
 
 	class iterator {
 
