@@ -10,5 +10,6 @@
 #include "fastad_bits/forward.hpp"
 #include "fastad_bits/exgen.hpp"
 #include "fastad_bits/prod.hpp"
+#include "fastad_bits/mat.hpp"
 #include "fastad_bits/hessian.hpp"
 #include "fastad_bits/jacobian.hpp"
