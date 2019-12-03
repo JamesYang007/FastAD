@@ -1,12 +1,6 @@
 #pragma once
 #include <iterator>
 
-#ifdef USE_ARMA
-
-#include <armadillo>
-
-#endif
-
 namespace utils {
 
 // type_traits extension
@@ -36,24 +30,5 @@ struct is_tuple<const std::tuple<Ts...>> : std::true_type
 template <class... Ts>
 struct is_tuple<const std::tuple<Ts...>&> : std::true_type
 {};
-
-#ifdef USE_ARMA
-
-namespace details {
-
-template <class T>
-struct is_arma_mat : std::false_type
-{};
-
-template <class T>
-struct is_arma_mat<::arma::Mat<T>> : std::true_type
-{};
-
-} // namespace details
-
-template <class T>
-inline constexpr bool is_arma_mat = details::is_arma_mat<T>::value;
-
-#endif 
 
 } // namespace utils

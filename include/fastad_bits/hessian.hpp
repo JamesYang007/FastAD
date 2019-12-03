@@ -115,27 +115,21 @@ inline void hessian(HessIter hess_begin, GradIter grad_begin, Iter begin, Iter e
     core::hessian_gen<opt_sizes...>(hess_begin, grad_begin, x, gen);
 }
 
-#ifdef USE_ARMA
-
-template <size_t... opt_sizes, class Matrix, class Iter, class F
-        , class = std::enable_if_t<utils::is_arma_mat<std::decay_t<Matrix>>> >
-inline void hessian(Matrix& hess_mat, Iter begin, Iter end, F&& f)
+template <size_t... opt_sizes, typename Matrix_T, class Iter, class F>
+inline void hessian(Mat<Matrix_T>& hess_mat, Iter begin, Iter end, F&& f)
 {
     const size_t n = static_cast<size_t>(std::distance(begin, end));
     hess_mat.zeros(n, n);
     hessian<opt_sizes...>(hess_mat.begin(), begin, end, std::forward<F>(f));
 }
 
-template <size_t... opt_sizes, class Matrix, class F, class Iter
-        , class = std::enable_if_t<utils::is_arma_mat<std::decay_t<Matrix>>> >
-inline void hessian(Matrix& hess_mat, Matrix& grad_mat, Iter begin, Iter end, F&& f)
+template <size_t... opt_sizes, typename Matrix_T, class F, class Iter>
+inline void hessian(Mat<Matrix_T>& hess_mat, Mat<Matrix_T>& grad_mat, Iter begin, Iter end, F&& f)
 {
     const size_t n = static_cast<size_t>(std::distance(begin, end));
     hess_mat.zeros(n, n);
     grad_mat.zeros(1, n);
     hessian<opt_sizes...>(hess_mat.begin(), grad_mat.begin(), begin, end, std::forward<F>(f));
 }
-
-#endif
 
 } // namespace ad
