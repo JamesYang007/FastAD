@@ -29,10 +29,6 @@ endif()
 
 message(STATUS "Compiling in ${CMAKE_BUILD_TYPE} mode")
 
-# Not needed at the moment
-# TODO: in the future, we want fastad to compile certain features based on this flag
-# option(USE_ARMA "Use armadillo as matrix library" OFF)
-
 # Function to check if PATH_VAR exists as an include path if
 # TYPE_VAR is 'include' otherwise as library path if TYPE_VAR is 'library.'
 # If user specified PATH_VAR, use it
@@ -78,18 +74,22 @@ target_include_directories(gtest_main PRIVATE ${GTEST_DIR})
 ##################################################
 # Find dependency headers and libraries
 
-# Check if armadillo include path exists
-find_path_generic(ARMA_PATH "armadillo" "include")
+# Check if boost include path exists
+find_path_generic(BOOST_PATH "boost" "include")
 
-# Check if armadillo library exists
-find_path_generic(LIBARMA_PATH "armadillo" "library")
+# Check if boost library exists
+find_path_generic(LIBBOOST_SYSTEM_MT_PATH "boost_system-mt" "library")
+find_path_generic(LIBBOOST_THREAD_MT_PATH "boost_thread-mt" "library")
 
-# If arma include path and library exists, can use arma
-if (ARMA_PATH AND LIBARMA_PATH)
-    add_definitions(-DUSE_ARMA)
+# if boost include, and both mt libs exist
+# add compiler flag USE_BOOST_THREAD_MT
+# if boost include not exist, only use subset of boost in deps/ and no mt libs.
+if (BOOST_PATH AND LIBBOOST_SYSTEM_MT_PATH AND LIBBOOST_THREAD_MT_PATH)
+    add_definitions(-DUSE_BOOST_THREAD_MT)
+elseif (NOT BOOST_PATH)
+    set(BOOST_PATH ${PROJECT_SOURCE_DIR}/deps/boost)
+    include_directories(${BOOST_PATH})
 endif()
-
-# TODO: if no ARMA_PATH or no LIBARMA_PATH, implement and use my 2D array; set compiler def
 
 # add test subdirectory
 add_subdirectory(${PROJECT_SOURCE_DIR}/test ${PROJECT_BINARY_DIR}/test)

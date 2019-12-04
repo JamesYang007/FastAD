@@ -5,12 +5,6 @@
 #include "vec.hpp"
 #include "utility.hpp"
 
-#ifdef USE_ARMA
-
-#include <armadillo>
-
-#endif
-
 namespace ad {
 namespace details {
 
@@ -77,20 +71,14 @@ inline void jacobian(RowIter it, Iter begin, Iter end, Fs&&... fs)
     jacobian<opt_sizes...>(it, begin, end, std::move(exgen));
 }
 
-#ifdef USE_ARMA
-
-template <size_t... opt_sizes, class Matrix, class Iter, class... Fs
+template <size_t... opt_sizes, class Matrix_T, class Iter, class... Fs
         , class = std::enable_if_t<
-            (!core::is_exgen<std::decay_t<Fs>> || ...) &&   // no Fs is an Exgen and
-            (utils::is_arma_mat<std::decay_t<Matrix>>)      // Matrix is an arma::Mat 
+            (!core::is_exgen<std::decay_t<Fs>> || ...)   // no Fs is an Exgen and
         >>
-inline void jacobian(Matrix& mat, Iter begin, Iter end, Fs&&... fs)
+inline void jacobian(Mat<Matrix_T>& mat, Iter begin, Iter end, Fs&&... fs)
 {
-    mat.zeros(std::distance(begin, end), sizeof...(Fs));
-    jacobian<opt_sizes...>(mat.begin(), begin, end, std::forward<Fs>(fs)...);
-    mat = mat.t();
+    mat.zeros(sizeof...(Fs), std::distance(begin, end));
+     jacobian<opt_sizes...>(mat.begin(), begin, end, std::forward<Fs>(fs)...);
 }
-
-#endif
 
 } // namespace ad 
