@@ -71,7 +71,7 @@ inline void jacobian(RowIter it, Iter begin, Iter end, Fs&&... fs)
     jacobian<opt_sizes...>(it, begin, end, std::move(exgen));
 }
 
-template <size_t... opt_sizes, typename Matrix_T, class Iter, class... Fs
+template <size_t... opt_sizes, class Matrix_T, class Iter, class... Fs
         , class = std::enable_if_t<
             (!core::is_exgen<std::decay_t<Fs>> || ...)   // no Fs is an Exgen and
         >>

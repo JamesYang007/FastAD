@@ -7,11 +7,11 @@ namespace utils {
 
 // Dummy function used to SFINAE on return value.
 // Checks if type T is pointer-like (dereferenceable)
-template <typename T>
+template <class T>
 auto is_pointer_like()
     -> decltype(*std::declval<T>(), std::true_type{});
 
-template <typename T>
+template <class T>
 using is_pointer_like_dereferenceable = decltype(is_pointer_like<T>());
 
 // Checks if type T is a tuple

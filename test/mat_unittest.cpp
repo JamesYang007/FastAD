@@ -11,11 +11,11 @@ protected:
     admat_fixture()
         : mat(4, 5, 0)
 	{
-	    mat(0, 1) = 1;
-	    mat(1, 2) = 3;
-	    mat(2, 3) = 5;
-	    mat(3, 4) = 7;
-    }
+		mat(0, 1) = 1;
+		mat(1, 2) = 3;
+		mat(2, 3) = 5;
+		mat(3, 4) = 7;
+	}
 };
 
 // copy constructor
@@ -27,7 +27,7 @@ TEST_F(admat_fixture, copy_constructor) {
 TEST_F(admat_fixture, iter_size_comp) {
 	size_t i = 0;
 	Mat<double>::iterator it = mat.begin();
-	while (it++ != mat.end()) { ++i; }
+	while (it++ != mat.end() && ++i);
 	EXPECT_EQ(i, mat.size());
 }
 
