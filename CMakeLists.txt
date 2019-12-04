@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.9)
 
-project("FastAD" VERSION 2.0)
+project("FastAD" VERSION 2.1)
 
 # enables testing
 enable_testing()
@@ -29,37 +29,6 @@ endif()
 
 message(STATUS "Compiling in ${CMAKE_BUILD_TYPE} mode")
 
-# Function to check if PATH_VAR exists as an include path if
-# TYPE_VAR is 'include' otherwise as library path if TYPE_VAR is 'library.'
-# If user specified PATH_VAR, use it
-# Otherwise, find path with NAME_VAR and use as PATH_VAR
-function (find_path_generic PATH_VAR NAME_VAR TYPE_VAR)
-    if (NOT ${TYPE_VAR} STREQUAL "include" AND NOT ${TYPE_VAR} STREQUAL "library")
-        message(FATAL_ERROR "TYPE_VAR must be \"include\" or \"library\"")
-    endif()
-
-    if (${PATH_VAR})
-        message(STATUS "Check for ${TYPE_VAR} path to ${NAME_VAR}: ${${PATH_VAR}}")
-        if (${TYPE_VAR} STREQUAL "include")
-            include_directories(${${PATH_VAR}})
-        endif()
-    else()
-        if (${TYPE_VAR} STREQUAL "include")
-            find_path(${PATH_VAR} NAMES ${NAME_VAR})
-        elseif (${TYPE_VAR} STREQUAL "library")
-            find_library(${PATH_VAR} NAMES ${NAME_VAR})
-        endif()
-        if (${PATH_VAR})
-            message(STATUS "Check for ${TYPE_VAR} path to ${NAME_VAR}: ${${PATH_VAR}}")
-            if (${TYPE_VAR} STREQUAL "include")
-                include_directories(${${PATH_VAR}})
-            endif()
-        else()
-            message(STATUS "Check for ${TYPE_VAR} path to ${NAME_VAR}: NOT FOUND")
-        endif()
-    endif()
-endfunction(find_path_generic)
-
 # Flags passed to the C++ compiler.
 add_compile_options(-g -Wall -Werror -Wextra -pthread -isystem ${GTEST_DIR}/include)
 
@@ -70,26 +39,6 @@ add_compile_options(-g -Wall -Werror -Wextra -pthread -isystem ${GTEST_DIR}/incl
 # compiles fast and for ordinary users its source rarely changes.
 add_library(gtest_main STATIC ${GTEST_DIR}/src/gtest-all.cc ${GTEST_DIR}/src/gtest_main.cc)
 target_include_directories(gtest_main PRIVATE ${GTEST_DIR})
-
-##################################################
-# Find dependency headers and libraries
-
-# Check if boost include path exists
-find_path_generic(BOOST_PATH "boost" "include")
-
-# Check if boost library exists
-find_path_generic(LIBBOOST_SYSTEM_MT_PATH "boost_system-mt" "library")
-find_path_generic(LIBBOOST_THREAD_MT_PATH "boost_thread-mt" "library")
-
-# if boost include, and both mt libs exist
-# add compiler flag USE_BOOST_THREAD_MT
-# if boost include not exist, only use subset of boost in deps/ and no mt libs.
-if (BOOST_PATH AND LIBBOOST_SYSTEM_MT_PATH AND LIBBOOST_THREAD_MT_PATH)
-    add_definitions(-DUSE_BOOST_THREAD_MT)
-elseif (NOT BOOST_PATH)
-    set(BOOST_PATH ${PROJECT_SOURCE_DIR}/deps/boost)
-    include_directories(${BOOST_PATH})
-endif()
 
 # add test subdirectory
 add_subdirectory(${PROJECT_SOURCE_DIR}/test ${PROJECT_BINARY_DIR}/test)
