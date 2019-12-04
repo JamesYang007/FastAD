@@ -31,9 +31,9 @@ TEST_F(admat_fixture, iter_size_comp) {
 	EXPECT_EQ(i, mat.size());
 }
 
-// zeros
+// zeros (tests fill)
 TEST_F(admat_fixture, zeros) {
-	mat.zeros(mat.n_rows(), mat.n_cols());
+	mat.zeros();
 	Mat<double> z(mat.n_rows(), mat.n_cols(), 0);
 	EXPECT_EQ(mat, z);
 }

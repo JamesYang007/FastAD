@@ -18,9 +18,8 @@ class Mat {
 public:
 
 	// constructors
-	Mat() = default;
-	Mat(const Mat& mat) 
-		: data_(mat.data_), rows_(mat.rows_), cols_(mat.cols_) 
+	Mat()
+		: data_(), rows_(0), cols_(0)
 	{}
 	Mat(size_t size, const T& fill) 
 		: data_(size*size, fill), rows_(size), cols_(size) 
@@ -68,12 +67,16 @@ public:
 	// fill the matrix (will resize for new dimensions)
 	void fill(size_t rows, size_t cols, const T& fill);
 	void fill(const T& fill) {
-		fill(this->rows_, this->cols_, fill);
+		this->fill(this->rows_, this->cols_, fill);
 	}
 	void zeros(size_t rows, size_t cols) 
 	{ 
-		fill(rows, cols, 0); 
+		this->fill(rows, cols, 0); 
 	}	
+	void zeros()
+	{
+		this->zeros(this->rows_, this->cols_);
+	}
 
 	// transpose
 	Mat t();	
@@ -138,10 +141,13 @@ bool operator==(const Mat<T>& mat1, const Mat<T>& mat2)
 }
 
 template <class T>
-void Mat<T>::fill(size_t rows, size_t cols, const T& fill) {
+void Mat<T>::fill(size_t rows, size_t cols, const T& fill) 
+{
 	if (this->size() != rows*cols) {
 		this->data_.resize(rows*cols);
 	}
+	this->rows_ = rows;
+	this->cols_ = cols;
 	std::fill(this->begin(), this->end(), fill);
 }
 
