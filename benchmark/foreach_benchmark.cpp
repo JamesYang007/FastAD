@@ -3,7 +3,6 @@
 #include <fastad_bits/math.hpp>
 #include <fastad_bits/vec.hpp>
 #include <fastad_bits/eval.hpp>
-#include <boost/iterator/counting_iterator.hpp>
 #include "gtest/gtest.h"
 
 namespace ad {
@@ -24,11 +23,11 @@ TEST(benchmark, foreach) {
     Vec<long double> prod(vec.size());
     prod[0] = vec[0];
 
-    auto&& expr = ad::for_each(
-            boost::counting_iterator<size_t>(1)
-            , boost::counting_iterator<size_t>(vec.size())
-            , [&](size_t i) {
-                return prod[i] = prod[i-1] * vec[i];
+    auto vec_it = vec.begin();
+    auto prod_prev = prod.begin();
+    auto expr = ad::for_each(std::next(prod.begin()), prod.end()
+            , [&](const Vec<long double>::value_type& curr) {
+                return curr = *(prod_prev++) * *(++vec_it);
             });
     autodiff((w4=expr, w5 = w4*w4 + vec[0]));
 
