@@ -111,7 +111,7 @@ The template parameter to `make_exgen` is the type of the values and should usua
 Using the same `F_lmda` lambda function from previous example,
 ```cpp
 double x_val[] = { -0.201, 1.2241 };
-arma::Mat<double> jacobi;	
+ad::Mat<double> jacobi;	
 jacobian(jacobi, x_val, x_val + 2, F_lmda);
 std::cout << "f(x, y) = exp((x * sin(y) + x * y) * x * sin(y))" << std::endl;
 jacobi.print("Jacobian of f(x, y)");
@@ -120,7 +120,7 @@ jacobi.print("Jacobian of f(x, y)");
 #### Hessian
 Using the same `x_val` and `F_lmda` from previous example,
 ```cpp
-arma::Mat<double> hess;
+ad::Mat<double> hess;
 hessian(hess, x_val, x_val + 2, F_lmda);
 std::cout << "f(x, y) = exp((x * sin(y) + x * y) * x * sin(y))" << std::endl;
 hess.print("Hessian of f(x, y)");
@@ -138,7 +138,6 @@ $ git clone --recurse-submodules https://github.com/JamesYang007/FastAD.git
 
 ### Setup
 * Install a compiler with full support for C++17 standard.
-* Recommended to install [armadillo](http://arma.sourceforge.net/download.html) and its dependencies.
 * (Linux/MacOS) Install cmake >= 3.9
 
 ---
