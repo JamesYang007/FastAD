@@ -1,4 +1,4 @@
-# FastAD [![Build Status](https://travis-ci.org/JamesYang007/FastAD.svg?branch=master)](https://travis-ci.org/JamesYang007/FastAD) ![GitHub tag (latest by date)](https://img.shields.io/github/v/tag/JamesYang007/FastAD) ![GitHub release (latest by date)](https://img.shields.io/github/v/release/JamesYang007/FastAD) [![License](http://img.shields.io/:license-mit-blue.svg?style=flat-square)](http://badges.mit-license.org)
+# FastAD [![Build Status](https://travis-ci.org/JamesYang007/FastAD.svg?branch=master)](https://travis-ci.org/JamesYang007/FastAD) ![GitHub tag (latest by date)](https://img.shields.io/github/v/tag/JamesYang007/FastAD) ![GitHub release (latest by date)](https://img.shields.io/github/v/release/JamesYang007/FastAD?include_prereleases) [![License](http://img.shields.io/:license-mit-blue.svg?style=flat-square)](http://badges.mit-license.org)
 
 FastAD is a light-weight, header-only C++ library of automatic differentiation providing both forward and reverse mode.
 
