@@ -7,8 +7,10 @@ namespace ad {
 
 template <class T>
 class Mat;
+
 template <class T>
 std::ostream& operator<<(std::ostream& os, const Mat<T>& mat);
+
 template <class T>
 bool operator==(const Mat<T>& mat1, const Mat<T>& mat2);
 
@@ -33,12 +35,16 @@ public:
 	{ 
 		return data_[row*cols_ + col];  
 	}
+
 	const T& operator()(size_t row, size_t col) const 
 	{ 
 		return const_cast<Mat&>(*this)(row, col); 
 	}
+
 	friend std::ostream& operator<< <>(std::ostream& os, const Mat& mat);
+
 	friend bool operator== <>(const Mat& mat1, const Mat& mat2);
+
 	friend bool operator!=(const Mat& mat1, const Mat& mat2) 
 	{ 
 		return !(mat1 == mat2); 
@@ -49,26 +55,31 @@ public:
 	{ 
 		return rows_*cols_; 
 	}
+
 	size_t n_rows() const 
 	{ 
 		return rows_; 
 	}
+
 	size_t n_cols() const 
 	{ 
 		return cols_; 
 	}
 
 	// print to stdout with given header
-	void print(const std::string& header) 
+	void print(const std::string& header) const
 	{ 
 		std::cout << header << std::endl << *this; 
 	}
 
 	// fill the matrix (will resize for new dimensions)
 	void fill(size_t rows, size_t cols, const T& fill);
-	void fill(const T& fill) {
+
+	void fill(const T& fill) 
+    {
 		this->fill(this->rows_, this->cols_, fill);
 	}
+
 	void zeros(size_t rows, size_t cols) 
 	{ 
 		this->fill(rows, cols, 0); 
@@ -89,14 +100,17 @@ public:
 	{ 
 		return data_.begin(); 
 	}
+
 	const_iterator begin() const 
 	{ 
 		return data_.begin(); 
 	}
+
 	iterator end() 
 	{ 
 		return data_.end(); 
 	}
+
 	const_iterator end() const 
 	{ 
 		return data_.end(); 
@@ -116,7 +130,8 @@ std::ostream& operator<<(std::ostream& os, const Mat<T>& mat)
 	for (const T& item : mat) {
 		os << item << '\t';
 		if (++i >= mat.cols_) { 
-			os << std::endl; i = 0; 
+			os << std::endl; 
+            i = 0; 
 		}
 	}
 	return os;
