@@ -135,18 +135,6 @@ struct LeafNode:
         return set_adjoint(0);
     }
 
-    // Resets value destination to point to current value.
-    void reset_value_ptr()
-    {
-        w_ptr_ = &data_t::get_value();
-    }
-
-    // Resets adjoint destination to point to current adjoint.
-    void reset_adjoint_ptr() 
-    {
-        df_ptr_ = &data_t::get_adjoint();
-    }
-
 private:
     // explicitly declare some DualNum member functions private
     using data_t::get_value;

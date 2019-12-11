@@ -62,22 +62,6 @@ struct Vec : std::deque<Var<T>>
             var.reset_adjoint();
         }
     }
-
-    // Resets every variable value destination to point to current value
-    void reset_value_ptr()
-    {
-        for (auto& var : *this) {
-            var.reset_value_ptr();
-        }
-    }
-
-    // Resets every variable adjoint destination to point to current value
-    void reset_adjoint_ptr()
-    {
-        for (auto& var : *this) {
-            var.reset_adjoint_ptr();
-        }
-    }
 };
 
 } // namespace ad
