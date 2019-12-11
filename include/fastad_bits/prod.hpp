@@ -21,46 +21,7 @@ struct ProdNode :
 
     ProdNode(Iter start, Iter end, const Lmda& f)
         : data_t(0, 0), start_(start), end_(end), f_(f)
-        , vec_(static_cast<size_t>(std::distance(start_, end_)))
     {}
-
-    ProdNode(const ProdNode& node)
-        : data_t(node), start_(node.start_), end_(node.end_), f_(node.f_)
-        , vec_(node.vec_)
-    {
-        // Reset all adjoint destinations to point to current adjoints
-        // and value destinations to point to current values.
-        vec_.reset_value_ptr();
-        vec_.reset_adjoint_ptr(); 
-    }
-
-    ProdNode(ProdNode&& node)
-        : data_t(node)
-        , start_(std::move(node.start_))
-        , end_(std::move(node.end_))
-        , f_(std::move(node.f_))
-        , vec_(std::move(node.vec_))
-    {
-        vec_.reset_value_ptr();
-        vec_.reset_adjoint_ptr(); 
-    }
-
-    ProdNode& operator=(const ProdNode& node)
-    {
-        if (this == &node) {
-            return *this;
-        }
-
-        *this = node;
-        start_ = node.start_;
-        end_ = node.end_;
-        f_ = node.f_;
-        vec_ = node.vec_;
-        vec_.reset_value_ptr();
-        vec_.reset_adjoint_ptr(); 
-
-        return *this;
-    }
 
     // Forward evaluation.
     // See eval function below for more details.
@@ -85,7 +46,8 @@ private:
     // Backward evaluation is applied on every running product.
     void eval(bool do_grad, ValueType seed = static_cast<ValueType>(0))
     {
-        auto&& first = make_eq(vec_[0], this->f_(*start_)); // create EqNode
+        Vec<ValueType> vec(static_cast<size_t>(std::distance(start_, end_)));
+        auto&& first = make_eq(vec[0], this->f_(*start_)); // create EqNode
         this->set_value(first.feval());
         if (std::distance(start_, end_) == 1 && !do_grad) return;
         else if (std::distance(start_, end_) == 1) {
@@ -93,8 +55,8 @@ private:
             return;
         }
         auto it = start_;
-        auto it_prev = vec_.begin();
-        auto foreach = ad::for_each(std::next(vec_.begin()), vec_.end(), 
+        auto it_prev = vec.begin();
+        auto foreach = ad::for_each(std::next(vec.begin()), vec.end(), 
                 [&, this](const typename Vec<ValueType>::value_type& x) {
                     return x = *(it_prev++) * (this->f_)(*(++it)); // returns an EqNode
                 });
@@ -108,7 +70,6 @@ private:
 
     Iter start_, end_;
     Lmda f_;
-    Vec<ValueType> vec_;
 };
 
 } // namespace core
