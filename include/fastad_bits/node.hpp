@@ -84,7 +84,6 @@ struct LeafNode:
         }
     }
 
-    // Override DualNum::get_value.
     // This function returns the value in value dest.
     // It is crucial for ForEach::feval to work properly that the value dest be provided.
     ValueType& get_value() 
@@ -97,7 +96,6 @@ struct LeafNode:
         return *w_ptr_;
     }
 
-    // Override DualNum::set_value
     // This function sets the value in value dest as well current value.
     // It is crucial for ForEach::feval to work properly that the value dest be provided.
     // Note that calling set_value on any copy of current LeafNode will also overwrite
@@ -111,7 +109,6 @@ struct LeafNode:
         return *w_ptr_ = data_t::set_value(w);
     }
 
-    // Override DualNum::get_adjoint.
     // This function returns the adjoint in adjoint dest (full partial derivative).
     // It is crucial for EqNode::beval to work properly that the full adjoint be provided.
     ValueType& get_adjoint() 
@@ -124,13 +121,18 @@ struct LeafNode:
         return *df_ptr_;
     }
 
-    // Override DualNum::set_adjoint.
     // This function sets both current adjoint and adjoint dest to df.
     // @param   df  the new adjoint to set current adjoint and adjoint dest to
     // @return  df
     ValueType& set_adjoint(ValueType df)
     {
         return *df_ptr_ = data_t::set_adjoint(df);
+    }
+
+    // Equivalent to set_adjoint(0)
+    ValueType& reset_adjoint()
+    {
+        return set_adjoint(0);
     }
 
 private:

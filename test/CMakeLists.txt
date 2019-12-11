@@ -4,6 +4,7 @@ set(
     # Unit tests
     dualnum_unittest
     vec_unittest
+    mat_unittest
     math_unittest
     node_unittest
     eval_unittest

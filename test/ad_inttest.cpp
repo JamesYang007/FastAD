@@ -50,11 +50,9 @@ struct ad_fixture : ::testing::Test
 {
 protected:
 
-#ifdef USE_ARMA
     template <class Matrix, class Iter>
     void f_test(const Matrix& res, size_t i, Iter begin)
     {
-        static_assert(utils::is_arma_mat<Matrix>, "Matrix is not from armadillo");
         EXPECT_DOUBLE_EQ(res(i, 0), std::cos(*begin)*std::cos(*std::next(begin)));
         EXPECT_DOUBLE_EQ(res(i, 1), -std::sin(*begin)*std::sin(*std::next(begin)));
         EXPECT_DOUBLE_EQ(res(i, 2), 1);
@@ -66,20 +64,18 @@ protected:
     template <class Matrix, class Iter>
     void g_test(const Matrix& res, size_t i, Iter begin)
     {
-        static_assert(utils::is_arma_mat<Matrix>, "Matrix is not from armadillo");
         auto it = begin;
         using T = typename std::iterator_traits<Iter>::value_type;
         T sum = static_cast<T>(0);
-        for (size_t j = 0; j < res.n_cols; ++it, ++j)
+        for (size_t j = 0; j < res.n_cols(); ++it, ++j)
             sum += std::sin(*it);
-        for (size_t j = 0; j < res.n_cols; ++begin, ++j)
+        for (size_t j = 0; j < res.n_cols(); ++begin, ++j)
             EXPECT_DOUBLE_EQ(res(i, j), 2 * sum*std::cos(*begin) + std::sin(*begin));
     }
 
     template <class Matrix, class Iter>
     void h_test(const Matrix& res, size_t i, Iter begin)
     {
-        static_assert(utils::is_arma_mat<Matrix>, "Matrix is not from armadillo");
         EXPECT_DOUBLE_EQ(res(i, 4), *begin);
         EXPECT_DOUBLE_EQ(res(i, 1), 0);
         EXPECT_DOUBLE_EQ(res(i, 2), 0);
@@ -88,35 +84,30 @@ protected:
         EXPECT_DOUBLE_EQ(res(i, 0), *begin);
     }
 
-    // Scalar Function test with arma
-    // TODO: create without arma using my 2darray
+    // Scalar Function test
     template <class Iter, class F>
     void test_scalar(Iter begin, Iter end, F& f)
     {
         using T = typename std::iterator_traits<Iter>::value_type;
-        arma::Mat<T> res;
+        ad::Mat<T> res;
         jacobian(res, begin, end, f);
         f_test(res, 0, begin);
     }
 
-    // Vector Function Test with arma
-    // TODO: create without arma using my 2darray
+    // Vector Function Test
     template <class Iter, class... Fs>
     void test_vector(Iter begin, Iter end, Fs&... fs)
     {
         using T = typename std::iterator_traits<Iter>::value_type;
-        arma::Mat<T> res;
+        ad::Mat<T> res;
         jacobian(res, begin, end, fs...);
         f_test(res, 0, begin);
         g_test(res, 1, begin);
         h_test(res, 2, begin);
     }
 
-#endif
 
 };
-
-#ifdef USE_ARMA
 
 // Scalar Function f:R^n -> R
 TEST_F(ad_fixture, function_scalar) {
@@ -178,8 +169,6 @@ TEST_F(ad_fixture, function_vector_complex) {
         F_lmda, G_lmda, H_lmda, F_lmda, G_lmda, PHI_lmda, PHI_lmda
             );
 }
-
-#endif
 
 } // namespace core
 } // namespace ad

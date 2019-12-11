@@ -1,4 +1,5 @@
 #include <array>
+#include <fastad_bits/mat.hpp>
 #include <fastad_bits/jacobian.hpp>
 #include "exgen_fixture.hpp"
 #include "gtest/gtest.h"
@@ -79,12 +80,10 @@ TEST_F(jacobian_fixture, jacobian_two_lmda)
     EXPECT_DOUBLE_EQ(adj[3], 0.);
 }
 
-#ifdef USE_ARMA
-
 TEST_F(jacobian_fixture, jacobian_two_lmda_arma)
 {
     double values[2] = {1., 2.};
-    arma::Mat<double> jacobi(2, 2);
+    Mat<double> jacobi(2, 2);
     jacobian(jacobi, values, values + 2, 
             core::f_lmda_no_opt, core::f_lmda_no_opt);
     EXPECT_DOUBLE_EQ(jacobi(0,0), 1.);
@@ -93,7 +92,5 @@ TEST_F(jacobian_fixture, jacobian_two_lmda_arma)
     EXPECT_DOUBLE_EQ(jacobi(1,1), 0.);
 }
 
-#endif
-        
 } // namespace details
 } // namespace ad

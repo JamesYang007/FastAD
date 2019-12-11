@@ -1,13 +1,8 @@
 #define _USE_MATH_DEFINES
 #include <fastad_bits/math.hpp>
+#include <fastad_bits/mat.hpp>
 #include <fastad_bits/hessian.hpp>
 #include "gtest/gtest.h"
-
-#ifdef USE_ARMA
-
-#include <armadillo>
-
-#endif
 
 namespace ad {
 
@@ -26,8 +21,6 @@ auto H_lmda = [](const auto& x, const auto&) {
 struct hessian_fixture: ::testing::Test
 {
 protected:
-
-#ifdef USE_ARMA
 
     // Test functions
     // WOLFRAM-ALPHA HARD-CODED NUMBERS
@@ -55,11 +48,7 @@ protected:
         EXPECT_NEAR(mat(0, 3), 1.60972, 1e-5);
     }
 
-#endif
-
 };
-
-#ifdef USE_ARMA
 
 // Hessian (second derivative) of a univariate function
 // Verify that algorithm approach is correct
@@ -90,7 +79,7 @@ TEST_F(hessian_fixture, one_dimensional) {
 TEST_F(hessian_fixture, two_dimensional) {
     using T = double;
     T x[] = { M_PI / 3 , M_PI / 6 };
-    arma::Mat<T> hess;
+    Mat<T> hess;
     hessian(hess, x, x + 2, G_lmda);
     EXPECT_DOUBLE_EQ(hess(0, 0), -0.75);
     EXPECT_DOUBLE_EQ(hess(1, 1), -0.75);
@@ -103,13 +92,11 @@ TEST_F(hessian_fixture, multi_dimensional) {
     using T = double;
     // DON'T CHANGE THESE NUMBERS
     T x[] = { 1.,2.,3.,4. };
-    arma::Mat<T> hess;
-    arma::Mat<T> grad;
+    Mat<T> hess;
+    Mat<T> grad;
     hessian(hess, grad, x, x + 4, H_lmda);
     h_hess_test(hess);
     h_grad_test(grad);
 }
-
-#endif
 
 } // namespace ad
