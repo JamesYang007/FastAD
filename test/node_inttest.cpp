@@ -231,10 +231,10 @@ TEST_F(node_integration_fixture, foreach) {
     vec.emplace_back(1e-3);
     Vec<double> prod(4);
     prod[0] = vec[0];
-    auto&& expr = ad::for_each(
-        boost::counting_iterator<size_t>(1)
-        , boost::counting_iterator<size_t>(4)
-        , [&vec, &prod](size_t i) {return prod[i] = prod[i - 1] * vec[i]; }
+    auto it_prev = prod.begin();
+    auto vec_it = vec.begin();
+    auto expr = ad::for_each(std::next(prod.begin()), prod.end()
+        , [&vec_it, &it_prev](const Var<double>& cur) {return cur = *(it_prev++) * *(++vec_it); }
     );
 
     double actual = 1;

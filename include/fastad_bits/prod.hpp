@@ -55,11 +55,11 @@ private:
             return;
         }
         auto it = start_;
-        auto&& foreach = ad::for_each(boost::counting_iterator<size_t>(1)
-            , boost::counting_iterator<size_t>(static_cast<size_t>(std::distance(start_, end_)))
-            , [&, this](size_t i) {
-                return vec[i] = vec[i-1] * (this->f_)(*(++it)); // returns an EqNode
-            });
+        auto it_prev = vec.begin();
+        auto foreach = ad::for_each(std::next(vec.begin()), vec.end(), 
+                [&, this](const typename Vec<ValueType>::value_type& x) {
+                    return x = *(it_prev++) * (this->f_)(*(++it)); // returns an EqNode
+                });
         this->set_value(foreach.feval());
         if (do_grad) {
             this->set_adjoint(seed);

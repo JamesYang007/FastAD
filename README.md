@@ -179,8 +179,8 @@ $ ctest
 ## FAQ
 
 ### How do I build my project with FastAD as a dependency?
-- Add the compiler flag `-I<path-to-FastAD>/include -I<path-to-FastAD>/deps/boost`
-- Or in CMake, add `include_directories(<path-to-FastAD>/include <path-to-FastAD>/deps/boost)`
+- Add the compiler flag `-I<path-to-FastAD>/include`
+- Or in CMake, add `include_directories(<path-to-FastAD>/include)`
 
 ---
 

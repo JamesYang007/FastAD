@@ -20,7 +20,7 @@ inline void jacobian_unpack(RowIter it, Vec<ValueType>& x
     }
     else {
         x.reset_adjoint(); // reset adjoint to 0
-        autodiff(std::get<I>(tup));
+        ad::autodiff(std::get<I>(tup));
         for (const auto& var : x) {
             *it = var.get_adjoint();
             ++it;
