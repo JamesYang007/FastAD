@@ -62,8 +62,8 @@ public:
 	}
 
 	// print (formatted with proper spacing) to stdout with given header
-	void print_at_width(const std::string& header, unsigned int field_width) const;
 	void print(const std::string& header) const { print_at_width(header, DEFAULT_PRINT_FIELD_WIDTH); }
+	void print_at_width(const std::string& header, unsigned int field_width) const;
 	std::enable_if_t<std::is_floating_point_v<T>> print_at_precision(const std::string& header, unsigned int precision) const;
 
 	// fill the matrix (will resize for new dimensions)
