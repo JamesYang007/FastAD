@@ -1,7 +1,10 @@
 #pragma once
 #include <iostream>
+#include <iomanip>
 #include <vector>
 #include <algorithm>
+
+#define DEFAULT_PRINT_FIELD_WIDTH 8
 
 namespace ad {
 
@@ -66,11 +69,13 @@ public:
 		return cols_; 
 	}
 
-	// print to stdout with given header
+	// print (formatted with proper spacing) to stdout with given header
+	void print_at_width(const std::string& header, unsigned int field_width) const;
 	void print(const std::string& header) const
-	{ 
-		std::cout << header << std::endl << *this; 
+	{
+		print_at_width(header, DEFAULT_PRINT_FIELD_WIDTH);
 	}
+	std::enable_if_t<std::is_floating_point_v<T>> print_at_precision(const std::string& header, unsigned int precision) const;
 
 	// fill the matrix (will resize for new dimensions)
 	void fill(size_t rows, size_t cols, const T& fill);
@@ -153,6 +158,27 @@ bool operator==(const Mat<T>& mat1, const Mat<T>& mat2)
 	}
 
 	return true;
+}
+
+template <class T>
+void Mat<T>::print_at_width(const std::string& header, unsigned int field_width) const
+{ 
+	std::cout << header << std::endl;
+	std::cout << std::setfill(' ');	
+	size_t i = 0;
+	for (const T& item : *this) {
+		std::cout << std::setw(field_width) << item;
+		if (++i >= this->cols_) { 
+			std::cout << std::endl; i = 0; 
+		}
+	}
+}
+
+template <class T>
+std::enable_if_t<std::is_floating_point_v<T>> Mat<T>::print_at_precision(const std::string& header, unsigned int precision) const {
+	std::cout.precision(precision);
+	std::cout << std::defaultfloat;
+	print_at_width(header, precision+8);
 }
 
 template <class T>
