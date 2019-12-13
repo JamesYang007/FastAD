@@ -131,9 +131,14 @@ hess.print("Hessian of f(x, y)");
 ## Installation
 
 ### Clone
-Change directory to installation directory and run the following command:
+If you would like to run tests or benchmark, change directory to installation directory and run the following command:
 ```shell
 $ git clone --recurse-submodules https://github.com/JamesYang007/FastAD.git 
+```
+
+Otherwise, run:
+```shell
+$ git clone https://github.com/JamesYang007/FastAD.git
 ```
 
 ### Setup
