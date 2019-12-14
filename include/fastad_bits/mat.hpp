@@ -4,9 +4,6 @@
 #include <vector>
 #include <algorithm>
 
-static inline constexpr unsigned int PRINT_WIDTH = 13;
-static inline constexpr unsigned int PRINT_PRECISION = 5;
-
 namespace ad {
 
 template <class T>
@@ -137,6 +134,9 @@ private:
 	std::vector<T> data_;	
 	size_t rows_, cols_;
 
+	static inline constexpr unsigned int PRINT_WIDTH = 13;
+	static inline constexpr unsigned int PRINT_PRECISION = 5;
+
 };
 
 // matrix -> string format is tab-separated by column, newline separated by row
@@ -176,14 +176,13 @@ template <class T>
 void Mat<T>::raw_print(std::ostream& os) const
 {
 	std::streamsize width_save = os.width();
-
-        size_t i = 0;
-        for (const T& item : *this) {
-                os << std::setw(width_save) << item;
-                if (++i >= this->cols_) {
-                        os << std::endl;
+	size_t i = 0;
+	for (const T& item : *this) {
+		os << std::setw(width_save) << item;
+		if (++i >= this->cols_) {
+			os << std::endl;
 			i = 0;
-                }
+		}
 	}
 }
 
