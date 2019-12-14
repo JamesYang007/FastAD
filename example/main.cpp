@@ -1,8 +1,6 @@
 #include <fastad>
 #include <iostream>
 
-#define FLOAT_PRINT_PRECISION 5
-
 // Forward AD
 void forward()
 {
@@ -100,7 +98,7 @@ void reverse_jacobian()
 												// (more information in documentation)
 	jacobian(jacobi, x_val, x_val + 2, F_lmda);
 	std::cout << "f(x, y) = exp((x * sin(y) + x * y) * x * sin(y))" << std::endl;
-	jacobi.print_at_precision("Jacobian of f(x, y)", FLOAT_PRINT_PRECISION);
+	jacobi.print("Jacobian of f(x, y)");
 }
 
 void reverse_vector()
@@ -122,7 +120,7 @@ void reverse_vector()
 	jacobian(jacobi, x_val, x_val + 2, F_lmda, G_lmda); 
 	std::cout << "f(x, y) = exp((x * sin(y) + x * y) * x * sin(y))\n"
             << "g(x, y) = (x + exp(sin(y)))^2 * y" << std::endl;
-	jacobi.print_at_precision("Jacobian of (f(x, y), g(x, y))", FLOAT_PRINT_PRECISION);
+	jacobi.print("Jacobian of (f(x, y), g(x, y))");
 }
 
 // Hessian
@@ -144,8 +142,8 @@ void hessian()
 	hessian(hess, jacobi, x_val, x_val + 2, F_lmda);
 
 	std::cout << "f(x, y) = exp((x * sin(y) + x * y) * x * sin(y))" << std::endl;
-	hess.print_at_precision("Hessian of f(x, y)", FLOAT_PRINT_PRECISION);
-	jacobi.print_at_precision("Jacobian of f(x, y)", FLOAT_PRINT_PRECISION);
+	hess.print("Hessian of f(x, y)");
+	jacobi.print("Jacobian of f(x, y)");
 }
 
 int main()
