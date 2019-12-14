@@ -4,7 +4,8 @@
 #include <vector>
 #include <algorithm>
 
-#define DEFAULT_PRINT_FIELD_WIDTH 8
+static inline constexpr unsigned int PRINT_WIDTH = 13;
+static inline constexpr unsigned int PRINT_PRECISION = 5;
 
 namespace ad {
 
@@ -61,13 +62,36 @@ public:
 		return cols_; 
 	}
 
-	// print (formatted with proper spacing) to stdout with given header
-	void print(const std::string& header) const
+	// print unformatted to stream (stdout by default) with optional header; allows for stream formatting parameters to be set manually
+	void raw_print(std::ostream& os) const;
+	void raw_print(std::ostream& os, const std::string& header) const
 	{
-		this->print_at_width(header, DEFAULT_PRINT_FIELD_WIDTH);
+		os << header << std::endl;
+		this->raw_print(os);
 	}
-	void print_at_width(const std::string& header, unsigned int field_width) const;
-	std::enable_if_t<std::is_floating_point_v<T>> print_at_precision(const std::string& header, unsigned int precision) const;
+	void raw_print() const
+	{
+		this->raw_print(std::cout);
+	}
+	void raw_print(const std::string& header) const
+	{
+		this->raw_print(std::cout, header);
+	}
+	
+	// print with default formatting to stream (stdout by default) with optional header
+	void print(std::ostream& os) const;
+	void print(std::ostream& os, const std::string& header) const {
+		os << header << std::endl;
+		this->print(os);
+	}
+	void print() const 
+	{
+		this->print(std::cout);
+	}	
+	void print(const std::string& header) const 
+	{
+		this->print(std::cout, header);
+	}
 
 	// fill the matrix (will resize for new dimensions)
 	void fill(size_t rows, size_t cols, const T& fill);
@@ -112,6 +136,7 @@ private:
 
 	std::vector<T> data_;	
 	size_t rows_, cols_;
+
 };
 
 // matrix -> string format is tab-separated by column, newline separated by row
@@ -148,24 +173,39 @@ bool operator==(const Mat<T>& mat1, const Mat<T>& mat2)
 }
 
 template <class T>
-void Mat<T>::print_at_width(const std::string& header, unsigned int field_width) const
-{ 
-	std::cout << header << std::endl;
-	std::cout << std::setfill(' ');	
-	size_t i = 0;
-	for (const T& item : *this) {
-		std::cout << std::setw(field_width) << item;
-		if (++i >= this->cols_) { 
-			std::cout << std::endl; i = 0; 
-		}
+void Mat<T>::raw_print(std::ostream& os) const
+{
+	std::streamsize width_save = os.width();
+
+        size_t i = 0;
+        for (const T& item : *this) {
+                os << std::setw(width_save) << item;
+                if (++i >= this->cols_) {
+                        os << std::endl;
+			i = 0;
+                }
 	}
 }
 
 template <class T>
-std::enable_if_t<std::is_floating_point_v<T>> Mat<T>::print_at_precision(const std::string& header, unsigned int precision) const {
-	std::cout.precision(precision);
-	std::cout << std::defaultfloat;
-	print_at_width(header, precision+8);
+void Mat<T>::print(std::ostream& os) const
+{
+	char fill_save = os.fill();
+	std::streamsize width_save = os.width();
+	std::streamsize precision_save = os.precision();
+	std::ios::fmtflags flags_save = os.flags();
+
+	os.fill(' ');
+	os.width(PRINT_WIDTH);
+	os.precision(PRINT_PRECISION);
+	os.flags(flags_save | std::ios::fixed);
+
+	this->raw_print(os);
+
+	os.fill(fill_save);
+	os.width(width_save);
+	os.precision(precision_save);
+	os.flags(flags_save);
 }
 
 template <class T>
