@@ -1,7 +1,6 @@
 #include <fastad>
 #include <iostream>
 
-
 // Forward AD
 void forward()
 {
