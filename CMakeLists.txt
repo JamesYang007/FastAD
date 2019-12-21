@@ -52,12 +52,7 @@ install(FILES
 
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/include DESTINATION ${CMAKE_INSTALL_PREFIX})
 
-# Set all static libraries to libs directory
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/libs)
-
-# Points to the root of Google Test
-set(GTEST_DIR ${PROJECT_SOURCE_DIR}/googletest/googletest)
-
+# Automate the choosing of config
 # if CMAKE_BUILD_TYPE not defined
 if (NOT CMAKE_BUILD_TYPE)
 
@@ -73,17 +68,14 @@ endif()
 
 message(STATUS "Compiling in ${CMAKE_BUILD_TYPE} mode")
 
-# Flags passed to the C++ compiler.
-add_compile_options(-g -Wall -Werror -Wextra -pthread -isystem ${GTEST_DIR}/include)
+# Points to the root of Google Test
+set(GTEST_DIR ${PROJECT_SOURCE_DIR}/libs/googletest/googletest)
 
-# Builds gtest_main.a.
-# For simplicity and to avoid depending on Google Test's
-# implementation details, the dependencies specified below are
-# conservative and not optimized.  This is fine as Google Test
-# compiles fast and for ordinary users its source rarely changes.
-add_library(gtest_main STATIC ${GTEST_DIR}/src/gtest-all.cc ${GTEST_DIR}/src/gtest_main.cc)
-target_compile_features(gtest_main PRIVATE cxx_std_14)
-target_include_directories(gtest_main PRIVATE ${GTEST_DIR})
+# Flags passed to the C++ compiler.
+add_compile_options(-g -Wall -Werror -Wextra)
+
+# add libs subdirectory
+add_subdirectory(${PROJECT_SOURCE_DIR}/libs ${PROJECT_BINARY_DIR}/libs)
 
 # add test subdirectory
 add_subdirectory(${PROJECT_SOURCE_DIR}/test ${PROJECT_BINARY_DIR}/test)

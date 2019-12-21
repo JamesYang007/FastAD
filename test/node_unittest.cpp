@@ -148,7 +148,7 @@ TEST_F(adnode_fixture, gluenode_glue_size_2)
 {
     using eq_t = EqNode<double, double>;
     using glue_t = GlueNode<double, eq_t, eq_t>; 
-    EXPECT_EQ(details::glue_size<glue_t>::value, 2);
+    EXPECT_EQ(details::glue_size<glue_t>::value, static_cast<size_t>(2));
 }
 
 TEST_F(adnode_fixture, gluenode_glue_size_3)
@@ -156,7 +156,7 @@ TEST_F(adnode_fixture, gluenode_glue_size_3)
     using eq_t = EqNode<double, double>;
     using glue_t = GlueNode<double, eq_t, eq_t>; 
     using glue_glue_t = GlueNode<double, glue_t, eq_t>;
-    EXPECT_EQ(details::glue_size<glue_glue_t>::value, 3);
+    EXPECT_EQ(details::glue_size<glue_glue_t>::value, static_cast<size_t>(3));
 }
 
 // ConstNode

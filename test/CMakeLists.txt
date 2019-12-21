@@ -19,10 +19,9 @@ set(
     ad_inttest
 )
 
-# Builds tests
-# For every unit test, create executable, link with libraries,
 foreach( test ${TESTS} )
     add_executable(${test} ${CMAKE_CURRENT_SOURCE_DIR}/${test}.cpp)
+    target_include_directories(${test} PRIVATE ${GTEST_DIR}/include)
     target_link_libraries(${test} gtest_main pthread ${PROJECT_NAME})
     add_test(${test} ${test})
 endforeach()
