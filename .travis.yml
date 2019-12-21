@@ -28,6 +28,7 @@ script:
       export CXX=/usr/bin/g++-7;
       gcc -v && g++ -v && cmake --version;
     fi 
+  - ./setup.sh
   - mkdir build
   - cd build
   - mkdir debug
