@@ -1,8 +1,7 @@
 cmake_minimum_required(VERSION 3.9)
 
 project("FastAD" VERSION 2.1
-                 DESCRIPTION "A light-weight header-only C++ library of automatic differentiation."
-                 HOMEPAGE_URL "https://github.com/JamesYang007/FastAD")
+                 DESCRIPTION "A light-weight header-only C++ library of automatic differentiation.")
 
 # This is to make this library portable to other machines.
 # This will be used for install.
