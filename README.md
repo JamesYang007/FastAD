@@ -159,16 +159,9 @@ $ git clone https://github.com/JamesYang007/FastAD.git
 ## Tests
 
 ### Linux/MacOS
-> to build
-```shell
-$ mkdir build && cd build
-$ cmake ../
-$ make
-```
-
 > to run tests
 ```shell
-$ ctest
+$ cd build/release && ctest
 ```
 
 ---
