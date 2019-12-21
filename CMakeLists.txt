@@ -55,17 +55,14 @@ install(DIRECTORY ${PROJECT_SOURCE_DIR}/include DESTINATION ${CMAKE_INSTALL_PREF
 # Automate the choosing of config
 # if CMAKE_BUILD_TYPE not defined
 if (NOT CMAKE_BUILD_TYPE)
-
-# if binary directory ends with "release", use release mode
-if (${PROJECT_BINARY_DIR} MATCHES "release$")
-    set(CMAKE_BUILD_TYPE RELEASE)
-# otherwise, use debug mode
-else()
-    set(CMAKE_BUILD_TYPE DEBUG)
+    # if binary directory ends with "release", use release mode
+    if (${PROJECT_BINARY_DIR} MATCHES "release$")
+        set(CMAKE_BUILD_TYPE RELEASE)
+    # otherwise, use debug mode
+    else()
+        set(CMAKE_BUILD_TYPE DEBUG)
+    endif()
 endif()
-
-endif()
-
 message(STATUS "Compiling in ${CMAKE_BUILD_TYPE} mode")
 
 # Points to the root of Google Test
