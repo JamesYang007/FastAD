@@ -130,22 +130,17 @@ hess.print("Hessian of f(x, y)");
 
 ## Installation
 
-### Clone
+### Setup
+* Install a compiler with full support for C++17 standard.
+* (Linux/MacOS) Install cmake >= 3.9
+
+### Build and Install
 Run the following command:
 ```shell
 $ git clone --recurse-submodules https://github.com/JamesYang007/FastAD.git ~/FastAD
 $ cd ~/FastAD
 $ ./install.sh
 ```
-
-Otherwise, run:
-```shell
-$ git clone https://github.com/JamesYang007/FastAD.git
-```
-
-### Setup
-* Install a compiler with full support for C++17 standard.
-* (Linux/MacOS) Install cmake >= 3.9
 
 ---
 
