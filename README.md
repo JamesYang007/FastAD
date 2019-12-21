@@ -139,6 +139,7 @@ Run the following command:
 ```shell
 $ git clone --recurse-submodules https://github.com/JamesYang007/FastAD.git ~/FastAD
 $ cd ~/FastAD
+$ ./setup.sh
 $ ./install.sh
 ```
 
