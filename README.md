@@ -131,9 +131,11 @@ hess.print("Hessian of f(x, y)");
 ## Installation
 
 ### Clone
-If you would like to run tests or benchmark, change directory to installation directory and run the following command:
+Run the following command:
 ```shell
-$ git clone --recurse-submodules https://github.com/JamesYang007/FastAD.git 
+$ git clone --recurse-submodules https://github.com/JamesYang007/FastAD.git ~/FastAD
+$ cd ~/FastAD
+$ ./install.sh
 ```
 
 Otherwise, run:
@@ -183,8 +185,22 @@ $ ctest
 ## FAQ
 
 ### How do I build my project with FastAD as a dependency?
-- Add the compiler flag `-I<path-to-FastAD>/include`
-- Or in CMake, add `include_directories(<path-to-FastAD>/include)`
+If project is built using CMake, add the following to CMakeLists.txt in the root directory:
+
+```cmake
+find_package(FastAD CONFIG REQUIRED)
+```
+
+and use `target_link_libraries` to link with `FastAD::FastAD`.
+
+An example project that uses FastAD as a dependency may have a CMakeLists.txt that looks like this:
+
+```cmake
+project("MyProject")
+find_package(FastAD CONFIG REQUIRED)
+add_executable(main src/main.cpp)
+target_link_libraries(main FastAD::FastAD)
+```
 
 ---
 
