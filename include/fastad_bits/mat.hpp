@@ -1,5 +1,6 @@
 #pragma once
 #include <iostream>
+#include <iomanip>
 #include <vector>
 #include <algorithm>
 
@@ -7,10 +8,8 @@ namespace ad {
 
 template <class T>
 class Mat;
-
 template <class T>
 std::ostream& operator<<(std::ostream& os, const Mat<T>& mat);
-
 template <class T>
 bool operator==(const Mat<T>& mat1, const Mat<T>& mat2);
 
@@ -35,16 +34,12 @@ public:
 	{ 
 		return data_[row*cols_ + col];  
 	}
-
 	const T& operator()(size_t row, size_t col) const 
 	{ 
 		return const_cast<Mat&>(*this)(row, col); 
 	}
-
 	friend std::ostream& operator<< <>(std::ostream& os, const Mat& mat);
-
 	friend bool operator== <>(const Mat& mat1, const Mat& mat2);
-
 	friend bool operator!=(const Mat& mat1, const Mat& mat2) 
 	{ 
 		return !(mat1 == mat2); 
@@ -55,31 +50,52 @@ public:
 	{ 
 		return rows_*cols_; 
 	}
-
 	size_t n_rows() const 
 	{ 
 		return rows_; 
 	}
-
 	size_t n_cols() const 
 	{ 
 		return cols_; 
 	}
 
-	// print to stdout with given header
-	void print(const std::string& header) const
-	{ 
-		std::cout << header << std::endl << *this; 
+	// print unformatted to stream (stdout by default) with optional header; allows for stream formatting parameters to be set manually
+	void raw_print(std::ostream& os) const;
+	void raw_print(std::ostream& os, const std::string& header) const
+	{
+		os << header << std::endl;
+		this->raw_print(os);
+	}
+	void raw_print() const
+	{
+		this->raw_print(std::cout);
+	}
+	void raw_print(const std::string& header) const
+	{
+		this->raw_print(std::cout, header);
+	}
+	
+	// print with default formatting to stream (stdout by default) with optional header
+	void print(std::ostream& os) const;
+	void print(std::ostream& os, const std::string& header) const {
+		os << header << std::endl;
+		this->print(os);
+	}
+	void print() const 
+	{
+		this->print(std::cout);
+	}	
+	void print(const std::string& header) const 
+	{
+		this->print(std::cout, header);
 	}
 
 	// fill the matrix (will resize for new dimensions)
 	void fill(size_t rows, size_t cols, const T& fill);
-
 	void fill(const T& fill) 
-    {
+    	{
 		this->fill(this->rows_, this->cols_, fill);
 	}
-
 	void zeros(size_t rows, size_t cols) 
 	{ 
 		this->fill(rows, cols, 0); 
@@ -100,17 +116,14 @@ public:
 	{ 
 		return data_.begin(); 
 	}
-
 	const_iterator begin() const 
 	{ 
 		return data_.begin(); 
 	}
-
 	iterator end() 
 	{ 
 		return data_.end(); 
 	}
-
 	const_iterator end() const 
 	{ 
 		return data_.end(); 
@@ -120,6 +133,10 @@ private:
 
 	std::vector<T> data_;	
 	size_t rows_, cols_;
+
+	static inline constexpr unsigned int PRINT_WIDTH = 13;
+	static inline constexpr unsigned int PRINT_PRECISION = 5;
+
 };
 
 // matrix -> string format is tab-separated by column, newline separated by row
@@ -130,8 +147,8 @@ std::ostream& operator<<(std::ostream& os, const Mat<T>& mat)
 	for (const T& item : mat) {
 		os << item << '\t';
 		if (++i >= mat.cols_) { 
-			os << std::endl; 
-            i = 0; 
+			os << std::endl;
+			i = 0; 
 		}
 	}
 	return os;
@@ -153,6 +170,41 @@ bool operator==(const Mat<T>& mat1, const Mat<T>& mat2)
 	}
 
 	return true;
+}
+
+template <class T>
+void Mat<T>::raw_print(std::ostream& os) const
+{
+	std::streamsize width_save = os.width();
+	size_t i = 0;
+	for (const T& item : *this) {
+		os << std::setw(width_save) << item;
+		if (++i >= this->cols_) {
+			os << std::endl;
+			i = 0;
+		}
+	}
+}
+
+template <class T>
+void Mat<T>::print(std::ostream& os) const
+{
+	char fill_save = os.fill();
+	std::streamsize width_save = os.width();
+	std::streamsize precision_save = os.precision();
+	std::ios::fmtflags flags_save = os.flags();
+
+	os.fill(' ');
+	os.width(PRINT_WIDTH);
+	os.precision(PRINT_PRECISION);
+	os.flags(flags_save | std::ios::fixed);
+
+	this->raw_print(os);
+
+	os.fill(fill_save);
+	os.width(width_save);
+	os.precision(precision_save);
+	os.flags(flags_save);
 }
 
 template <class T>
