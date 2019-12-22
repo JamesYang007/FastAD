@@ -5,10 +5,21 @@ FastAD is a light-weight, header-only C++ library of automatic differentiation p
 ---
 
 ## Table of contents
-* [Example](#example)
 * [Installation](#installation)
+  * [Setup](#setup)
+  * [Build and Install](#build-and-install)
 * [Features](#features)
-* [Tests](#tests)
+* [Tests and Benchmarks](#tests-and-benchmarks)
+  * [Linux/MacOS](#linux/macos)
+* [User Guide](#user-guide)
+  * [Include](#include)
+  * [Forward Mode](#forward-mode)
+  * [Reverse Mode](#reverse-mode)
+    * [Basic](#basic)
+    * [Using Vec](#using-vec)
+    * [Using Expression Generator](#using-expression-generator)
+    * [Jacobian](#jacobian)
+    * [Hessian](#hessian)
 * [Team](#team)
 - [FAQ](#faq)
   - [How do I build my project with FastAD as a dependency?](#how-do-i-build-my-project-with-fastad-as-a-dependency)
@@ -17,7 +28,43 @@ FastAD is a light-weight, header-only C++ library of automatic differentiation p
 
 ---
 
-## Example
+## Installation
+
+### Setup
+* Install a compiler with full support for C++17 standard.
+* (Linux/MacOS) Install cmake >= 3.9
+* [Adept](https://github.com/rjhogan/Adept-2) if user wishes to run benchmarks as well
+
+### Build and Install
+Run the following command:
+```shell
+$ git clone --recurse-submodules https://github.com/JamesYang007/FastAD.git ~/FastAD
+$ cd ~/FastAD
+$ ./setup.sh
+$ ./install.sh
+```
+
+---
+
+## Features
+* Forward-mode and reverse-mode automatic differentiation
+* Easy way to compute and store jacobian and hessian
+* Supports differentiation of polynomials and most elementary functions in standard library
+
+---
+
+## Tests and Benchmarks
+
+### Linux/MacOS
+> to run tests
+
+```shell
+$ cd build/release && ctest
+```
+
+---
+
+## User Guide
 
 ### Include
 ```cpp
@@ -25,7 +72,7 @@ FastAD is a light-weight, header-only C++ library of automatic differentiation p
 ```
 In the following examples, it is assumed that user is using `namespace ad`.
 
-### Forward-mode
+### Forward Mode
 ```cpp
 ForwardVar<double> w1(-0.201), w2(1.2241);
 w1.set_adjoint(1);
@@ -42,7 +89,7 @@ By default, all adjoints of `ForwardVar` are set to `0`.
 This indicates that we will be differentiating in the direction of `(1,0)`, i.e. partial derivative w.r.t. `w1`.
 After computing the desired expression, we get the directional derivative by calling `get_adjoint()` on the final `ForwardVar`.
 
-### Reverse-mode
+### Reverse Mode
 
 #### Basic
 ```cpp
@@ -89,7 +136,7 @@ std::cout << "f(x, y) = exp((x * sin(y) + x * y) * x * sin(y))\n"
 It can be initialized using an initializer list where every value is used to construct a `Var`.
 The expression can be constructed similarly by accessing the appropriate elements of a `Vec` object.
 
-#### Using Expression Generator (exgen)
+#### Using Expression Generator
 Using the same `x` variable from previous example,
 ```cpp
 auto F_lmda = [](const auto& x, const auto& w) {
@@ -124,40 +171,6 @@ ad::Mat<double> hess;
 hessian(hess, x_val, x_val + 2, F_lmda);
 std::cout << "f(x, y) = exp((x * sin(y) + x * y) * x * sin(y))" << std::endl;
 hess.print("Hessian of f(x, y)");
-```
-
----
-
-## Installation
-
-### Setup
-* Install a compiler with full support for C++17 standard.
-* (Linux/MacOS) Install cmake >= 3.9
-
-### Build and Install
-Run the following command:
-```shell
-$ git clone --recurse-submodules https://github.com/JamesYang007/FastAD.git ~/FastAD
-$ cd ~/FastAD
-$ ./setup.sh
-$ ./install.sh
-```
-
----
-
-## Features
-* Forward-mode and reverse-mode automatic differentiation
-* Easy way to compute and store jacobian and hessian
-* Supports differentiation of polynomials and most elementary functions in standard library
-
----
-
-## Tests
-
-### Linux/MacOS
-> to run tests
-```shell
-$ cd build/release && ctest
 ```
 
 ---

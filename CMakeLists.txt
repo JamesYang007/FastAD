@@ -68,9 +68,6 @@ message(STATUS "Compiling in ${CMAKE_BUILD_TYPE} mode")
 set(GTEST_DIR ${PROJECT_SOURCE_DIR}/libs/benchmark/googletest/googletest)
 set(GBENCH_DIR ${PROJECT_SOURCE_DIR}/libs/benchmark)
 
-# Flags passed to the C++ compiler.
-add_compile_options(-g -Wall -Werror -Wextra)
-
 # add libs subdirectory
 add_subdirectory(${PROJECT_SOURCE_DIR}/libs ${PROJECT_BINARY_DIR}/libs)
 
@@ -80,5 +77,9 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/test ${PROJECT_BINARY_DIR}/test)
 # add example subdirectory
 add_subdirectory(${PROJECT_SOURCE_DIR}/example ${PROJECT_BINARY_DIR}/example)
 
-# add benchmark subdirectory
-add_subdirectory(${PROJECT_SOURCE_DIR}/benchmark ${PROJECT_BINARY_DIR}/benchmark)
+# add benchmark subdirectory if adept is installed
+find_path(ADEPT_INCLUDE_DIR adept)
+find_library(ADEPT_LIB adept)
+if (ADEPT_INCLUDE_DIR AND ADEPT_LIB)
+    add_subdirectory(${PROJECT_SOURCE_DIR}/benchmark ${PROJECT_BINARY_DIR}/benchmark)
+endif()
