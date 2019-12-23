@@ -4,7 +4,10 @@
 if [ ! -d "libs/benchmark/googletest" ]; then
     git clone https://github.com/google/googletest.git libs/benchmark/googletest
     cd libs/benchmark
-    mkdir build && cd build
+    if [ ! -d "build" ]; then
+        mkdir build
+    fi
+    cd build
     cmake ../
     make -j6
 else
