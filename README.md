@@ -1,40 +1,103 @@
-# FastAD [![Build Status](https://travis-ci.org/JamesYang007/FastAD.svg?branch=master)](https://travis-ci.org/JamesYang007/FastAD) ![GitHub tag (latest by date)](https://img.shields.io/github/v/tag/JamesYang007/FastAD) ![GitHub release (latest by date)](https://img.shields.io/github/v/release/JamesYang007/FastAD?include_prereleases) [![License](http://img.shields.io/:license-mit-blue.svg?style=flat-square)](http://badges.mit-license.org)
+# FastAD 
 
-FastAD is a C++ template library of automatic differentiation supporting both forward and reverse mode to compute gradient and hessian. 
-It utilizes the latest features in C++17 and expression templates for efficient computation.
-
----
+[![Build Status](https://travis-ci.org/JamesYang007/FastAD.svg?branch=master)](https://travis-ci.org/JamesYang007/FastAD) 
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/5fe0893b770643e7bd9d4c9ad6ab189b)](https://www.codacy.com/manual/JamesYang007/FastAD?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=JamesYang007/FastAD&amp;utm_campaign=Badge_Grade)
+[![GitHub tag (latest by date)](https://img.shields.io/github/v/tag/JamesYang007/FastAD)](https://github.com/JamesYang007/FastAD/tags)
+[![GitHub release (latest by date)](https://img.shields.io/github/v/release/JamesYang007/FastAD?include_prereleases)](https://github.com/JamesYang007/FastAD/releases)
+[![GitHub issue (latest by date)](https://img.shields.io/github/issues/JamesYang007/FastAD)](https://github.com/JamesYang007/FastAD/issues)
+[![License](https://img.shields.io/github/license/JamesYang007/FastAD?color=blue)](http://badges.mit-license.org)
 
 ## Table of contents
-* [Installation](#installation)
-  * [Setup](#setup)
-  * [Build and Install](#build-and-install)
-* [Features](#features)
-* [Tests and Benchmarks](#tests-and-benchmarks)
-  * [Linux and MacOS](#linux-and-macos)
-* [User Guide](#user-guide)
-  * [Forward Mode](#forward-mode)
-  * [Reverse Mode](#reverse-mode)
-    * [Basic](#basic)
-    * [Using Vec](#using-vec)
-    * [Using Expression Generator](#using-expression-generator)
-    * [Jacobian](#jacobian)
-    * [Hessian](#hessian)
-* [Team](#team)
-* [FAQ](#faq)
-  * [How do I build my project with FastAD as a dependency?](#how-do-i-build-my-project-with-fastad-as-a-dependency)
-* [Support](#support)
-* [License](#license)
 
----
+- [Overview](#overview)
+  - [Intuitive Syntax](#intuitive-syntax)
+  - [Simplicity](#simplicity)
+  - [Robustness](#robustness)
+  - [Memory Efficiency](#memory-efficiency)
+  - [Speed](#speed)
+  - [Features](#features)
+
+- [Installation](#installation)
+  - [Setup](#setup)
+  - [Build and Install](#build-and-install)
+
+- [Integration](#integration)
+  - [CMake](#cmake)
+
+- [Tests and Benchmarks](#tests-and-benchmarks)
+  - [Linux and MacOS](#linux-and-macos)
+
+- [User Guide](#user-guide)
+  - [Forward Mode](#forward-mode)
+
+  - [Reverse Mode](#reverse-mode)
+    - [Basic](#basic)
+    - [Using Vec](#using-vec)
+    - [Using Expression Generator](#using-expression-generator)
+    - [Jacobian](#jacobian)
+    - [Hessian](#hessian)
+
+- [Contact](#contact)
+
+- [Team](#team)
+
+- [License](#license)
+
+## Overview
+
+FastAD is a header-only C++ template library of automatic differentiation supporting both forward and reverse mode to compute gradient and hessian. 
+It utilizes the latest features in C++17 and expression templates for efficient computation.
+FastAD is unique for the following:
+
+### Intuitive syntax
+
+Syntax choice is very important for C++ developers. 
+Our philosophy is that syntax should be as similar as possible to STL.
+All elementary functions such as `sin`, `exp`, and `pow` preserve the same name as those in STL.
+This provides a seemless integration of FastAD in other existing projects as well with minor syntactical changes.
+
+### Simplicity
+
+FastAD is incredibly easy to use, partly due to the intuitive syntax.
+With only a few lines of code, users can differentiate any smooth function.
+See [User Guide](#user-guide) for more information.
+
+### Robustness
+
+FastAD has been heavily unit-tested with high test coverage followed by a few integration tests.
+A variety of functions from simple (unit-test) to complex (integration-test) 
+have been tested against manually-computed solutions.
+At machine-level precision, the derivatives coincide.
+
+### Memory Efficiency
+
+FastAD is written to be incredibly efficient with memory usage and cache hits.
+The main overhead of most AD libraries is the tape, which stores adjoints.
+Using expression template techniques, we can significantly reduce this overhead.
+
+### Speed
+
+Speed is the utmost critical aspect of any AD library.
+FastAD has been proven to be extremely fast, which inspired the name of this library.
+Benchmark shows over 40-50x improvement from [Adept](https://github.com/rjhogan/Adept-2), an existing AD library.
+Moreover, it also shows 10x improvement from the naive (and often inaccurate) finite-difference method.
+
+### Features
+
+- Forward and reverse mode automatic differentiation
+- Easy way to compute and store jacobian and hessian
+- Supports differentiation of polynomials and most elementary functions in standard library
+- Follows STL syntax and semantics
 
 ## Installation
 
 ### Setup
 
-* Install a compiler with full support for C++17 standard.
-* (Linux/MacOS) Install cmake >= 3.9
-* (optional) [Adept](https://github.com/rjhogan/Adept-2) if user wishes to run benchmarks against it as well
+- GCC >= 5
+- Clang >= 5
+- CMake >= 3.9
+
+Optionally, user can install [Adept](https://github.com/rjhogan/Adept-2) if they wish to run benchmarks against it.
 
 ### Build and Install
 
@@ -47,16 +110,26 @@ cd ~/FastAD
 ./install.sh
 ```
 
----
+## Integration
 
-## Features
+### CMake
 
-* Forward and reverse mode automatic differentiation
-* Easy way to compute and store jacobian and hessian
-* Supports differentiation of polynomials and most elementary functions in standard library
-* Follows STL syntax and semantics for accessibility
+If project is built using CMake, add the following to CMakeLists.txt in the root directory:
 
----
+```cmake
+find_package(FastAD CONFIG REQUIRED)
+```
+
+and use `target_link_libraries` to link with `FastAD::FastAD`.
+
+An example project that uses FastAD as a dependency may have a CMakeLists.txt that looks like this:
+
+```cmake
+project("MyProject")
+find_package(FastAD CONFIG REQUIRED)
+add_executable(main src/main.cpp)
+target_link_libraries(main FastAD::FastAD)
+```
 
 ## Tests and Benchmarks
 
@@ -74,8 +147,6 @@ The following is an example command:
 ```shell
 cd build/release/benchmark && ./ad_benchmark
 ```
-
----
 
 ## User Guide
 
@@ -165,6 +236,7 @@ It can be initialized using an initializer list where every value is used to con
 The expression can be constructed similarly by accessing the appropriate elements of a `Vec` object.
 
 #### Using Expression Generator
+
 Using the same `x` variable from previous example, one may construct `expr` similarly, 
 but without defining the temporary placeholders `w`.
 
@@ -183,6 +255,7 @@ This object will not create an expression until user calls `generate(x)` where `
 The template parameter to `make_exgen` is the type of the values and will usually be identical to the template parameter of the `Vec` object `x`.
 
 #### Jacobian
+
 Using the same `F_lmda` lambda function from previous example, 
 one can further encapsulate this process of differentiating by only supplying the raw x-values
 and a lambda function (such as `F_lmda`) that will generate the expression.
@@ -196,6 +269,7 @@ jacobi.print("Jacobian of f(x, y)");
 ```
 
 #### Hessian
+
 Using the same `x_val` and `F_lmda` from previous example,
 we may compute the hessian in the following way:
 
@@ -206,7 +280,13 @@ std::cout << "f(x, y) = exp((x * sin(y) + x * y) * x * sin(y))" << std::endl;
 hess.print("Hessian of f(x, y)");
 ```
 
----
+## Contact
+
+If you have any questions about FastAD, please [open an issue](https://github.com/JamesYang007/FastAD/issues/new).
+When opening an issue, please describe in the fullest detail with a minimal example to recreate the problem.
+
+For other general questions that cannot be resolved through opening issues,
+feel free to [send me an email](mailto:jamesyang916@gmail.com).
 
 ## Team
 
@@ -215,39 +295,7 @@ hess.print("Hessian of f(x, y)");
 | [![JamesYang007](https://avatars3.githubusercontent.com/u/5008832?s=100&v=4)](https://github.com/JamesYang007) | [](https://github.com/kentjhall) |
 | <a href="http://github.com/JamesYang007" target="_blank">`github.com/JamesYang007`</a> | <a href="http://github.com/kentjhall" target="_blank">`github.com/kentjhall`</a> |
 
----
-
-## FAQ
-
-### How do I build my project with FastAD as a dependency?
-If project is built using CMake, add the following to CMakeLists.txt in the root directory:
-
-```cmake
-find_package(FastAD CONFIG REQUIRED)
-```
-
-and use `target_link_libraries` to link with `FastAD::FastAD`.
-
-An example project that uses FastAD as a dependency may have a CMakeLists.txt that looks like this:
-
-```cmake
-project("MyProject")
-find_package(FastAD CONFIG REQUIRED)
-add_executable(main src/main.cpp)
-target_link_libraries(main FastAD::FastAD)
-```
-
----
-
-## Support
-Feel free to contact me via:
-* Email: jamesyang916@gmail.com
-
----
-
 ## License
-
-[![License](http://img.shields.io/:license-mit-blue.svg?style=flat-square)](http://badges.mit-license.org)
 
 - **[MIT license](http://opensource.org/licenses/mit-license.php)**
 - Copyright 2019 ©JamesYang007.
