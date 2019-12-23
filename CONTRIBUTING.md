@@ -2,6 +2,10 @@
 
 Here is a guideline for reporting any bugs, issues, changes, or additions.
 
+## Private Reports
+
+If a private report must be made because of confidential information, please [email me with the issue](mailto:jamesyang916@gmail.com).
+
 ## Prerequisites
 
 First check the [issue page](https://github.com/JamesYang007/FastAD/issues) to see if your issue already exists.
