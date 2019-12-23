@@ -2,6 +2,7 @@
 
 FastAD is a C++ template library of automatic differentiation supporting both forward and reverse mode to compute gradient and hessian. 
 It utilizes the latest features in C++17 and expression templates for efficient computation.
+
 ---
 
 ## Table of contents
@@ -10,9 +11,8 @@ It utilizes the latest features in C++17 and expression templates for efficient 
   * [Build and Install](#build-and-install)
 * [Features](#features)
 * [Tests and Benchmarks](#tests-and-benchmarks)
-  * [Linux/MacOS](#linux/macos)
+  * [Linux and MacOS](#linux-and-macos)
 * [User Guide](#user-guide)
-  * [Include](#include)
   * [Forward Mode](#forward-mode)
   * [Reverse Mode](#reverse-mode)
     * [Basic](#basic)
@@ -21,8 +21,8 @@ It utilizes the latest features in C++17 and expression templates for efficient 
     * [Jacobian](#jacobian)
     * [Hessian](#hessian)
 * [Team](#team)
-- [FAQ](#faq)
-  - [How do I build my project with FastAD as a dependency?](#how-do-i-build-my-project-with-fastad-as-a-dependency)
+* [FAQ](#faq)
+  * [How do I build my project with FastAD as a dependency?](#how-do-i-build-my-project-with-fastad-as-a-dependency)
 * [Support](#support)
 * [License](#license)
 
@@ -51,7 +51,7 @@ cd ~/FastAD
 
 ## Features
 
-* Forward-mode and reverse-mode automatic differentiation
+* Forward and reverse mode automatic differentiation
 * Easy way to compute and store jacobian and hessian
 * Supports differentiation of polynomials and most elementary functions in standard library
 * Follows STL syntax and semantics for accessibility
@@ -60,7 +60,7 @@ cd ~/FastAD
 
 ## Tests and Benchmarks
 
-### Linux/MacOS
+### Linux and MacOS
 
 To run tests, execute the following:
 
@@ -68,7 +68,7 @@ To run tests, execute the following:
 cd build/release && ctest
 ```
 
-To run benchmarks, change directory to `build/release/benchmark` and run any one of the executables
+To run benchmarks, change directory to `build/release/benchmark` and run any one of the executables.
 The following is an example command:
 
 ```shell
