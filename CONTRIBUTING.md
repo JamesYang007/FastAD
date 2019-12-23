@@ -49,9 +49,9 @@ To make changes, you need to edit the following files:
 If you add or change a feature, please also add a unit test to this file. The unit tests can be compiled and executed with
 
 ```sh
-$ ./clean-build debug
-$ cd build/debug
-$ ctest
+./clean-build debug
+cd build/debug
+ctest
 ```
 
 The test cases are also executed on [Travis](https://travis-ci.org/nlohmann/json) once you open a pull request.
