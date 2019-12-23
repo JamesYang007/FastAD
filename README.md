@@ -5,6 +5,7 @@
 [![GitHub tag (latest by date)](https://img.shields.io/github/v/tag/JamesYang007/FastAD)](https://github.com/JamesYang007/FastAD/tags)
 [![GitHub release (latest by date)](https://img.shields.io/github/v/release/JamesYang007/FastAD?include_prereleases)](https://github.com/JamesYang007/FastAD/releases)
 [![GitHub issue (latest by date)](https://img.shields.io/github/issues/JamesYang007/FastAD)](https://github.com/JamesYang007/FastAD/issues)
+[![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/3532/badge)](https://bestpractices.coreinfrastructure.org/projects/3532)
 [![License](https://img.shields.io/github/license/JamesYang007/FastAD?color=blue)](http://badges.mit-license.org)
 
 ## Table of contents
@@ -16,31 +17,23 @@
   - [Memory Efficiency](#memory-efficiency)
   - [Speed](#speed)
   - [Features](#features)
-
 - [Installation](#installation)
   - [Setup](#setup)
   - [Build and Install](#build-and-install)
-
 - [Integration](#integration)
   - [CMake](#cmake)
-
 - [Tests and Benchmarks](#tests-and-benchmarks)
   - [Linux and MacOS](#linux-and-macos)
-
 - [User Guide](#user-guide)
   - [Forward Mode](#forward-mode)
-
   - [Reverse Mode](#reverse-mode)
     - [Basic](#basic)
     - [Using Vec](#using-vec)
     - [Using Expression Generator](#using-expression-generator)
     - [Jacobian](#jacobian)
     - [Hessian](#hessian)
-
 - [Contact](#contact)
-
 - [Team](#team)
-
 - [License](#license)
 
 ## Overview

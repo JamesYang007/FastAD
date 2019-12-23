@@ -3,7 +3,7 @@
 # directory where current shell script resides
 PROJECTDIR=$(dirname "$BASH_SOURCE")
 
-cd $PROJECTDIR
+cd "$PROJECTDIR"
 
 mode=$1 # debug/release mode
 shift   # shift command-line arguments
@@ -41,7 +41,7 @@ else
     exit 1
 fi
 
-rm -rf *
+rm -rf ./*
 
 # if $run is set to "run" or not set to anything
 if [ "$run" = "run" ] || [ "$run" = "" ]; then
