@@ -10,21 +10,33 @@
 ## Table of contents
 
 - [Overview](#overview)
+  - [Intuitive Syntax](#intuitive-syntax)
+  - [Simplicity](#simplicity)
+  - [Robustness](#robustness)
+  - [Memory Efficiency](#memory-efficiency)
+  - [Speed](#speed)
+  - [Features](#features)
+
 - [Installation](#installation)
   - [Setup](#setup)
   - [Build and Install](#build-and-install)
+
 - [Integration](#integration)
   - [CMake](#cmake)
+
 - [Tests and Benchmarks](#tests-and-benchmarks)
   - [Linux and MacOS](#linux-and-macos)
+
 - [User Guide](#user-guide)
   - [Forward Mode](#forward-mode)
+
   - [Reverse Mode](#reverse-mode)
     - [Basic](#basic)
     - [Using Vec](#using-vec)
     - [Using Expression Generator](#using-expression-generator)
     - [Jacobian](#jacobian)
     - [Hessian](#hessian)
+
 - [Contact](#contact)
 - [Team](#team)
 - [License](#license)
@@ -35,40 +47,40 @@ FastAD is a header-only C++ template library of automatic differentiation suppor
 It utilizes the latest features in C++17 and expression templates for efficient computation.
 FastAD is unique for the following:
 
-- **Intuitive syntax**
+### Intuitive syntax
 
-    Syntax choice is very important for C++ developers. 
-    Our philosophy is that syntax should be as similar as possible to STL.
-    All elementary functions such as `sin`, `exp`, and `pow` preserve the same name as those in STL.
-    This provides a seemless integration of FastAD in other existing projects as well with minor syntactical changes.
+Syntax choice is very important for C++ developers. 
+Our philosophy is that syntax should be as similar as possible to STL.
+All elementary functions such as `sin`, `exp`, and `pow` preserve the same name as those in STL.
+This provides a seemless integration of FastAD in other existing projects as well with minor syntactical changes.
 
-- **Simplicity**
+### Simplicity
 
-    FastAD is incredibly easy to use, partly due to the intuitive syntax.
-    With only a few lines of code, users can differentiate any smooth function.
-    See [User Guide](#user-guide) for more information.
+FastAD is incredibly easy to use, partly due to the intuitive syntax.
+With only a few lines of code, users can differentiate any smooth function.
+See [User Guide](#user-guide) for more information.
 
-- **Robustness**
+### Robustness
 
-    FastAD has been heavily unit-tested with high test coverage followed by a few integration tests.
-    A variety of functions from simple (unit-test) to complex (integration-test) 
-    have been tested against manually-computed solutions.
-    At machine-level precision, the derivatives coincide.
+FastAD has been heavily unit-tested with high test coverage followed by a few integration tests.
+A variety of functions from simple (unit-test) to complex (integration-test) 
+have been tested against manually-computed solutions.
+At machine-level precision, the derivatives coincide.
 
-- **Memory Efficiency**
+### Memory Efficiency
 
-    FastAD is written to be incredibly efficient with memory usage and cache hits.
-    The main overhead of most AD libraries is the tape, which stores adjoints.
-    Using expression template techniques, we can significantly reduce this overhead.
+FastAD is written to be incredibly efficient with memory usage and cache hits.
+The main overhead of most AD libraries is the tape, which stores adjoints.
+Using expression template techniques, we can significantly reduce this overhead.
 
-- **Speed**
+### Speed
 
-    Speed is the utmost critical aspect of any AD library.
-    FastAD has been proven to be extremely fast, which inspired the name of this library.
-    Benchmark shows over 40-50x improvement from [Adept](https://github.com/rjhogan/Adept-2), an existing AD library.
-    Moreover, it also shows 10x improvement from the naive (and often inaccurate) finite-difference method.
+Speed is the utmost critical aspect of any AD library.
+FastAD has been proven to be extremely fast, which inspired the name of this library.
+Benchmark shows over 40-50x improvement from [Adept](https://github.com/rjhogan/Adept-2), an existing AD library.
+Moreover, it also shows 10x improvement from the naive (and often inaccurate) finite-difference method.
 
-FastAD supports the following features:
+### Features
 
 - Forward and reverse mode automatic differentiation
 - Easy way to compute and store jacobian and hessian
