@@ -1,46 +1,80 @@
-#include <random>
-#include <ctime>
 #include <fastad_bits/vec.hpp>
 #include <fastad_bits/math.hpp>
 #include <fastad_bits/node.hpp>
 #include <fastad_bits/eval.hpp>
-#include "gtest/gtest.h"
+#include <benchmark/benchmark.h>
+#include <numeric>
+#ifdef USE_ADEPT
+#include <adept_arrays.h>
+#endif
 
-namespace ad {
-
-TEST(benchmark, sumnode) {
-    Vec<double> vec;
-    std::default_random_engine gen;
-    std::normal_distribution<double> dist(0.0,1.0);
-    for (size_t i = 0; i < 1e6; ++i) {
-        vec.emplace_back(dist(gen));        
+// Finite-difference method
+static inline double f_test(const std::vector<double>& x)
+{
+    double sum = 0;
+    for (const auto& xi : x) {
+        sum += xi * xi;
     }
-
-    Vec<double> sumvec(vec.size());
-    sumvec[0] = vec[0];
-
-    Var<double> w4, w5;
-
-    auto sumvec_prev = sumvec.begin();
-    auto vec_it = vec.begin();
-    auto expr = ad::for_each(std::next(sumvec.begin()), sumvec.end()
-            , [&](const typename Vec<double>::value_type& curr) {
-                return curr = *(sumvec_prev++) + *(++vec_it);
-            });
-
-    std::clock_t time;
-    time = std::clock();
-    autodiff((w4=expr, w5 = w4*w4 + vec[0]));
-    std::cout << "Autodiff only: " 
-        << 1e3 * (std::clock() - time) / (double) CLOCKS_PER_SEC
-        << " ms" << std::endl;
-
-    double sqsum = 0.0;
-    for (size_t i = 0; i < vec.size(); ++i) {
-        sqsum += vec[i].get_value();
-    }
-    EXPECT_DOUBLE_EQ(w5.get_value(), sqsum*sqsum + vec[0].get_value());
-
+    return sum * sum + std::sin(sum);
 }
 
-} // namespace ad
+static void BM_sumnode_fd(benchmark::State& state)
+{
+    constexpr double h = 1e-10;
+    for (auto _ : state) {
+        std::vector<double> x(10);
+        for (size_t i = 0; i < x.size(); ++i) {
+            x[i] = i;
+        }
+        double f = f_test(x);
+        for (size_t i = 0; i < x.size(); ++i) {
+            x[i] += h;
+            double f_h = f_test(x);
+            double dfdx_i = (f_h - f) / h;
+            benchmark::DoNotOptimize(dfdx_i);
+            x[i] -= h;
+        }
+    }
+}
+
+BENCHMARK(BM_sumnode_fd);
+
+// FastAD
+static void BM_sumnode_fastad(benchmark::State& state) 
+{
+    using namespace ad;
+    for (auto _ : state) {
+        Vec<double> vec;
+        for (size_t i = 0; i < 1e1; ++i) {
+            vec.emplace_back(i);
+        }
+        Var<double> w4, w5;
+        auto expr = ad::sum(vec.begin(), vec.end(), [](const auto& x) {return x * x;});
+        autodiff((w4=expr, w5 = w4 * w4 + ad::sin(w4)));
+        benchmark::ClobberMemory();
+    }
+}
+
+BENCHMARK(BM_sumnode_fastad);
+
+#ifdef USE_ADEPT
+
+// Adept
+static void BM_sumnode_adept(benchmark::State& state)
+{
+    using namespace adept;    
+    for (auto _ : state) {
+        Stack stack;
+        aVector x = {0.,1.,2.,3.,4.,5.,6.,7.,8.,9.};
+        stack.new_recording();
+        aReal y = sum(x * x);
+        aReal J = pow(y, 2) + sin(y);
+        J.set_gradient(1.);
+        stack.reverse();
+        benchmark::ClobberMemory();
+    }
+}
+
+BENCHMARK(BM_sumnode_adept);
+
+#endif

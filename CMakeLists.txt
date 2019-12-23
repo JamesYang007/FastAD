@@ -65,10 +65,8 @@ endif()
 message(STATUS "Compiling in ${CMAKE_BUILD_TYPE} mode")
 
 # Points to the root of Google Test
-set(GTEST_DIR ${PROJECT_SOURCE_DIR}/libs/googletest/googletest)
-
-# Flags passed to the C++ compiler.
-add_compile_options(-g -Wall -Werror -Wextra)
+set(GTEST_DIR ${PROJECT_SOURCE_DIR}/libs/benchmark/googletest/googletest)
+set(GBENCH_DIR ${PROJECT_SOURCE_DIR}/libs/benchmark)
 
 # add libs subdirectory
 add_subdirectory(${PROJECT_SOURCE_DIR}/libs ${PROJECT_BINARY_DIR}/libs)
