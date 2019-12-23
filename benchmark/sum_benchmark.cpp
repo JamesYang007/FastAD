@@ -4,14 +4,47 @@
 #include <fastad_bits/eval.hpp>
 #include <benchmark/benchmark.h>
 #include <adept_arrays.h>
+#include <numeric>
 
-static void BM_sumnode(benchmark::State& state) 
+// Finite-difference method
+static inline double f_test(const std::vector<double>& x)
+{
+    double sum = 0;
+    for (const auto& xi : x) {
+        sum += xi * xi;
+    }
+    return sum * sum + std::sin(sum);
+}
+
+static void BM_sumnode_fd(benchmark::State& state)
+{
+    constexpr double h = 1e-10;
+    for (auto _ : state) {
+        std::vector<double> x(10);
+        for (size_t i = 0; i < x.size(); ++i) {
+            x[i] = i;
+        }
+        double f = f_test(x);
+        for (size_t i = 0; i < x.size(); ++i) {
+            x[i] += h;
+            double f_h = f_test(x);
+            double dfdx_i = (f_h - f) / h;
+            benchmark::DoNotOptimize(dfdx_i);
+            x[i] -= h;
+        }
+    }
+}
+
+BENCHMARK(BM_sumnode_fd);
+
+// FastAD
+static void BM_sumnode_fastad(benchmark::State& state) 
 {
     using namespace ad;
     for (auto _ : state) {
         Vec<double> vec;
         for (size_t i = 0; i < 1e1; ++i) {
-            vec.emplace_back(i);        
+            vec.emplace_back(i);
         }
         Var<double> w4, w5;
         auto expr = ad::sum(vec.begin(), vec.end(), [](const auto& x) {return x * x;});
@@ -20,8 +53,11 @@ static void BM_sumnode(benchmark::State& state)
     }
 }
 
-BENCHMARK(BM_sumnode);
+BENCHMARK(BM_sumnode_fastad);
 
+#ifdef USE_ADEPT
+
+// Adept
 static void BM_sumnode_adept(benchmark::State& state)
 {
     using namespace adept;    
@@ -38,3 +74,5 @@ static void BM_sumnode_adept(benchmark::State& state)
 }
 
 BENCHMARK(BM_sumnode_adept);
+
+#endif

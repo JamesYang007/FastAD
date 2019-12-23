@@ -77,9 +77,5 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/test ${PROJECT_BINARY_DIR}/test)
 # add example subdirectory
 add_subdirectory(${PROJECT_SOURCE_DIR}/example ${PROJECT_BINARY_DIR}/example)
 
-# add benchmark subdirectory if adept is installed
-find_path(ADEPT_INCLUDE_DIR adept)
-find_library(ADEPT_LIB adept)
-if (ADEPT_INCLUDE_DIR AND ADEPT_LIB)
-    add_subdirectory(${PROJECT_SOURCE_DIR}/benchmark ${PROJECT_BINARY_DIR}/benchmark)
-endif()
+# add benchmark subdirectory
+add_subdirectory(${PROJECT_SOURCE_DIR}/benchmark ${PROJECT_BINARY_DIR}/benchmark)

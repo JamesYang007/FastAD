@@ -6,7 +6,40 @@
 #include <benchmark/benchmark.h>
 #include <adept_arrays.h>
 
-static void BM_prod(benchmark::State& state) 
+// Finite-difference
+
+static inline double f_test(const std::vector<double>& x)
+{
+    double prod = 1.;
+    for (const auto& xi : x) {
+        prod *= xi * xi;
+    }
+    return prod * prod + std::cos(prod);
+}
+
+static void BM_prod_fd(benchmark::State& state)
+{
+    constexpr double h = 1e-10;
+    for (auto _ : state) {
+        std::vector<double> x(10);
+        for (size_t i = 0; i < x.size(); ++i) {
+            x[i] = i;
+        } 
+        double f = f_test(x);
+        for (size_t i = 0; i < x.size(); ++i) {
+            x[i] += h;
+            double f_h = f_test(x);
+            double dfdx_i = (f_h - f)/h;
+            benchmark::DoNotOptimize(dfdx_i);
+            x[i] -= h;
+        }
+    }
+}
+
+BENCHMARK(BM_prod_fd);
+
+// FastAD
+static void BM_prod_fastad(benchmark::State& state) 
 {
     using namespace ad;
     for (auto _ : state) {
@@ -24,8 +57,11 @@ static void BM_prod(benchmark::State& state)
     }
 }
 
-BENCHMARK(BM_prod);
+BENCHMARK(BM_prod_fastad);
 
+#ifdef USE_ADEPT
+
+// Adept
 static void BM_prod_adept(benchmark::State& state)
 {
     using namespace adept;    
@@ -42,3 +78,6 @@ static void BM_prod_adept(benchmark::State& state)
 }
 
 BENCHMARK(BM_prod_adept);
+
+#endif
+
