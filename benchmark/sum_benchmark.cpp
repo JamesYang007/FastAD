@@ -3,8 +3,10 @@
 #include <fastad_bits/node.hpp>
 #include <fastad_bits/eval.hpp>
 #include <benchmark/benchmark.h>
-#include <adept_arrays.h>
 #include <numeric>
+#ifdef USE_ADEPT
+#include <adept_arrays.h>
+#endif
 
 // Finite-difference method
 static inline double f_test(const std::vector<double>& x)

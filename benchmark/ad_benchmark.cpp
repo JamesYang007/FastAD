@@ -1,6 +1,9 @@
 #include <fastad>
 #include <benchmark/benchmark.h>
+
+#ifdef USE_ADEPT
 #include <adept_arrays.h>
+#endif
 
 // Finite-difference
 

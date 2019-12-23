@@ -4,7 +4,9 @@
 #include <fastad_bits/vec.hpp>
 #include <fastad_bits/eval.hpp>
 #include <benchmark/benchmark.h>
+#ifdef USE_ADEPT
 #include <adept_arrays.h>
+#endif
 
 // Finite-difference
 
