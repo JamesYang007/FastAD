@@ -5,8 +5,7 @@ option(COVERAGE "Build FastAD with coverage" OFF)
 
 if (COVERAGE)
     message(STATUS "Building test suite with coverage information")
-    add_compile_options(--coverage -O0 -fprofile-arcs -ftest-coverage
-        -fno-inline -fno-inline-small-functions -fno-default-inline)
+    add_compile_options(--coverage -O0 -fno-inline -fno-inline-small-functions -fno-default-inline)
 endif()
 
 # All tests
@@ -35,10 +34,9 @@ foreach( test ${TESTS} )
     # Flags passed to the C++ compiler.
     target_compile_options(${test} PRIVATE -g -Wall -Werror -Wextra)
     target_include_directories(${test} PRIVATE ${GTEST_DIR}/include)
-    ## If gcc, then link with gcov
-    #if(CMAKE_COMPILER_IS_GNUCXX)
-    #    target_link_libraries(${test} gcov)
-    #endif()
+    if (COVERAGE)
+        target_link_libraries(${test} gcov)
+    endif()
     target_link_libraries(${test} gtest_main pthread ${PROJECT_NAME})
     add_test(${test} ${test})
 endforeach()
