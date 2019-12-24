@@ -6,6 +6,7 @@
 
 **Merged pull requests:**
 
+- Release/1.0.1 [\#47](https://github.com/JamesYang007/FastAD/pull/47) ([JamesYang007](https://github.com/JamesYang007))
 - Update CHANGELOG [\#46](https://github.com/JamesYang007/FastAD/pull/46) ([JamesYang007](https://github.com/JamesYang007))
 
 ## [v1.0.1](https://github.com/JamesYang007/FastAD/tree/v1.0.1) (2019-12-24)
