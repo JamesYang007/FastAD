@@ -296,6 +296,8 @@ Many third party tools were used for this project.
 
 - [Clang](https://clang.llvm.org/): main compiler used for development.
 - [Codacy](https://app.codacy.com/welcome/organizations): rigorous code analysis.
+- [Coveralls](https://coveralls.io/): for measuring [code coverage](https://coveralls.io/github/JamesYang007/FastAD).
+- [Cpp Coveralls](https://github.com/eddyxu/cpp-coveralls): for measuring code coverage in Coveralls.
 - [Github Changelog Generator](https://github.com/github-changelog-generator/github-changelog-generator): generate [CHANGELOG](https://github.com/JamesYang007/FastAD/blob/master/CHANGELOG.md).
 - [Google Benchmark](https://github.com/google/benchmark): benchmark against various methods.
 - [Googletest](https://github.com/google/googletest): unit-test and integration-test.
