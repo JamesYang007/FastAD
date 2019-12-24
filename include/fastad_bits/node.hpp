@@ -329,15 +329,8 @@ struct glue_size
 template <class ValueType, class LeftExprType, class ExprType>
 struct glue_size<GlueNode<ValueType, LeftExprType, EqNode<ValueType, ExprType>>>
 {
+    static_assert(is_glue_eq<LeftExprType>::value, "Left expression is not a GlueNode.");
     static inline constexpr size_t value = 1 + glue_size<LeftExprType>::value;
-};
-
-template <class ValueType, class ExprType1, class ExprType2>
-struct glue_size<
-    GlueNode<ValueType, EqNode<ValueType, ExprType1>, EqNode<ValueType, ExprType2>>
-    >
-{
-    static inline constexpr size_t value = 2;
 };
 
 template <class ValueType, class ExprType1>
