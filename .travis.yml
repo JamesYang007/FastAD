@@ -6,32 +6,34 @@ os: linux
   
 addons:
   apt:
-    sources:
-      - ubuntu-toolchain-r-test
-    packages:
-      - gcc-7
-      - g++-7
-      - cmake
-      - valgrind
+    sources: ubuntu-toolchain-r-test
+    packages: [g++-7, cmake, valgrind]
+      
+before_install:
+  - pip install --user cpp-coveralls
 
+env:
+  - CMAKE_OPTIONS=-DCOVERAGE=ON
+  
 language: cpp
 
 compiler: gcc
 
 script:
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
-      sudo ln -s /usr/bin/gcc-7 /usr/local/bin/gcc;
-      sudo ln -s /usr/bin/g++-7 /usr/local/bin/g++;
-      export CC=/usr/bin/gcc-7;
       export CXX=/usr/bin/g++-7;
-      gcc -v && g++ -v && cmake --version;
+      g++ -v && cmake --version;
     fi 
   - ./setup.sh
   - mkdir build
   - cd build
   - mkdir debug
   - cd debug
-  - cmake ../../
+  - cmake ../../ ${CMAKE_OPTIONS}
   - make -j12
   - ctest  -T memcheck -j12
   - cat ./Testing/Temporary/MemoryChecker.*.log
+  - cd ../../
+  
+after_success:
+  - coveralls --build-root test --include include --gcov 'gcov-7' --gcov-options '\-lp'

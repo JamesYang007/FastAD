@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.9)
 
+set(CMAKE_TRY_COMPILE_TARGET_TYPE "STATIC_LIBRARY")
+
 project("FastAD" VERSION 2.1
                  DESCRIPTION "A light-weight header-only C++ library of automatic differentiation.")
 
