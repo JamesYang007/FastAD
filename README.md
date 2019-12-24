@@ -1,12 +1,12 @@
 # FastAD 
 
 [![Build Status](https://travis-ci.org/JamesYang007/FastAD.svg?branch=master)](https://travis-ci.org/JamesYang007/FastAD) 
+[![Coverage Status](https://coveralls.io/repos/github/JamesYang007/FastAD/badge.svg?branch=master)](https://coveralls.io/github/JamesYang007/FastAD?branch=master)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/5fe0893b770643e7bd9d4c9ad6ab189b)](https://www.codacy.com/manual/JamesYang007/FastAD?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=JamesYang007/FastAD&amp;utm_campaign=Badge_Grade)
+[![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/3532/badge)](https://bestpractices.coreinfrastructure.org/projects/3532)
 [![GitHub tag (latest by date)](https://img.shields.io/github/v/tag/JamesYang007/FastAD)](https://github.com/JamesYang007/FastAD/tags)
 [![GitHub release (latest by date)](https://img.shields.io/github/v/release/JamesYang007/FastAD?include_prereleases)](https://github.com/JamesYang007/FastAD/releases)
 [![GitHub issue (latest by date)](https://img.shields.io/github/issues/JamesYang007/FastAD)](https://github.com/JamesYang007/FastAD/issues)
-[![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/3532/badge)](https://bestpractices.coreinfrastructure.org/projects/3532)
-[![Coverage Status](https://coveralls.io/repos/github/JamesYang007/FastAD/badge.svg?branch=master)](https://coveralls.io/github/JamesYang007/FastAD?branch=master)
 [![License](https://img.shields.io/github/license/JamesYang007/FastAD?color=blue)](http://badges.mit-license.org)
 
 ## Table of contents
