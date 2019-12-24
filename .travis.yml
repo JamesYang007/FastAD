@@ -33,6 +33,7 @@ script:
   - make -j12
   - ctest  -T memcheck -j12
   - cat ./Testing/Temporary/MemoryChecker.*.log
+  - cd ../../
   
 after_success:
   - coveralls --build-root test --include include --gcov 'gcov-7' --gcov-options '\-lp'
