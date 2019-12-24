@@ -34,6 +34,7 @@
     - [Hessian](#hessian)
 - [Contact](#contact)
 - [Team](#team)
+- [Third Party Tools](#third-party-tools)
 - [License](#license)
 
 ## Overview
@@ -287,6 +288,18 @@ feel free to [send me an email](mailto:jamesyang916@gmail.com).
 | :---: | :---: |
 | [![JamesYang007](https://avatars3.githubusercontent.com/u/5008832?s=100&v=4)](https://github.com/JamesYang007) | [](https://github.com/kentjhall) |
 | <a href="http://github.com/JamesYang007" target="_blank">`github.com/JamesYang007`</a> | <a href="http://github.com/kentjhall" target="_blank">`github.com/kentjhall`</a> |
+
+## Third Party Tools
+
+Many third party tools were used for this project.
+
+- [Clang](https://clang.llvm.org/): main compiler used for development.
+- [Codacy](https://app.codacy.com/welcome/organizations): rigorous code analysis.
+- [Github Changelog Generator](https://github.com/github-changelog-generator/github-changelog-generator): generate [CHANGELOG](https://github.com/JamesYang007/FastAD/blob/master/CHANGELOG.md).
+- [Google Benchmark](https://github.com/google/benchmark): benchmark against various methods.
+- [Googletest](https://github.com/google/googletest): unit-test and integration-test.
+- [Travis](https://travis-ci.org/): continuous integration for Linux.
+- [Valgrind](http://valgrind.org/): check memory leak/error.
 
 ## License
 
