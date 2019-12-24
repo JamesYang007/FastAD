@@ -301,7 +301,6 @@ Many third party tools were used for this project.
 - [Travis](https://travis-ci.org/): continuous integration for Linux.
 - [Valgrind](http://valgrind.org/): check memory leak/error.
 
-
 ## License
 
 - **[MIT license](http://opensource.org/licenses/mit-license.php)**
