@@ -3,6 +3,9 @@ cmake_minimum_required(VERSION 3.9)
 project("FastAD" VERSION 2.1
                  DESCRIPTION "A light-weight header-only C++ library of automatic differentiation.")
 
+# This will perform memcheck
+include(CTest)
+
 # This is to make this library portable to other machines.
 # This will be used for install.
 include(GNUInstallDirs)

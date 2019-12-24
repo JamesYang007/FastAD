@@ -2,9 +2,8 @@ dist: trusty
 
 sudo: enabled
 
-os:
-  - linux
-
+os: linux
+  
 addons:
   apt:
     sources:
@@ -13,12 +12,11 @@ addons:
       - gcc-7
       - g++-7
       - cmake
+      - valgrind
 
-language: 
-  - cpp
+language: cpp
 
-compiler:
-  - gcc
+compiler: gcc
 
 script:
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
@@ -35,4 +33,5 @@ script:
   - cd debug
   - cmake ../../
   - make -j12
-  - ctest -j12
+  - ctest  -T memcheck -j12
+  - cat ./Testing/Temporary/MemoryChecker.*.log

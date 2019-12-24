@@ -1,5 +1,13 @@
 # Changelog
 
+## [Unreleased](https://github.com/JamesYang007/FastAD/tree/HEAD)
+
+[Full Changelog](https://github.com/JamesYang007/FastAD/compare/v1.0.1...HEAD)
+
+**Merged pull requests:**
+
+- Update CHANGELOG [\#46](https://github.com/JamesYang007/FastAD/pull/46) ([JamesYang007](https://github.com/JamesYang007))
+
 ## [v1.0.1](https://github.com/JamesYang007/FastAD/tree/v1.0.1) (2019-12-24)
 
 [Full Changelog](https://github.com/JamesYang007/FastAD/compare/v1.0.0...v1.0.1)
