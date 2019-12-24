@@ -30,6 +30,6 @@ script:
   - cd build
   - mkdir debug
   - cd debug
-  - cmake ../../ -T memcheck
+  - cmake ../../
   - make -j12
-  - ctest -j12
+  - ctest  -T memcheck -j12
