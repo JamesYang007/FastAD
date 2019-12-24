@@ -6,6 +6,8 @@
 
 **Merged pull requests:**
 
+- Modify order of badges [\#51](https://github.com/JamesYang007/FastAD/pull/51) ([JamesYang007](https://github.com/JamesYang007))
+- Release/1.0.1 [\#50](https://github.com/JamesYang007/FastAD/pull/50) ([JamesYang007](https://github.com/JamesYang007))
 - Release/1.0.1 [\#47](https://github.com/JamesYang007/FastAD/pull/47) ([JamesYang007](https://github.com/JamesYang007))
 - Update CHANGELOG [\#46](https://github.com/JamesYang007/FastAD/pull/46) ([JamesYang007](https://github.com/JamesYang007))
 
@@ -41,7 +43,6 @@
 - Update installation directions and FAQ [\#39](https://github.com/JamesYang007/FastAD/pull/39) ([JamesYang007](https://github.com/JamesYang007))
 - Pilot 2.1/remove arma [\#38](https://github.com/JamesYang007/FastAD/pull/38) ([JamesYang007](https://github.com/JamesYang007))
 - Pilot 2.1/remove arma [\#35](https://github.com/JamesYang007/FastAD/pull/35) ([JamesYang007](https://github.com/JamesYang007))
-- James.yang/concepts [\#34](https://github.com/JamesYang007/FastAD/pull/34) ([JamesYang007](https://github.com/JamesYang007))
 - James.yang/docs [\#32](https://github.com/JamesYang007/FastAD/pull/32) ([JamesYang007](https://github.com/JamesYang007))
 - James.yang/docs [\#31](https://github.com/JamesYang007/FastAD/pull/31) ([JamesYang007](https://github.com/JamesYang007))
 - Add index.html [\#30](https://github.com/JamesYang007/FastAD/pull/30) ([JamesYang007](https://github.com/JamesYang007))
