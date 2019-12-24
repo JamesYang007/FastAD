@@ -18,7 +18,7 @@ before_install:
   - pip install --user cpp-coveralls
 
 env:
-  - CMAKE_OPTIONS=-DCoverage=ON
+  - CMAKE_OPTIONS=-DCOVERAGE=ON
   
 language: cpp
 
