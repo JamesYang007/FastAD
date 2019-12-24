@@ -1,7 +1,7 @@
 # FastAD 
 
 [![Build Status](https://travis-ci.org/JamesYang007/FastAD.svg?branch=master)](https://travis-ci.org/JamesYang007/FastAD) 
-[![Coverage Status](https://coveralls.io/repos/github/JamesYang007/FastAD/badge.svg?branch=master)](https://coveralls.io/github/JamesYang007/FastAD?branch=master)
+[![Coverage Status](https://coveralls.io/repos/github/JamesYang007/FastAD/badge.svg?branch=master&service=github)](https://coveralls.io/github/JamesYang007/FastAD?branch=master)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/5fe0893b770643e7bd9d4c9ad6ab189b)](https://www.codacy.com/manual/JamesYang007/FastAD?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=JamesYang007/FastAD&amp;utm_campaign=Badge_Grade)
 [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/3532/badge)](https://bestpractices.coreinfrastructure.org/projects/3532)
 [![GitHub tag (latest by date)](https://img.shields.io/github/v/tag/JamesYang007/FastAD)](https://github.com/JamesYang007/FastAD/tags)
@@ -296,6 +296,8 @@ Many third party tools were used for this project.
 
 - [Clang](https://clang.llvm.org/): main compiler used for development.
 - [Codacy](https://app.codacy.com/welcome/organizations): rigorous code analysis.
+- [Coveralls](https://coveralls.io/): for measuring [code coverage](https://coveralls.io/github/JamesYang007/FastAD).
+- [Cpp Coveralls](https://github.com/eddyxu/cpp-coveralls): for measuring code coverage in Coveralls.
 - [Github Changelog Generator](https://github.com/github-changelog-generator/github-changelog-generator): generate [CHANGELOG](https://github.com/JamesYang007/FastAD/blob/master/CHANGELOG.md).
 - [Google Benchmark](https://github.com/google/benchmark): benchmark against various methods.
 - [Googletest](https://github.com/google/googletest): unit-test and integration-test.
