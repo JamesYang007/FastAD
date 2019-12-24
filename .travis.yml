@@ -13,7 +13,13 @@ addons:
       - g++-7
       - cmake
       - valgrind
+      
+before_install:
+  - pip install --user cpp-coveralls
 
+env:
+  - CMAKE_OPTIONS=-DCoverage=ON
+  
 language: cpp
 
 compiler: gcc
@@ -31,7 +37,10 @@ script:
   - cd build
   - mkdir debug
   - cd debug
-  - cmake ../../
+  - cmake ../../ ${CMAKE_OPTIONS}
   - make -j12
   - ctest  -T memcheck -j12
   - cat ./Testing/Temporary/MemoryChecker.*.log
+  
+after_success:
+  - coveralls --build-root test --include include --gcov 'gcov-7' --gcov-options '\-lp'
