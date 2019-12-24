@@ -1,5 +1,13 @@
 # Changelog
 
+## [v1.0.1](https://github.com/JamesYang007/FastAD/tree/v1.0.1) (2019-12-24)
+
+[Full Changelog](https://github.com/JamesYang007/FastAD/compare/v1.0.0...v1.0.1)
+
+**Merged pull requests:**
+
+- James.yang/fix setup [\#45](https://github.com/JamesYang007/FastAD/pull/45) ([JamesYang007](https://github.com/JamesYang007))
+
 ## [v1.0.0](https://github.com/JamesYang007/FastAD/tree/v1.0.0) (2019-12-24)
 
 [Full Changelog](https://github.com/JamesYang007/FastAD/compare/9a33ff57b96985752aff80b24e554d1de5fdcb1f...v1.0.0)
