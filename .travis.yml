@@ -34,3 +34,4 @@ script:
   - cmake ../../
   - make -j12
   - ctest  -T memcheck -j12
+  - cat ./Testing/Temporary/MemoryChecker.*.log
