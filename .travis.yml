@@ -101,7 +101,7 @@ script:
 
     # setup, clean build, and test
     - ./setup.sh
-    - ./clean-build release ${CMAKE_OPTIONS}
+    - ./clean-build.sh release ${CMAKE_OPTIONS}
     - ctest ${CTEST_OPTIONS} -j12
 
     # if testing valgrind
