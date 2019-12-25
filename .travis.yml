@@ -105,9 +105,9 @@ script:
     - mkdir -p build && cd build
     - mkdir -p debug && cd debug
     - if [ "${COVERALL}" == "ON" ]; then
-        cmake ../../ ${CMAKE_OPTIONS} && cmake --build .;
+        cmake ../../ ${CMAKE_OPTIONS} && cmake --build . -j12;
       else
-        cmake ../../ -GNinja ${CMAKE_OPTIONS} && cmake --build .;
+        cmake ../../ -GNinja ${CMAKE_OPTIONS} && cmake --build . -j12;
       fi
     - ctest ${CTEST_OPTIONS} -j12
 
