@@ -105,10 +105,11 @@ script:
     - mkdir -p build && cd build
     - mkdir -p debug && cd debug
     - if [ "${COVERALL}" == "ON" ]; then
-        cmake ../../ ${CMAKE_OPTIONS} && cmake --build . -j12;
+        cmake ../../ ${CMAKE_OPTIONS};
       else
-        cmake ../../ -GNinja ${CMAKE_OPTIONS} && cmake --build . -j12;
+        cmake ../../ -GNinja ${CMAKE_OPTIONS};
       fi
+    - cmake --build . -- -j12
     - ctest ${CTEST_OPTIONS} -j12
 
     # if testing valgrind
