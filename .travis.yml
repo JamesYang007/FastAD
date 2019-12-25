@@ -1,39 +1,67 @@
-dist: trusty
+# Project Configuration
 
-sudo: enabled
-
-os: linux
-  
-addons:
-  apt:
-    sources: ubuntu-toolchain-r-test
-    packages: [g++-7, cmake, valgrind]
-      
-before_install:
-  - pip install --user cpp-coveralls
-
-env:
-  - CMAKE_OPTIONS=-DCOVERAGE=ON
-  
+# C++ Project
 language: cpp
 
-compiler: gcc
+dist: trusty
+sudo: required
+
+# Build Job Matrix
+
+jobs:
+    include:
+
+        # Valgrind
+        - os: linux
+          compiler: gcc
+          addons:
+              apt:
+                  sources: ['ubuntu-toolchain-r-test']
+                  packages: ['g++-7', 'cmake', 'ninja-build', 'valgrind']
+          env:
+              - COMPILER=g++-7 
+              - CTEST_OPTIONS=-T memcheck
+              - VALGRIND_ON=true 
+
+        # Coveralls
+        - os: linux
+          compiler: gcc
+          addons:
+              apt:
+                  sources: ['ubuntu-toolchain-r-test']
+                  packages: ['g++-7', 'cmake', 'ninja-build']
+          before_install:
+              - pip install --user cpp-coveralls
+          after_success:
+              - coveralls --build-root test --include include --gcov 'gcov-7' --gcov-options '\-lp'
+          env:
+              - COMPILER=g++-7 
+              - CMAKE_OPTIONS=-DCOVERAGE=ON
+
+
+# Build Script
 
 script:
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
-      export CXX=/usr/bin/g++-7;
-      g++ -v && cmake --version;
-    fi 
-  - ./setup.sh
-  - mkdir build
-  - cd build
-  - mkdir debug
-  - cd debug
-  - cmake ../../ ${CMAKE_OPTIONS}
-  - make -j12
-  - ctest  -T memcheck -j12
-  - cat ./Testing/Temporary/MemoryChecker.*.log
-  - cd ../../
-  
-after_success:
-  - coveralls --build-root test --include include --gcov 'gcov-7' --gcov-options '\-lp'
+
+    # set CXX to correct compiler
+    - if [[ "${COMPILER}" != "" ]]; then
+        export CXX=${COMPILER};
+      fi 
+
+    # show OS/compiler/cmake version
+    - uname -a
+    - ${CXX} --version
+    - cmake --version
+
+    # setup, clean build, and test
+    - ./setup.sh
+    - ./clean-build.sh debug ${CMAKE_OPTIONS}
+    - ctest ${CTEST_OPTIONS} -j12
+
+    # if testing valgrind
+    - if [[ "${VALGRIND}" == "true" ]]; then
+        cat ./Testing/Temporary/MemoryChecker.*.log;
+      fi
+
+    # change to root directory
+    - cd ../../
