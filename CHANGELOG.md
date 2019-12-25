@@ -2,7 +2,19 @@
 
 ## [Unreleased](https://github.com/JamesYang007/FastAD/tree/HEAD)
 
-[Full Changelog](https://github.com/JamesYang007/FastAD/compare/v1.0.1...HEAD)
+[Full Changelog](https://github.com/JamesYang007/FastAD/compare/v1.0.2...HEAD)
+
+**Implemented enhancements:**
+
+- Update Travis to test different types of machines with different compilers [\#48](https://github.com/JamesYang007/FastAD/issues/48)
+
+**Merged pull requests:**
+
+- Release/1.0.2 [\#57](https://github.com/JamesYang007/FastAD/pull/57) ([JamesYang007](https://github.com/JamesYang007))
+
+## [v1.0.2](https://github.com/JamesYang007/FastAD/tree/v1.0.2) (2019-12-25)
+
+[Full Changelog](https://github.com/JamesYang007/FastAD/compare/v1.0.1...v1.0.2)
 
 **Merged pull requests:**
 
@@ -12,7 +24,6 @@
 - Add trick to make badges upload [\#52](https://github.com/JamesYang007/FastAD/pull/52) ([JamesYang007](https://github.com/JamesYang007))
 - Modify order of badges [\#51](https://github.com/JamesYang007/FastAD/pull/51) ([JamesYang007](https://github.com/JamesYang007))
 - Release/1.0.1 [\#50](https://github.com/JamesYang007/FastAD/pull/50) ([JamesYang007](https://github.com/JamesYang007))
-- Update Travis for Coveralls [\#49](https://github.com/JamesYang007/FastAD/pull/49) ([JamesYang007](https://github.com/JamesYang007))
 - Release/1.0.1 [\#47](https://github.com/JamesYang007/FastAD/pull/47) ([JamesYang007](https://github.com/JamesYang007))
 - Update CHANGELOG [\#46](https://github.com/JamesYang007/FastAD/pull/46) ([JamesYang007](https://github.com/JamesYang007))
 

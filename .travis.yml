@@ -33,9 +33,10 @@ jobs:
           before_install:
               - pip install --user cpp-coveralls
           after_success:
-              - coveralls --build-root test --include include --gcov 'gcov-7' --gcov-options '\-lp'
+              - coveralls --build-root . --include include --gcov 'gcov-7' --gcov-options '\-lp'
           env:
               - COMPILER="g++-7"
+              - COVERALL="ON"
               - CMAKE_OPTIONS="-DCOVERAGE=ON"
 
         # OSX / Clang
@@ -101,8 +102,14 @@ script:
 
     # setup, clean build, and test
     - ./setup.sh
-    - ./clean-build.sh debug ${CMAKE_OPTIONS}
-    - cd build/debug
+    - mkdir -p build && cd build
+    - mkdir -p debug && cd debug
+    - if [ "${COVERALL}" == "ON" ]; then
+        cmake ../../ ${CMAKE_OPTIONS};
+      else
+        cmake ../../ -GNinja ${CMAKE_OPTIONS};
+      fi
+    - cmake --build . -- -j12
     - ctest ${CTEST_OPTIONS} -j12
 
     # if testing valgrind
@@ -110,5 +117,4 @@ script:
         cat ./Testing/Temporary/MemoryChecker.*.log;
       fi
 
-    # change to root directory
     - cd ../../
