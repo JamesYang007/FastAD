@@ -48,4 +48,23 @@ TEST_F(admat_fixture, transpose) {
 	EXPECT_EQ(t(4, 3), 7);
 }
 
+// operator==
+TEST_F(admat_fixture, opeq_row_size_mismatch)
+{
+    Mat<double> t(1, 5, 0);
+    EXPECT_FALSE(mat == t);
+}
+
+TEST_F(admat_fixture, opeq_col_size_mismatch)
+{
+    Mat<double> t(4, 1, 0);
+    EXPECT_FALSE(mat == t);
+}
+
+TEST_F(admat_fixture, opeq_content_mismatch)
+{
+    Mat<double> t(4, 5, 0);
+    EXPECT_FALSE(mat == t);
+}
+
 } // namespace 
