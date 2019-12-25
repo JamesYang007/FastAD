@@ -36,7 +36,6 @@ jobs:
               - coveralls --root ../../ --build-root ./ --include include --gcov 'gcov-7' --gcov-options '\-lp'
           env:
               - COMPILER="g++-7"
-              - COVERALL="ON"
               - CMAKE_OPTIONS="-DCOVERAGE=ON"
 
         # OSX / Clang
@@ -102,14 +101,10 @@ script:
 
     # setup, clean build, and test
     - ./setup.sh
-    - mkdir -p build && cd build
-    - mkdir -p debug && cd debug
-    - cmake ../../ -GNinja ${CMAKE_OPTIONS}
-    - cmake --build . -- -j12
+    - ./clean-build release ${CMAKE_OPTIONS}
     - ctest ${CTEST_OPTIONS} -j12
 
     # if testing valgrind
     - if [[ "${VALGRIND}" == "ON" ]]; then
         cat ./Testing/Temporary/MemoryChecker.*.log;
       fi
-    #- cd ../
