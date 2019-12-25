@@ -33,7 +33,7 @@ jobs:
           before_install:
               - pip install --user cpp-coveralls
           after_success:
-              - coveralls --build-root test --include include --gcov 'gcov-7' --gcov-options '\-lp'
+              - coveralls --root . --build-root test --include include --gcov 'gcov-7' --gcov-options '\-lp'
           env:
               - COMPILER="g++-7"
               - CMAKE_OPTIONS="-DCOVERAGE=ON"
@@ -103,11 +103,11 @@ script:
     - ./setup.sh
     - mkdir -p build && cd build
     - mkdir -p debug && cd debug
-    - cmake ../../ ${CMAKE_OPTIONS} && cmake --build .
+    - cmake ../../ -GNinja ${CMAKE_OPTIONS} && cmake --build .
     - ctest ${CTEST_OPTIONS} -j12
-    - cd ../../
 
     # if testing valgrind
     - if [[ "${VALGRIND}" == "ON" ]]; then
         cat ./Testing/Temporary/MemoryChecker.*.log;
       fi
+    - cd ../../
