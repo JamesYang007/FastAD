@@ -39,9 +39,6 @@ jobs:
               - CMAKE_OPTIONS="-DCOVERAGE=ON"
 
         # OSX / Clang
-        
-        - os: osx
-          osx_image: xcode9.4
 
         - os: osx
           osx_image: xcode10
