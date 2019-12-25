@@ -101,14 +101,13 @@ script:
 
     # setup, clean build, and test
     - ./setup.sh
-    - ./clean-build.sh debug ${CMAKE_OPTIONS}
-    - cd build/debug
+    - mkdir -p build && cd build
+    - mkdir -p debug && cd debug
+    - cmake ../../ ${CMAKE_OPTIONS} && cmake --build .
     - ctest ${CTEST_OPTIONS} -j12
+    - cd ../../
 
     # if testing valgrind
     - if [[ "${VALGRIND}" == "ON" ]]; then
         cat ./Testing/Temporary/MemoryChecker.*.log;
       fi
-
-    # change to root directory
-    - cd ../../

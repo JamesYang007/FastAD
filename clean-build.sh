@@ -28,5 +28,5 @@ else
 fi
 
 rm -rf ./*
-cmake -GNinja ../../ "$@"
-ninja -j12           # make with 12 threads
+cmake ../../ -GNinja "$@"
+ninja -j12
