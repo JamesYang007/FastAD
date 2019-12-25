@@ -33,7 +33,7 @@ jobs:
           before_install:
               - pip install --user cpp-coveralls
           after_success:
-              - coveralls --root ../ --build-root ./ --include include --gcov 'gcov-7' --gcov-options '\-lp'
+              - coveralls --root ../../ --build-root ./ --include include --gcov 'gcov-7' --gcov-options '\-lp'
           env:
               - COMPILER="g++-7"
               - COVERALL="ON"
@@ -103,8 +103,9 @@ script:
     # setup, clean build, and test
     - ./setup.sh
     - mkdir -p build && cd build
-    - cmake ../ -GNinja ${CMAKE_OPTIONS};
-    - cmake --build . --config Debug -- -j12
+    - mkdir -p debug && cd debug
+    - cmake ../../ -GNinja ${CMAKE_OPTIONS}
+    - cmake --build . -- -j12
     - ctest ${CTEST_OPTIONS} -j12
 
     # if testing valgrind
