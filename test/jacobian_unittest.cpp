@@ -10,7 +10,7 @@ namespace details {
 struct jacobian_fixture: ::testing::Test
 {
 protected:
-    std::array<double, 4> adj = {-1};
+    std::array<double, 4> adj = {{-1.}};
     std::array<double, 4>::iterator adj_ptr = adj.begin();
     Vec<double> x;
     using expr_t = std::decay_t<decltype(make_eq(x[1], x[0]))>;
