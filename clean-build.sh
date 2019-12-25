@@ -7,28 +7,14 @@ cd "$PROJECTDIR"
 
 mode=$1 # debug/release mode
 shift   # shift command-line arguments
-run=$1  # run ctest
-shift
+        # the rest are cmake command-line arguments
 
-# other cmake arguments
-
-# if build directory does not exist, create it
-if [ ! -d "build" ]; then
-    mkdir build
-fi
-
-# change directory to build
-cd build
+mkdir -p build && cd build
 
 # if debug directory does not exist, create it
-if [ ! -d "debug" ]; then
-    mkdir debug
-fi
-
+mkdir -p debug
 # if release directory does not exist, create it
-if [ ! -d "release" ]; then
-    mkdir release
-fi
+mkdir -p release
 
 # if debug mode
 if [ "$mode" = "debug" ]; then
@@ -37,22 +23,10 @@ if [ "$mode" = "debug" ]; then
 elif [ "$mode" = "release" ]; then
     cd release
 else
-    echo "Usage: ./clean-build.sh <debug/release> [run] ..." 1>&2
+    echo "Usage: ./clean-build.sh <debug/release> [cmake options]" 1>&2
     exit 1
 fi
 
 rm -rf ./*
-
-# if $run is set to "run" or not set to anything
-if [ "$run" = "run" ] || [ "$run" = "" ]; then
-    cmake ../../ "$@"   # append other cmake command-line arguments
-else
-    cmake ../../ "$run $@"   # append $run (assumed to be first cmake command-line argument if not run)
-                             # and other cmake command-line arguments
-fi
-
-make -j6           # make with 12 threads
-
-if [ "$run" = "run" ]; then
-    ctest -j6
-fi
+cmake -GNinja ../../ "$@"
+ninja -j12           # make with 12 threads

@@ -190,6 +190,11 @@ TEST_F(adnode_fixture, sumnode_beval)
 }
 
 // ForEach
+TEST_F(adnode_fixture, foreach_ctor_exception)
+{
+    ASSERT_THROW(ad::for_each(exprs, exprs, mock_lmda), std::length_error); 
+}
+
 TEST_F(adnode_fixture, foreach_feval)
 {
     auto foreach = ad::for_each(exprs, exprs + 3, mock_lmda);

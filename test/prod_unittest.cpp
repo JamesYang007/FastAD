@@ -29,6 +29,21 @@ protected:
         };
 };
 
+TEST_F(prod_fixture, prodnode_feval_one)
+{
+    auto&& expr = ad::prod(leaves, leaves + 1, lmda);
+    double expected = std::sin(1);
+    EXPECT_DOUBLE_EQ(expr.feval(), expected);
+}
+
+TEST_F(prod_fixture, prodnode_beval_one)
+{
+    auto&& expr = ad::prod(leaves, leaves + 1, lmda);
+    expr.beval(seed);
+    double expected = seed * std::cos(1);
+    EXPECT_DOUBLE_EQ(leaves[0].get_adjoint(), expected);
+}
+
 TEST_F(prod_fixture, prodnode_feval) 
 {
     auto&& expr = ad::prod(leaves, leaves + 3, lmda);
