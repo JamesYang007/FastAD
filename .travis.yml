@@ -33,7 +33,7 @@ jobs:
           before_install:
               - pip install --user cpp-coveralls
           after_success:
-              - coveralls --build-root ../test --include include --gcov 'gcov-7' --gcov-options '\-lp'
+              - coveralls --build-root test --include include --gcov 'gcov-7' --gcov-options '\-lp'
           env:
               - COMPILER="g++-7"
               - COVERALL="ON"
@@ -111,3 +111,4 @@ script:
     - if [[ "${VALGRIND}" == "ON" ]]; then
         cat ./Testing/Temporary/MemoryChecker.*.log;
       fi
+    - cd ../
