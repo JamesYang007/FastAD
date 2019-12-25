@@ -19,9 +19,9 @@ jobs:
                   sources: ['ubuntu-toolchain-r-test']
                   packages: ['g++-7', 'cmake', 'ninja-build', 'valgrind']
           env:
-              - COMPILER=g++-7 
-              - CTEST_OPTIONS=-T memcheck
-              - VALGRIND_ON=true 
+              - COMPILER="g++-7"
+              - CTEST_OPTIONS="-T memcheck"
+              - VALGRIND="ON"
 
         # Coveralls
         - os: linux
@@ -35,13 +35,77 @@ jobs:
           after_success:
               - coveralls --build-root test --include include --gcov 'gcov-7' --gcov-options '\-lp'
           env:
-              - COMPILER=g++-7 
-              - CMAKE_OPTIONS=-DCOVERAGE=ON
+              - COMPILER="g++-7"
+              - CMAKE_OPTIONS="-DCOVERAGE=ON"
 
+        # OSX / Clang
+        
+        - os: osx
+          osx_image: xcode8.3
+
+        - os: osx
+          osx_image: xcode9
+
+        - os: osx
+          osx_image: xcode9.1
+
+        - os: osx
+          osx_image: xcode9.2
+
+        - os: osx
+          osx_image: xcode9.3
+
+        - os: osx
+          osx_image: xcode9.4
+
+        - os: osx
+          osx_image: xcode10
+
+        - os: osx
+          osx_image: xcode10.1
+
+        - os: osx
+          osx_image: xcode10.2
+
+        - os: osx
+          osx_image: xcode11.2
+
+        # Linux/GCC>=5
+
+        - os: linux
+          compiler: gcc
+          env: COMPILER=g++-7
+          addons:
+            apt:
+              sources: ['ubuntu-toolchain-r-test']
+              packages: ['g++-7', 'ninja-build']
+
+        - os: linux
+          compiler: gcc
+          env: COMPILER=g++-8
+          addons:
+            apt:
+              sources: ['ubuntu-toolchain-r-test']
+              packages: ['g++-8', 'ninja-build']
+
+        - os: linux
+          compiler: gcc
+          env: COMPILER=g++-9
+          addons:
+            apt:
+              sources: ['ubuntu-toolchain-r-test']
+              packages: ['g++-9', 'ninja-build']
 
 # Build Script
 
 script:
+
+    # MacOS only: install ninja and cmake
+    - if [[ (-x $(which brew)) ]]; then
+       brew update;
+       brew install cmake ninja;
+       brew upgrade cmake;
+      fi
 
     # set CXX to correct compiler
     - if [[ "${COMPILER}" != "" ]]; then
@@ -56,10 +120,11 @@ script:
     # setup, clean build, and test
     - ./setup.sh
     - ./clean-build.sh debug ${CMAKE_OPTIONS}
+    - cd build/debug
     - ctest ${CTEST_OPTIONS} -j12
 
     # if testing valgrind
-    - if [[ "${VALGRIND}" == "true" ]]; then
+    - if [[ "${VALGRIND}" == "ON" ]]; then
         cat ./Testing/Temporary/MemoryChecker.*.log;
       fi
 
