@@ -6,11 +6,13 @@
 
 **Merged pull requests:**
 
+- Update CHANGELOG [\#56](https://github.com/JamesYang007/FastAD/pull/56) ([JamesYang007](https://github.com/JamesYang007))
 - James.yang/full coverage \(\#54\) [\#55](https://github.com/JamesYang007/FastAD/pull/55) ([JamesYang007](https://github.com/JamesYang007))
 - Add trick to make badges upload [\#53](https://github.com/JamesYang007/FastAD/pull/53) ([JamesYang007](https://github.com/JamesYang007))
 - Add trick to make badges upload [\#52](https://github.com/JamesYang007/FastAD/pull/52) ([JamesYang007](https://github.com/JamesYang007))
 - Modify order of badges [\#51](https://github.com/JamesYang007/FastAD/pull/51) ([JamesYang007](https://github.com/JamesYang007))
 - Release/1.0.1 [\#50](https://github.com/JamesYang007/FastAD/pull/50) ([JamesYang007](https://github.com/JamesYang007))
+- Update Travis for Coveralls [\#49](https://github.com/JamesYang007/FastAD/pull/49) ([JamesYang007](https://github.com/JamesYang007))
 - Release/1.0.1 [\#47](https://github.com/JamesYang007/FastAD/pull/47) ([JamesYang007](https://github.com/JamesYang007))
 - Update CHANGELOG [\#46](https://github.com/JamesYang007/FastAD/pull/46) ([JamesYang007](https://github.com/JamesYang007))
 
