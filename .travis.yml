@@ -33,7 +33,7 @@ jobs:
           before_install:
               - pip install --user cpp-coveralls
           after_success:
-              - coveralls --root . --build-root test --include include --gcov 'gcov-7' --gcov-options '\-lp'
+              - coveralls --build-root . --include include --gcov 'gcov-7' --gcov-options '\-lp'
           env:
               - COMPILER="g++-7"
               - CMAKE_OPTIONS="-DCOVERAGE=ON"
