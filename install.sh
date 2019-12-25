@@ -1,6 +1,5 @@
 #!/bin/bash
 
 ./clean-build.sh release
-cd build
-cd release
-make install -j6
+cd build/release
+ninja install -j6
