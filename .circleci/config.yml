@@ -18,16 +18,11 @@ jobs:
               sudo apt update
               sudo apt install g++-7 -y
               export CXX="g++-7"
-              #- run:
-              #    name: Install Make
-              #    command: 'apt-get update && apt-get install -y make'
-              #- run:
-              #    name: Install wget
-              #    command: 'apt-get update && apt-get install -y wget'
       - run:
           name: Install CMake
           command: |
-              'apt-get update && apt-get install -y cmake'
+              sudo apt-get update
+              sudo apt-get install -y cmake
               #version=3.9
               #build=2
               #mkdir ~/temp
@@ -41,10 +36,14 @@ jobs:
               #cmake --version
       - run:
           name: Install Ninja
-          command: 'apt-get update && sudo apt-get install -y ninja-build'
+          command: |
+              sudo apt-get update
+              sudo apt-get install -y ninja-build
       - run:
           name: Install Git
-          command: 'apt-get update && sudo apt-get install -y git'
+          command: |
+              sudo apt-get update 
+              sudo apt-get install -y git
       - run:
           name: Init Submodules
           command: 'git submodule init'
@@ -53,7 +52,7 @@ jobs:
           command: './setup.sh'
       - run:
           name: Versions
-          command: 'g++ --version ; uname -a'
+          command: 'cmake --version; uname -a'
       - run:
           name: Compile
           command: './clean-build.sh release'
