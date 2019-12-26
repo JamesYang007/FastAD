@@ -36,6 +36,7 @@ jobs:
               - coveralls --root ../../ --build-root ./ --include include --gcov 'gcov-7' --gcov-options '\-lp'
           env:
               - COMPILER="g++-7"
+              - COVERALL="ON"
               - CMAKE_OPTIONS="-DCOVERAGE=ON"
 
         # OSX / Clang
