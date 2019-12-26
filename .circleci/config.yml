@@ -12,10 +12,11 @@ jobs:
       - run:
           name: Install ubuntu-toolchain-r/test and g++-7
           command: |
-              sudo apt-get install -y software-properties-common
+              #sudo apt-get install -y software-properties-common
               sudo add-apt-repository ppa:ubuntu-toolchain-r/test
               sudo apt update
               sudo apt install g++-7 -y
+              export CXX="g++-7"
               #- run:
               #    name: Install Make
               #    command: 'apt-get update && apt-get install -y make'
