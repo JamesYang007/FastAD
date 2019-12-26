@@ -29,4 +29,4 @@ fi
 
 rm -rf ./*
 cmake ../../ -GNinja "$@"
-ninja -j12
+cmake --build . -- -j12
