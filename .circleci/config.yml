@@ -20,7 +20,9 @@ jobs:
               export CXX=g++-7
       - run:
           name: Check CXX version
-          command: ${CXX} --version
+          command: |
+              echo ${CXX}
+              ${CXX} --version
 
       - run:
           name: Install CMake
