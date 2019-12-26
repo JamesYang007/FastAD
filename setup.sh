@@ -10,5 +10,5 @@ fi
 git clone https://github.com/google/googletest.git libs/benchmark/googletest
 cd libs/benchmark
 mkdir -p build && cd build
-cmake -GNinja ../
-ninja -j12
+cmake ../ -GNinja
+cmake --build . -- -j12
