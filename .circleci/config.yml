@@ -17,13 +17,14 @@ jobs:
               sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
               sudo apt update
               sudo apt install g++-7 -y
-              export CXX=g++-7
       - run:
-          name: Check CXX version
+          name: Check g++ version
           command: |
-              echo ${CXX}
-              ${CXX} --version
-
+              sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 60 \
+                                       --slave /usr/bin/g++ g++ /usr/bin/g++-7 
+              sudo update-alternatives --config gcc
+              gcc --version
+              g++ --version
       - run:
           name: Install CMake
           command: |
