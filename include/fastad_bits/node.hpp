@@ -109,6 +109,12 @@ struct LeafNode:
         return *w_ptr_ = data_t::set_value(w);
     }
 
+    // Change value pointer to point to the same place as ptr.
+    ValueType* set_value_ptr(ValueType* ptr)
+    {
+        return w_ptr_ = ptr;
+    }
+
     // This function returns the adjoint in adjoint dest (full partial derivative).
     // It is crucial for EqNode::beval to work properly that the full adjoint be provided.
     ValueType& get_adjoint() 
@@ -127,6 +133,12 @@ struct LeafNode:
     ValueType& set_adjoint(ValueType df)
     {
         return *df_ptr_ = data_t::set_adjoint(df);
+    }
+
+    // Change adjoint pointer to point to the same place as ptr.
+    ValueType* set_adjoint_ptr(ValueType* ptr)
+    {
+        return df_ptr_ = ptr;
     }
 
     // Equivalent to set_adjoint(0)
