@@ -84,9 +84,16 @@ TEST_F(node_integration_fixture, leaf_eq)
 TEST_F(node_integration_fixture, leaf_unary_binary) {
     double x1 = 2.0, x2 = 1.31, x3 = -3.14;
     double dfs[3] = { 0 };
-    Var<double> leaf1(x1, dfs);
-    Var<double> leaf2(x2, dfs + 1);
-    Var<double> leaf3(x3, dfs + 2);
+    Var<double> leaf1;
+    Var<double> leaf2;
+    Var<double> leaf3;
+
+    leaf1.set_value_ptr(&x1);
+    leaf1.set_adjoint_ptr(dfs);
+    leaf2.set_value_ptr(&x2);
+    leaf2.set_adjoint_ptr(dfs + 1);
+    leaf3.set_value_ptr(&x3);
+    leaf3.set_adjoint_ptr(dfs + 2);
 
     auto res = leaf1 + sin(leaf2 + leaf3);
     EXPECT_EQ(res.feval(), x1 + std::sin(x2 + x3));

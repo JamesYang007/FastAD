@@ -67,6 +67,30 @@ TEST_F(adnode_fixture, leafnode_get_value)
     EXPECT_DOUBLE_EQ(leaf_x.get_value(), 3);
 }
 
+TEST_F(adnode_fixture, leafnode_set_value_ptr)
+{
+    double val = 3.14;
+    double* res = leaf_x.set_value_ptr(&val);
+    EXPECT_EQ(res, &val);
+    EXPECT_DOUBLE_EQ(leaf_x.get_value(), 3.14);
+    val = 0.4;
+    EXPECT_DOUBLE_EQ(leaf_x.get_value(), 0.4);
+}
+
+TEST_F(adnode_fixture, leafnode_set_adjoint_ptr)
+{
+    double adj = 3.14;
+    double* res = leaf_x.set_adjoint_ptr(&adj);
+    EXPECT_EQ(res, &adj);
+
+    EXPECT_DOUBLE_EQ(leaf_x.get_adjoint(), 3.14);
+    adj = 0.4;
+    EXPECT_DOUBLE_EQ(leaf_x.get_adjoint(), 0.4);
+
+    leaf_x.beval(0.4);
+    EXPECT_DOUBLE_EQ(adj, 0.8);
+}
+
 TEST_F(adnode_fixture, leafnode_beval)
 {
     // check backward evaluation
