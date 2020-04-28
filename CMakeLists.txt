@@ -5,8 +5,9 @@ set(CMAKE_TRY_COMPILE_TARGET_TYPE "STATIC_LIBRARY")
 project("FastAD" VERSION 2.1
                  DESCRIPTION "A light-weight header-only C++ library of automatic differentiation.")
 
-# This will perform memcheck
-include(CTest)
+option(FASTAD_ENABLE_TEST "Enable unit tests to be built." ON)
+option(FASTAD_ENABLE_EXAMPLE "Enable examples to be built." OFF)
+option(FASTAD_ENABLE_BENCHMARK "Enable benchmarks to be built." OFF)
 
 # This is to make this library portable to other machines.
 # This will be used for install.
@@ -18,9 +19,6 @@ add_library(${PROJECT_NAME} INTERFACE)
 target_include_directories(${PROJECT_NAME}
   INTERFACE $<BUILD_INTERFACE:${${PROJECT_NAME}_SOURCE_DIR}/include>
             $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
-
-# enables testing
-enable_testing()
 
 # Set C++17 standard for project target
 target_compile_features(${PROJECT_NAME} INTERFACE cxx_std_17)
@@ -69,18 +67,28 @@ if (NOT CMAKE_BUILD_TYPE)
 endif()
 message(STATUS "Compiling in ${CMAKE_BUILD_TYPE} mode")
 
-# Points to the root of Google Test
-set(GTEST_DIR ${PROJECT_SOURCE_DIR}/libs/benchmark/googletest/googletest)
-set(GBENCH_DIR ${PROJECT_SOURCE_DIR}/libs/benchmark)
+if (FASTAD_ENABLE_TEST)
+    # This will perform memcheck
+    include(CTest)
+    enable_testing()
+
+    # Points to the root of Google Test
+    set(GTEST_DIR ${PROJECT_SOURCE_DIR}/libs/benchmark/googletest/googletest)
+    set(GBENCH_DIR ${PROJECT_SOURCE_DIR}/libs/benchmark)
+
+    # add test subdirectory
+    add_subdirectory(${PROJECT_SOURCE_DIR}/test ${PROJECT_BINARY_DIR}/test)
+endif()
+
+if (FASTAD_ENABLE_EXAMPLE)
+    # add example subdirectory
+    add_subdirectory(${PROJECT_SOURCE_DIR}/example ${PROJECT_BINARY_DIR}/example)
+endif()
+
+if (FASTAD_ENABLE_BENCHMARK)
+    # add benchmark subdirectory
+    add_subdirectory(${PROJECT_SOURCE_DIR}/benchmark ${PROJECT_BINARY_DIR}/benchmark)
+endif()
 
 # add libs subdirectory
 add_subdirectory(${PROJECT_SOURCE_DIR}/libs ${PROJECT_BINARY_DIR}/libs)
-
-# add test subdirectory
-add_subdirectory(${PROJECT_SOURCE_DIR}/test ${PROJECT_BINARY_DIR}/test)
-
-# add example subdirectory
-add_subdirectory(${PROJECT_SOURCE_DIR}/example ${PROJECT_BINARY_DIR}/example)
-
-# add benchmark subdirectory
-add_subdirectory(${PROJECT_SOURCE_DIR}/benchmark ${PROJECT_BINARY_DIR}/benchmark)
