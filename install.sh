@@ -2,4 +2,4 @@
 
 ./clean-build.sh release
 cd build/release
-ninja install -j6
+sudo ninja install -j6
