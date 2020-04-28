@@ -8,6 +8,8 @@
 #include "fastad_bits/vec.hpp"
 #include "fastad_bits/eval.hpp"
 #include "fastad_bits/forward.hpp"
+#include "fastad_bits/pow.hpp"
+#include "fastad_bits/ifelse.hpp"
 #include "fastad_bits/exgen.hpp"
 #include "fastad_bits/prod.hpp"
 #include "fastad_bits/mat.hpp"
