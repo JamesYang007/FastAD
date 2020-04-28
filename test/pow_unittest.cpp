@@ -72,5 +72,22 @@ TEST_F(pow_fixture, pow_negative_large_exp_pos_value)
     EXPECT_DOUBLE_EQ(y.get_adjoint(), -1./27);
 }
 
+TEST_F(pow_fixture, pow_on_pow)
+{
+    auto expr = pow<2>(pow<1>(x + y));
+    double value = expr.feval();
+    EXPECT_DOUBLE_EQ(value, 9.);
+    expr.beval(1.);
+    EXPECT_DOUBLE_EQ(x.get_adjoint(), 2 * 3);
+    EXPECT_DOUBLE_EQ(y.get_adjoint(), 2 * 3);
+
+    x.reset_adjoint();
+    y.reset_adjoint();
+
+    expr.beval(1.);
+    EXPECT_DOUBLE_EQ(x.get_adjoint(), 2 * 3);
+    EXPECT_DOUBLE_EQ(y.get_adjoint(), 2 * 3);
+}
+
 } // namespace core
 } // namespace ad

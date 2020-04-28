@@ -66,5 +66,35 @@ TEST_F(ifelse_fixture, ifelse_complicated)
     EXPECT_DOUBLE_EQ(z.get_adjoint(), 1.);
 }
 
+TEST_F(ifelse_fixture, if_on_if)
+{
+    auto expr = 
+        if_else(
+            (x < y),
+            if_else(
+                z < w,
+                x * y + z,
+                x
+            ),
+            ad::constant(0.)
+        );
+    double value = expr.feval();
+    EXPECT_DOUBLE_EQ(value, 5.);
+
+    expr.beval(1.);
+    EXPECT_DOUBLE_EQ(x.get_adjoint(), 2.);
+    EXPECT_DOUBLE_EQ(y.get_adjoint(), 1.);
+    EXPECT_DOUBLE_EQ(z.get_adjoint(), 1.);
+
+    x.reset_adjoint();
+    y.reset_adjoint();
+    z.reset_adjoint();
+
+    expr.beval(1.);
+    EXPECT_DOUBLE_EQ(x.get_adjoint(), 2.);
+    EXPECT_DOUBLE_EQ(y.get_adjoint(), 1.);
+    EXPECT_DOUBLE_EQ(z.get_adjoint(), 1.);
+}
+
 } // namespace core
 } // namespace ad
