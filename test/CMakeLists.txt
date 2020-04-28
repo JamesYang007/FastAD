@@ -29,7 +29,7 @@ foreach( test ${TESTS} )
     # Flags passed to the C++ compiler.
     target_compile_options(${test} PRIVATE -g -Wall -Werror -Wextra)
     target_include_directories(${test} PRIVATE ${GTEST_DIR}/include)
-    if (COVERAGE)
+    if (FASTAD_ENABLE_COVERAGE)
         target_link_libraries(${test} gcov)
     endif()
     target_link_libraries(${test} gtest_main pthread ${PROJECT_NAME})
