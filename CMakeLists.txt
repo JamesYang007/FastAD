@@ -8,6 +8,7 @@ project("FastAD" VERSION 2.1
 option(FASTAD_ENABLE_TEST "Enable unit tests to be built." ON)
 option(FASTAD_ENABLE_EXAMPLE "Enable examples to be built." OFF)
 option(FASTAD_ENABLE_BENCHMARK "Enable benchmarks to be built." OFF)
+option(FASTAD_ENABLE_COVERAGE "Build FastAD with coverage" OFF)
 
 # This is to make this library portable to other machines.
 # This will be used for install.

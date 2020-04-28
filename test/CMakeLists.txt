@@ -1,9 +1,4 @@
-# Coverage variable
-# If ON, gcov will be enabled.
-# By default, it is off.
-option(COVERAGE "Build FastAD with coverage" OFF)
-
-if (COVERAGE)
+if (FASTAD_ENABLE_COVERAGE)
     message(STATUS "Building test suite with coverage information")
     add_compile_options(--coverage -O0 -fno-inline -fno-inline-small-functions -fno-default-inline)
 endif()

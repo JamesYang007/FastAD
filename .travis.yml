@@ -37,7 +37,7 @@ jobs:
           env:
               - COMPILER="g++-7"
               - COVERALL="ON"
-              - CMAKE_OPTIONS="-DCOVERAGE=ON"
+              - CMAKE_OPTIONS="-DFASTAD_ENABLE_COVERAGE=ON"
 
         # OSX / Clang
 
