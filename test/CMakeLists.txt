@@ -14,6 +14,8 @@ set(
     node_unittest
     eval_unittest
     hessian_unittest
+    ifelse_unittest
+    pow_unittest
     prod_unittest
     exgen_unittest
     jacobian_unittest
