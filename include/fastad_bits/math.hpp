@@ -176,44 +176,84 @@ namespace math {
 // Unary struct definitions 
 
 // UnaryMinus struct
-UNARY_STRUCT(UnaryMinus, return -x;, static_cast<void>(x); return -1;)
+UNARY_STRUCT(UnaryMinus, return -x;, static_cast<void>(x); return -1.;)
 // Sin struct
 UNARY_STRUCT(Sin, USING_STD_AD(sin) return sin(x);, USING_STD_AD(cos) return cos(x);)
 // Cos struct
 UNARY_STRUCT(Cos, return Sin<T>::bmap(x);, return -Sin<T>::fmap(x);)
 // Tan struct
-UNARY_STRUCT(Tan, USING_STD_AD(tan) return tan(x);, auto tmp = Cos<T>::fmap(x); return T(1) / (tmp * tmp);)
+UNARY_STRUCT(Tan, USING_STD_AD(tan) return tan(x);, auto tmp = Cos<T>::fmap(x); return T(1.) / (tmp * tmp);)
 // Arcsin (degrees)
-UNARY_STRUCT(Arcsin, USING_STD_AD(asin) return asin(x);, USING_STD_AD(sqrt) return 1 / sqrt(1 - x * x);)
+UNARY_STRUCT(Arcsin, USING_STD_AD(asin) return asin(x);, USING_STD_AD(sqrt) return 1. / sqrt(1 - x * x);)
 // Arccos (degrees)
 UNARY_STRUCT(Arccos, USING_STD_AD(acos) return acos(x);, return -Arcsin<T>::bmap(x);)
 // Arctan (degrees)
-UNARY_STRUCT(Arctan, USING_STD_AD(atan) return atan(x);, return 1 / (1 + x * x);)
+UNARY_STRUCT(Arctan, USING_STD_AD(atan) return atan(x);, return 1. / (1. + x * x);)
 // Exp struct
 UNARY_STRUCT(Exp, USING_STD_AD(exp) return exp(x); , return fmap(x);)
 // Log struct
-UNARY_STRUCT(Log, USING_STD_AD(log) return log(x);, return T(1) / x;)
+UNARY_STRUCT(Log, USING_STD_AD(log) return log(x);, return T(1.) / x;)
 // Identity struct
-UNARY_STRUCT(Id, return x;, static_cast<void>(x); return T(1);)
+UNARY_STRUCT(Id, return x;, static_cast<void>(x); return T(1.);)
 
 // Binary struct definitions
 
 // Add
 BINARY_STRUCT(Add, return x + y;, 
-        static_cast<void>(x); static_cast<void>(y); return 1;, 
-        static_cast<void>(x); static_cast<void>(y); return 1;)
+        static_cast<void>(x); static_cast<void>(y); return 1.;, 
+        static_cast<void>(x); static_cast<void>(y); return 1.;)
 // Subtract
 BINARY_STRUCT(Sub, return x - y;, 
-        static_cast<void>(x); static_cast<void>(y); return 1;, 
-        static_cast<void>(x); static_cast<void>(y); return -1;)
+        static_cast<void>(x); static_cast<void>(y); return 1.;, 
+        static_cast<void>(x); static_cast<void>(y); return -1.;)
 // Multiply
 BINARY_STRUCT(Mul, return x * y;, 
         static_cast<void>(x); return y;, 
         static_cast<void>(y); return x;)
 // Divide
 BINARY_STRUCT(Div, return x / y;, 
-        static_cast<void>(x); return T(1) / y;, 
-        return T(-1)*x / (y*y);)
+        static_cast<void>(x); return T(1.) / y;, 
+        return T(-1.)*x / (y*y);)
+
+/* 
+ * Comparison operators
+ * By convention, derivatives always return 0.
+ * Backward evaluation should not be called for such binary operators.
+ */
+
+// LessThan
+BINARY_STRUCT(LessThan, return x < y;,
+        static_cast<void>(x); static_cast<void>(y); return 0;,
+        static_cast<void>(x); static_cast<void>(y); return 0;)
+// LessThanEq
+BINARY_STRUCT(LessThanEq, return x <= y;,
+        static_cast<void>(x); static_cast<void>(y); return 0;,
+        static_cast<void>(x); static_cast<void>(y); return 0;)
+// GreaterThan
+BINARY_STRUCT(GreaterThan, return x > y;,
+        static_cast<void>(x); static_cast<void>(y); return 0;,
+        static_cast<void>(x); static_cast<void>(y); return 0;)
+// GreaterThanEq
+BINARY_STRUCT(GreaterThanEq, return x >= y;,
+        static_cast<void>(x); static_cast<void>(y); return 0;,
+        static_cast<void>(x); static_cast<void>(y); return 0;)
+// Equal
+BINARY_STRUCT(Equal, return x == y;,
+        static_cast<void>(x); static_cast<void>(y); return 0;,
+        static_cast<void>(x); static_cast<void>(y); return 0;)
+// NotEqual
+BINARY_STRUCT(NotEqual, return x != y;,
+        static_cast<void>(x); static_cast<void>(y); return 0;,
+        static_cast<void>(x); static_cast<void>(y); return 0;)
+
+// Logical AND
+BINARY_STRUCT(LogicalAnd, return x && y;,
+        static_cast<void>(x); static_cast<void>(y); return 0;,
+        static_cast<void>(x); static_cast<void>(y); return 0;)
+// Logical OR
+BINARY_STRUCT(LogicalOr, return x || y;,
+        static_cast<void>(x); static_cast<void>(y); return 0;,
+        static_cast<void>(x); static_cast<void>(y); return 0;)
 
 } // namespace math
 
@@ -255,6 +295,23 @@ ADNODE_BINARY_FUNC(operator-, Sub)
 ADNODE_BINARY_FUNC(operator*, Mul)
 // ad::core::operator/(ADNode)
 ADNODE_BINARY_FUNC(operator/, Div)
+
+// ad::core::operator<(ADNode)
+ADNODE_BINARY_FUNC(operator<, LessThan)
+// ad::core::operator<=(ADNode)
+ADNODE_BINARY_FUNC(operator<=, LessThanEq)
+// ad::core::operator>(ADNode)
+ADNODE_BINARY_FUNC(operator>, GreaterThan)
+// ad::core::operator>=(ADNode)
+ADNODE_BINARY_FUNC(operator>=, GreaterThanEq)
+// ad::core::operator==(ADNode)
+ADNODE_BINARY_FUNC(operator==, Equal)
+// ad::core::operator!=(ADNode)
+ADNODE_BINARY_FUNC(operator!=, NotEqual)
+// ad::core::operator&&(ADNode)
+ADNODE_BINARY_FUNC(operator&&, LogicalAnd)
+// ad::core::operator||(ADNode)
+ADNODE_BINARY_FUNC(operator||, LogicalOr)
 
 } // namespace core
 } // namespace ad
