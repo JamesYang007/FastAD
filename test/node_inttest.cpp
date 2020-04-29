@@ -1,7 +1,7 @@
 #include <fastad_bits/node.hpp>
-#include <fastad_bits/math.hpp>
 #include <fastad_bits/vec.hpp>
 #include <fastad_bits/eval.hpp>
+#include <fastad_bits/math.hpp>
 #include "gtest/gtest.h"
 
 namespace ad {
@@ -24,6 +24,16 @@ TEST_F(node_integration_fixture, leaf_unary)
     auto expr = ad::sin(x);
     EXPECT_DOUBLE_EQ(autodiff(expr), std::sin(3.1));
     EXPECT_DOUBLE_EQ(x.get_adjoint(), std::cos(3.1));
+}
+
+// LeafNode -> -UnaryNode 
+
+TEST_F(node_integration_fixture, leaf_unary_minus) 
+{
+    LeafNode<double> x(3.1);
+    auto expr = -x;
+    EXPECT_DOUBLE_EQ(autodiff(expr), -3.1);
+    EXPECT_DOUBLE_EQ(x.get_adjoint(), -1.);
 }
 
 // LeafNode -> UnaryNode -> UnaryNode
