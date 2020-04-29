@@ -260,8 +260,6 @@ BINARY_STRUCT(LogicalOr, return x || y;,
 //================================================================================
 // Unary function definitions
 
-// Unary minus
-ADNODE_UNARY_FUNC(operator-, UnaryMinus)
 // ad::sin(ADNode)
 ADNODE_UNARY_FUNC(sin, Sin)
 // ad::cos(ADNode)
@@ -282,8 +280,14 @@ ADNODE_UNARY_FUNC(log, Log)
 ADNODE_UNARY_FUNC(id, Id)
 
 //================================================================================
+// NOTE: ALL OPERATOR OVERLOADS MUST BE IN namespace core
 
 namespace core {
+
+// Unary operators
+
+// operator-
+ADNODE_UNARY_FUNC(operator-, UnaryMinus)
 
 // Binary operators 
 

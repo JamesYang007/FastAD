@@ -17,8 +17,9 @@ TEST_F(adforward_fixture, negate)
 {
     ForwardVar<double> x(2);
     x.set_adjoint(1);   // set direction
-    EXPECT_DOUBLE_EQ(-x.get_value(), -2.);
-    EXPECT_DOUBLE_EQ(-x.get_adjoint(), -1.);
+    ForwardVar<double> y = -x;
+    EXPECT_DOUBLE_EQ(y.get_value(), -2.);
+    EXPECT_DOUBLE_EQ(y.get_adjoint(), -1.);
 }
 
 TEST_F(adforward_fixture, sin) 
