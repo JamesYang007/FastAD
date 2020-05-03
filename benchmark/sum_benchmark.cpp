@@ -2,6 +2,7 @@
 #include <fastad_bits/math.hpp>
 #include <fastad_bits/node.hpp>
 #include <fastad_bits/eval.hpp>
+#include <fastad_bits/pow.hpp>
 #include <benchmark/benchmark.h>
 #include <numeric>
 #ifdef USE_ADEPT
@@ -56,6 +57,40 @@ static void BM_sumnode_fastad(benchmark::State& state)
 }
 
 BENCHMARK(BM_sumnode_fastad);
+
+static void BM_sumnode_fastad_large_vectorized(benchmark::State& state)
+{
+    using namespace ad;
+    constexpr size_t size = 100;
+    std::vector<double> values(size);
+    std::vector<double> values2(size);
+    Vec<double> w(2);
+    w[0].set_value(2.);
+    w[1].set_value(1.);
+
+    for (size_t i = 0; i < size; ++i) {
+        values[i] = values2[i] = static_cast<double>(i);
+    }
+
+    for (auto _ : state) {
+        int i = 0;
+		auto expr = ad::sum(values.begin(), values.end(),
+			[&, i](double v) mutable {
+				if (i % values2.size() == 0) i = 0;
+				auto&& expr = -ad::constant(0.5) *
+					ad::pow<2>((ad::constant(v) - w[0] * ad::constant(values2[i])) / w[1]);
+				++i;
+				return expr;
+			});
+        for (int i = 0; i < 20; ++i) {
+            std::for_each(w.begin(), w.end(), [](auto& x) { x.reset_adjoint(); });
+            ad::autodiff(expr);
+        }
+		benchmark::DoNotOptimize(expr);
+    }
+}
+
+BENCHMARK(BM_sumnode_fastad_large_vectorized);
 
 #ifdef USE_ADEPT
 

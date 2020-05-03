@@ -27,7 +27,7 @@ TEST_F(admat_fixture, copy_constructor) {
 TEST_F(admat_fixture, iter_size_comp) {
 	size_t i = 0;
 	Mat<double>::iterator it = mat.begin();
-	while (it++ != mat.end() && ++i);
+	for (; it != mat.end(); ++it, ++i);
 	EXPECT_EQ(i, mat.size());
 }
 
