@@ -16,10 +16,10 @@ find_library(ADEPT_LIB adept)
 foreach( benchmark ${BENCHMARKS} )
     add_executable(${benchmark} ${CMAKE_CURRENT_SOURCE_DIR}/${benchmark}.cpp)
     target_include_directories(${benchmark} PRIVATE ${GBENCH_DIR}/include)
+    target_link_libraries(${benchmark} benchmark benchmark_main ${PROJECT_NAME})
     if (NOT CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 		target_link_libraries(${benchmark} pthread)
     endif()
-    target_link_libraries(${benchmark} benchmark benchmark_main ${PROJECT_NAME})
 
     # if Adept exists, define USE_ADEPT, add path, and link
     if (ADEPT_INCLUDE_DIR AND ADEPT_LIB)
