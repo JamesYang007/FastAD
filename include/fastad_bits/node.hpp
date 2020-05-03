@@ -472,51 +472,46 @@ struct SumNode :
     public DualNum<ValueType>, ADNodeExpr<SumNode<ValueType, Iter, Lmda>>
 {
     using data_t = DualNum<ValueType>;
+    using iter_value_type = typename std::iterator_traits<Iter>::value_type;
+    using vec_elem_t = std::decay_t<decltype(
+        std::declval<Lmda>()(std::declval<iter_value_type>())
+    )>;
 
     SumNode(Iter start, Iter end, Lmda f)
-        : data_t(0, 0), start_(start), end_(end), f_(f)
-    {}
+        : data_t(0, 0)
+        , exprs_{}
+    {
+        exprs_.reserve(std::distance(start, end));
+        std::for_each(start, end,
+            [&](const auto& val) {
+                exprs_.emplace_back(f(val));
+            });
+    }
 
     // Forward evaluation details are in eval function below.
     // @return forward evaluation of sum of functor on every expr.
     ValueType feval()
     {
-        this->eval(false); 
+        // note that constructor sets this value to 0
+        std::for_each(exprs_.begin(), exprs_.end(),
+            [this](auto& expr) {
+                this->get_value() += expr.feval();
+            });
         return this->get_value();
     }
 
     // Backward evaluation details are in eval function below.
     void beval(ValueType seed)
     {
-        this->eval(true, seed);
+        this->set_adjoint(seed);
+        std::for_each(exprs_.begin(), exprs_.end(),
+            [=](auto& expr) {
+                expr.beval(seed);
+            });
     }
 
 private:
-    // Evaluates Forward and backward directions.
-    // If do_grad is false, only forward direction is evaluated.
-    // Sets current value to 0 and adjoint to seed.
-    // From start to end of expressions, 
-    //      forward evaluates each f_(expr)
-    //      if do_grad is true, then also backward evaluate the same f_(expr) with seed
-    void eval(bool do_grad, ValueType seed = static_cast<ValueType>(0))
-    {
-        using expr_t = typename std::iterator_traits<Iter>::value_type;
-        this->set_value(0); // reset
-        this->set_adjoint(seed);
-        std::for_each(start_, end_,
-            [this, do_grad](const expr_t& expr)
-        {
-            auto&& f_expr = this->f_(expr);
-            this->get_value() += f_expr.feval();
-            if (do_grad) {
-                f_expr.beval(this->get_adjoint());
-            }
-        }
-        );
-    }
-
-    Iter start_, end_; // iterators over nodes
-    Lmda f_;           // lambda function to invoke on every node before summing
+    std::vector<vec_elem_t> exprs_;
 };
 
 } // namespace core
