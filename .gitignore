@@ -13,3 +13,4 @@ googletest-master/
 *build/
 *build_install/
 *.DS_Store
+CMakeSettings.json
