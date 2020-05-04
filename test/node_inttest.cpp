@@ -241,6 +241,21 @@ TEST_F(node_integration_fixture, sumnode) {
             std::sin(vec[i].get_value())));
     }
     EXPECT_DOUBLE_EQ(expr.get_value(), actual_sum);
+
+    // Reset adjoint and re-evaluate
+    vec[0].reset_adjoint();
+    vec[1].reset_adjoint();
+    vec[2].reset_adjoint();
+    EXPECT_DOUBLE_EQ(expr.feval(), actual_sum);
+    expr.beval(1);
+    for (size_t i = 0; i < 3; ++i) {
+        EXPECT_DOUBLE_EQ(vec[i].get_adjoint(),
+            -std::sin(std::sin(vec[i].get_value()) *
+            vec[i].get_value()) * 
+            (std::cos(vec[i].get_value()) *
+            vec[i].get_value() + 
+            std::sin(vec[i].get_value())));
+    }
 }
 
 TEST_F(node_integration_fixture, foreach) {

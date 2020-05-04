@@ -492,7 +492,8 @@ struct SumNode :
     // @return forward evaluation of sum of functor on every expr.
     ValueType feval()
     {
-        // note that constructor sets this value to 0
+        // re-evaluation requires current value to start at 0
+        this->set_value(0.);
         std::for_each(exprs_.begin(), exprs_.end(),
             [this](auto& expr) {
                 this->get_value() += expr.feval();
