@@ -1,4 +1,5 @@
 #include "gtest/gtest.h"
+#include <array>
 #include <fastad_bits/ifelse.hpp>
 #include <fastad_bits/math.hpp>
 
@@ -9,6 +10,7 @@ struct ifelse_fixture : ::testing::Test
 {
 protected:
     Var<double> x{1.}, y{2.}, z{3.}, w{4.};
+    std::array<ConstNode<double>, 3> const_exprs = {0., 3., 4.};
 };
 
 TEST_F(ifelse_fixture, cond_expr_simple)
@@ -94,6 +96,19 @@ TEST_F(ifelse_fixture, if_on_if)
     EXPECT_DOUBLE_EQ(x.get_adjoint(), 2.);
     EXPECT_DOUBLE_EQ(y.get_adjoint(), 1.);
     EXPECT_DOUBLE_EQ(z.get_adjoint(), 1.);
+}
+
+TEST_F(ifelse_fixture, if_constants)
+{
+    auto expr = if_else(const_exprs[0],
+                        const_exprs[1],
+                        const_exprs[2]);
+    static_assert(std::is_same_v<
+            std::decay_t<decltype(expr)>,
+            ConstNode<double> >);
+    EXPECT_DOUBLE_EQ(expr.feval(), 4.);
+    expr.beval(1.341);
+    EXPECT_DOUBLE_EQ(expr.get_adjoint(), 0.);
 }
 
 } // namespace core

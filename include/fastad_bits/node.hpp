@@ -519,10 +519,21 @@ private:
 
 // ad::sum(Iter, Iter, Lmda&&)
 template <class Iter, class Lmda>
-inline auto sum(Iter start, Iter end, Lmda&& f)
+inline auto sum(Iter begin, Iter end, Lmda&& f)
 {
-    using value_t = typename decltype(f(*start))::value_type;
-    return core::SumNode<value_t, Iter, Lmda>(start, end, std::forward<Lmda>(f));
+    using node_t = std::decay_t<decltype(f(*begin))>;
+    using value_t = typename node_t::value_type;
+    // optimized for f that returns a constant node
+    if constexpr (std::is_same_v<node_t, core::ConstNode<value_t>>) {
+        value_t sum = 0.;
+        std::for_each(begin, end, 
+                [&](const auto& x) 
+                { sum += f(x).get_value(); });
+        return ad::constant(sum);
+    } else {
+        return core::SumNode<value_t, Iter, Lmda>(
+                begin, end, std::forward<Lmda>(f));
+    }
 }
 
 namespace core {

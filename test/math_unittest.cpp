@@ -1,4 +1,5 @@
 #define _USE_MATH_DEFINES
+#include <type_traits>
 #include <fastad_bits/node.hpp>
 #include <fastad_bits/math.hpp>
 #include "gtest/gtest.h"
@@ -9,6 +10,30 @@ namespace math {
 struct admath_fixture : ::testing::Test
 {
 protected:
+
+    template <class ADF, class STDF>
+    void test_constant_unary(ADF ad_f, STDF std_f)
+    {
+        auto c = ad_f(ad::constant(1.));
+        static_assert(std::is_same_v<
+                std::decay_t<decltype(c)>,
+                ad::core::ConstNode<double> >);
+        EXPECT_DOUBLE_EQ(c.feval(), std_f(1.));
+        c.beval(1.);
+        EXPECT_DOUBLE_EQ(c.get_adjoint(), 0.);
+    }
+
+    template <class ADF, class STDF>
+    void test_constant_binary(ADF ad_f, STDF std_f)
+    {
+        auto c = ad_f(ad::constant(1.), ad::constant(2.));
+        static_assert(std::is_same_v<
+                std::decay_t<decltype(c)>,
+                ad::core::ConstNode<double> >);
+        EXPECT_DOUBLE_EQ(c.feval(), std_f(1., 2.));
+        c.beval(1.);
+        EXPECT_DOUBLE_EQ(c.get_adjoint(), 0.);
+    }
 };
 
 ////////////////////////////////////////////////////////////
@@ -105,6 +130,142 @@ TEST_F(admath_fixture, Div)
     EXPECT_EQ(Div<double>::fmap(-1.0, 2.1), -1./2.1);
     EXPECT_EQ(Div<double>::blmap(-2.01, 2.), 0.5);
     EXPECT_EQ(Div<double>::brmap(-2.01, 3.), 2.01 / 9.);
+}
+
+////////////////////////////////////////////////////////////
+// Unary Constant Overloads
+////////////////////////////////////////////////////////////
+
+TEST_F(admath_fixture, constant_operator_unary_minus)
+{
+    test_constant_unary([](const auto& x) {return -x;}, 
+                        [](const auto& x) {return -x;});
+}
+
+TEST_F(admath_fixture, constant_sin)
+{
+    test_constant_unary([](const auto& x) {return ad::sin(x);}, 
+                        [](const auto& x) {return std::sin(x);});
+}
+
+TEST_F(admath_fixture, constant_cos)
+{
+    test_constant_unary([](const auto& x) {return ad::cos(x);}, 
+                        [](const auto& x) {return std::cos(x);});
+}
+
+TEST_F(admath_fixture, constant_tan)
+{
+    test_constant_unary([](const auto& x) {return ad::tan(x);}, 
+                        [](const auto& x) {return std::tan(x);});
+}
+
+TEST_F(admath_fixture, constant_asin)
+{
+    test_constant_unary([](const auto& x) {return ad::asin(x);}, 
+                        [](const auto& x) {return std::asin(x);});
+}
+
+TEST_F(admath_fixture, constant_acos)
+{
+    test_constant_unary([](const auto& x) {return ad::acos(x);}, 
+                        [](const auto& x) {return std::acos(x);});
+}
+
+TEST_F(admath_fixture, constant_atan)
+{
+    test_constant_unary([](const auto& x) {return ad::atan(x);}, 
+                        [](const auto& x) {return std::atan(x);});
+}
+
+TEST_F(admath_fixture, constant_exp)
+{
+    test_constant_unary([](const auto& x) {return ad::exp(x);}, 
+                        [](const auto& x) {return std::exp(x);});
+}
+
+TEST_F(admath_fixture, constant_log)
+{
+    test_constant_unary([](const auto& x) {return ad::log(x);}, 
+                        [](const auto& x) {return std::log(x);});
+}
+
+TEST_F(admath_fixture, constant_id)
+{
+    test_constant_unary([](const auto& x) {return ad::id(x);}, 
+                        [](const auto& x) {return x;});
+}
+
+TEST_F(admath_fixture, constant_operator_plus)
+{
+    test_constant_binary([](const auto& x, const auto& y) { return x + y; },
+                         [](const auto& x, const auto& y) { return x + y; });
+}
+
+TEST_F(admath_fixture, constant_operator_minus)
+{
+    test_constant_binary([](const auto& x, const auto& y) { return x - y; },
+                         [](const auto& x, const auto& y) { return x - y; });
+}
+
+TEST_F(admath_fixture, constant_operator_mult)
+{
+    test_constant_binary([](const auto& x, const auto& y) { return x * y; },
+                         [](const auto& x, const auto& y) { return x * y; });
+}
+
+TEST_F(admath_fixture, constant_operator_div)
+{
+    test_constant_binary([](const auto& x, const auto& y) { return x / y; },
+                         [](const auto& x, const auto& y) { return x / y; });
+}
+
+TEST_F(admath_fixture, constant_operator_less)
+{
+    test_constant_binary([](const auto& x, const auto& y) { return x < y; },
+                         [](const auto& x, const auto& y) { return x < y; });
+}
+
+TEST_F(admath_fixture, constant_operator_less_eq)
+{
+    test_constant_binary([](const auto& x, const auto& y) { return x <= y; },
+                         [](const auto& x, const auto& y) { return x <= y; });
+}
+
+TEST_F(admath_fixture, constant_operator_greater)
+{
+    test_constant_binary([](const auto& x, const auto& y) { return x > y; },
+                         [](const auto& x, const auto& y) { return x > y; });
+}
+
+TEST_F(admath_fixture, constant_operator_greater_than)
+{
+    test_constant_binary([](const auto& x, const auto& y) { return x >= y; },
+                         [](const auto& x, const auto& y) { return x >= y; });
+}
+
+TEST_F(admath_fixture, constant_operator_eq)
+{
+    test_constant_binary([](const auto& x, const auto& y) { return x == y; },
+                         [](const auto& x, const auto& y) { return x == y; });
+}
+
+TEST_F(admath_fixture, constant_operator_neq)
+{
+    test_constant_binary([](const auto& x, const auto& y) { return x != y; },
+                         [](const auto& x, const auto& y) { return x != y; });
+}
+
+TEST_F(admath_fixture, constant_operator_and)
+{
+    test_constant_binary([](const auto& x, const auto& y) { return x && y; },
+                         [](const auto& x, const auto& y) { return x && y; });
+}
+
+TEST_F(admath_fixture, constant_operator_or)
+{
+    test_constant_binary([](const auto& x, const auto& y) { return x || y; },
+                         [](const auto& x, const auto& y) { return x || y; });
 }
 
 } // namespace math

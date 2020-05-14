@@ -55,6 +55,7 @@ struct name \
 }; 
 
 // Defines function with name associated with struct_name.
+// Overloaded for constant nodes to be eager-evaluated.
 // @tparam  Derived     the actual type of node in CRTP
 // @return  Unary Node that will evaluate forward and backward direction 
 //          defined by "struct_name"'s fmap and bmap acting on "node"
@@ -71,6 +72,13 @@ struct name \
 //         , typename ad::math::UnaryMinus<typename Derived::value_type>
 //         , Derived>(node.self());
 // } 
+// template <class ValueType> 
+// inline auto operator-(const ad::core::ConstNode<ValueType>& node)
+// { 
+//     return ad::core::ConstNode<ValueType>(
+//             ad::math::UnaryMinus<ValueType>::fmap(node.feval())
+//             );
+// }
 #define ADNODE_UNARY_FUNC(name, struct_name) \
 template <class Derived> \
 inline auto name(const ad::core::ADNodeExpr<Derived>& node) \
@@ -79,7 +87,15 @@ inline auto name(const ad::core::ADNodeExpr<Derived>& node) \
         typename Derived::value_type \
         , typename ad::math::struct_name<typename Derived::value_type> \
         , Derived>(node.self()); \
-} 
+} \
+\
+template <class ValueType> \
+inline auto name(const ad::core::ConstNode<ValueType>& node) \
+{ \
+    return ad::constant( \
+            ad::math::struct_name<ValueType>::fmap(node.get_value()) \
+            ); \
+}
 
 // Defines a binary struct with name "name".
 // Binary struct contains three static functions: fmap, blmap, brmap.
@@ -128,6 +144,7 @@ struct name \
 }; 
 
 // Defines function with name associated with struct_name.
+// Overload for constant for eager evaluation.
 // @tparam  Derived1    the actual type of node1 in CRTP
 // @tparam  Derived2    the actual type of node2 in CRTP
 // @tparam  value_type  the underlying data type.
@@ -153,6 +170,15 @@ struct name \
 //      return make_binary<value_type, ad::math::Add<value_type>>(
 //             node1.self(), node2.self());
 // } 
+// template <class ValueType1, class ValueType2>
+// inline auto operator+(const ad::core::ConstNode<ValueType1>& node1, 
+//                       const ad::core::ConstNode<ValueType2>& node2)
+// {
+//     using value_t = std::common_type_t<ValueType1, ValueType2>;
+//     return ad::constant(ad::math::Add<value_t>::fmap(
+//                 node1.get_value(), node2.get_value()
+//                 ));
+// }
 #define ADNODE_BINARY_FUNC(name, struct_name) \
 template < \
     class Derived1 \
@@ -168,7 +194,17 @@ inline auto name( \
 { \
     return make_binary<value_type, ad::math::struct_name<value_type>>( \
             node1.self(), node2.self()); \
-} 
+} \
+\
+template <class ValueType1, class ValueType2> \
+inline auto name(const ad::core::ConstNode<ValueType1>& node1, \
+                 const ad::core::ConstNode<ValueType2>& node2) \
+{ \
+    using value_t = std::common_type_t<ValueType1, ValueType2>; \
+    return ad::constant(ad::math::struct_name<value_t>::fmap( \
+                node1.get_value(), node2.get_value() \
+                )); \
+}
 
 namespace ad {
 namespace math {

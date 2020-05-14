@@ -1,3 +1,4 @@
+#include <array>
 #include <fastad_bits/prod.hpp>
 #include "gtest/gtest.h"
 
@@ -8,6 +9,7 @@ struct prod_fixture: ::testing::Test
 {
 protected:
     Var<double> leaves[3] = { 1., 2., 3. };
+    std::array<ConstNode<double>, 3> const_exprs = {1., 2., 3.};
     double seed = 3.;
 
     using lmda_t = std::function<
@@ -82,6 +84,18 @@ TEST_F(prod_fixture, prodnode_leaflmda_beval)
             seed * leaves[0].get_value() * leaves[2].get_value());
     EXPECT_DOUBLE_EQ(leaves[0].get_adjoint(), 
             seed * leaves[1].get_value() * leaves[2].get_value());
+}
+
+TEST_F(prod_fixture, prodnode_constants)
+{
+    auto expr = ad::prod(const_exprs.begin(), const_exprs.end(),
+            [](const auto& x) { return x + x; });
+    static_assert(std::is_same_v<
+            std::decay_t<decltype(expr)>,
+            ConstNode<double> >);
+    EXPECT_DOUBLE_EQ(expr.feval(), 48.);
+    expr.beval(41.3231);
+    EXPECT_DOUBLE_EQ(expr.get_adjoint(), 0.);
 }
 
 } // namespace core

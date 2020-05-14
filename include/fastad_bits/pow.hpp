@@ -92,10 +92,17 @@ private:
 
 // Undefined behavior if expression evaluates to 0
 // and backward-evaluates during AD.
-template <int64_t exp, class ADExprType>
-inline constexpr auto pow(const ADExprType& expr)
+template <int64_t exp, class Derived>
+inline constexpr auto pow(const core::ADNodeExpr<Derived>& expr)
 {
-    return core::PowNode<exp, ADExprType>(expr);
+    using value_t = typename Derived::value_type;
+    if constexpr (std::is_same_v<Derived, core::ConstNode<value_t>>) {
+        return ad::constant(
+                core::PowFunc<exp>::evaluate(expr.self().get_value())
+                ); 
+    } else {
+        return core::PowNode<exp, Derived>(expr.self());
+    }
 }
 
 } // namespace ad

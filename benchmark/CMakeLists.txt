@@ -4,6 +4,7 @@ set(
     sum_benchmark
     prod_benchmark
     ad_benchmark
+    constant_eager_benchmark
 )
 
 # Add path to static google benchmark static library

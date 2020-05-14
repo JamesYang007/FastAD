@@ -77,11 +77,23 @@ private:
 template <class CondExprType
         , class IfExprType
         , class ElseExprType>
-inline constexpr auto if_else(const CondExprType& cond,
-                              const IfExprType& if_expr,
-                              const ElseExprType& else_expr)
+inline constexpr auto if_else(const core::ADNodeExpr<CondExprType>& cond,
+                              const core::ADNodeExpr<IfExprType>& if_expr,
+                              const core::ADNodeExpr<ElseExprType>& else_expr)
 {
-    return core::IfElseNode(cond, if_expr, else_expr);
+    using value_t = typename core::details::common_data_t<
+        CondExprType, IfExprType, ElseExprType>::value_type;
+
+    // optimized if every expression type is constant
+    if constexpr (std::is_same_v<CondExprType, core::ConstNode<value_t>> &&
+                  std::is_same_v<IfExprType, core::ConstNode<value_t>> &&
+                  std::is_same_v<ElseExprType, core::ConstNode<value_t>>) {
+        return cond.self().get_value() ? 
+            ad::constant(if_expr.self().get_value()) :
+            ad::constant(else_expr.self().get_value());
+    } else {
+        return core::IfElseNode(cond.self(), if_expr.self(), else_expr.self());
+    }
 }
 
 } // namespace ad
