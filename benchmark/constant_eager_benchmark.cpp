@@ -1,6 +1,7 @@
 #include <fastad_bits/node.hpp>
 #include <fastad_bits/math.hpp>
 #include <fastad_bits/eval.hpp>
+#include <fastad_bits/pow.hpp>
 #include <benchmark/benchmark.h>
 #include <vector>
 #include <numeric>
@@ -22,3 +23,35 @@ static void BM_repeated_constants(benchmark::State& state)
 }
 
 BENCHMARK(BM_repeated_constants);
+
+static void BM_normal_repeated_stddev(benchmark::State& state)
+{
+    using namespace ad;
+    constexpr size_t size = 1000;
+    std::vector<double> values(size);
+    std::vector<double> values2(size);
+    Var<double> w(2.);
+
+    for (size_t i = 0; i < size; ++i) {
+        values[i] = values2[i] = static_cast<double>(i);
+    }
+
+    for (auto _ : state) {
+        int i = 0;
+		auto expr = ad::sum(values.begin(), values.end(),
+			[&, i](double v) mutable {
+				auto&& expr = -ad::constant(0.5) *
+					ad::pow<2>((ad::constant(v) - w * ad::constant(values2[i])) / ad::constant(2.)) -
+                    ad::log(ad::constant(2.));
+                ++i;
+				return expr;
+			});
+        for (int i = 0; i < 20; ++i) {
+            w.reset_adjoint();
+            ad::evaluate(expr);
+        }
+		benchmark::DoNotOptimize(expr);
+    }
+}
+
+BENCHMARK(BM_normal_repeated_stddev);
