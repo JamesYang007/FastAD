@@ -1,4 +1,5 @@
 #include <random>
+#include <array>
 #include <time.h>
 #include <fastad_bits/node.hpp>
 #include "base_fixture.hpp"
@@ -35,6 +36,8 @@ protected:
             tmp.set_value(tmp.get_value() * 2);
             return tmp;
         };
+
+    std::array<ConstNode<double>, 3> const_exprs = {1., 2., 3.};
 
     adnode_fixture()
         : ::testing::Test()
@@ -211,6 +214,18 @@ TEST_F(adnode_fixture, sumnode_beval)
     EXPECT_DOUBLE_EQ(exprs[0].get_adjoint(), seed);
     EXPECT_DOUBLE_EQ(exprs[1].get_adjoint(), seed);
     EXPECT_DOUBLE_EQ(exprs[2].get_adjoint(), seed);
+}
+
+TEST_F(adnode_fixture, sumnode_constant)
+{
+    auto sumnode = sum(const_exprs.begin(), const_exprs.end(),
+                       [](const auto& x) { return x; });
+    static_assert(std::is_same_v<
+            std::decay_t<decltype(sumnode)>,
+            ConstNode<double> >);
+    EXPECT_DOUBLE_EQ(sumnode.feval(), 6.);
+    sumnode.beval(1.3);
+    EXPECT_DOUBLE_EQ(sumnode.get_adjoint(), 0.);
 }
 
 // ForEach

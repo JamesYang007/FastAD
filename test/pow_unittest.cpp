@@ -9,6 +9,7 @@ struct pow_fixture : ::testing::Test
 {
 protected:
     Var<double> x{1.}, y{2.}, z{3.}, w{4.};
+    ConstNode<double> constant = 3.;
 };
 
 TEST_F(pow_fixture, pow_positive_exp)
@@ -87,6 +88,17 @@ TEST_F(pow_fixture, pow_on_pow)
     expr.beval(1.);
     EXPECT_DOUBLE_EQ(x.get_adjoint(), 2 * 3);
     EXPECT_DOUBLE_EQ(y.get_adjoint(), 2 * 3);
+}
+
+TEST_F(pow_fixture, pow_constants)
+{
+    auto expr = pow<3>(constant);
+    static_assert(std::is_same_v<
+            std::decay_t<decltype(expr)>,
+            ConstNode<double> >);
+    EXPECT_DOUBLE_EQ(expr.feval(), 27.);
+    expr.beval(1.341);
+    EXPECT_DOUBLE_EQ(expr.get_adjoint(), 0.);
 }
 
 } // namespace core

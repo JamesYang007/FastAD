@@ -78,10 +78,21 @@ private:
 // It is undefined behavaior if the lambda function returns
 // an expression other than a LeafNode.
 template <class Iter, class Lmda>
-inline auto prod(Iter start, Iter end, Lmda&& f)
+inline auto prod(Iter begin, Iter end, Lmda&& f)
 {
-    using value_t = typename decltype(f(*start))::value_type;
-    return core::ProdNode<value_t, Iter, Lmda>(start, end, std::forward<Lmda>(f));
+    using node_t = std::decay_t<decltype(f(*begin))>;
+    using value_t = typename node_t::value_type;
+    // optimized for f that returns a constant node
+    if constexpr (std::is_same_v<node_t, core::ConstNode<value_t>>) {
+        value_t prod = 1.;
+        std::for_each(begin, end, 
+                [&](const auto& x) 
+                { prod *= f(x).get_value(); });
+        return ad::constant(prod);
+    } else {
+        return core::ProdNode<value_t, Iter, Lmda>(
+                begin, end, std::forward<Lmda>(f));
+    }
 }
 
 } // namespace ad
