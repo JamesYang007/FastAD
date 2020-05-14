@@ -48,7 +48,7 @@ static void BM_normal_repeated_stddev(benchmark::State& state)
 			});
         for (int i = 0; i < 20; ++i) {
             w.reset_adjoint();
-            ad::evaluate(expr);
+            ad::autodiff(expr);
         }
 		benchmark::DoNotOptimize(expr);
     }
