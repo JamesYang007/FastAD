@@ -61,7 +61,7 @@ BENCHMARK(BM_sumnode_fastad);
 static void BM_sumnode_fastad_large_vectorized(benchmark::State& state)
 {
     using namespace ad;
-    constexpr size_t size = 100;
+    constexpr size_t size = 1000;
     std::vector<double> values(size);
     std::vector<double> values2(size);
     Vec<double> w(2);
@@ -72,20 +72,18 @@ static void BM_sumnode_fastad_large_vectorized(benchmark::State& state)
         values[i] = values2[i] = static_cast<double>(i);
     }
 
+    int i = 0;
+    auto expr = ad::sum(values.begin(), values.end(),
+        [&, i](double v) mutable {
+            if (i % values2.size() == 0) i = 0;
+            auto&& expr = -ad::constant(0.5) *
+                ad::pow<2>((ad::constant(v) - w[0] * ad::constant(values2[i])) / w[1]);
+            ++i;
+            return expr;
+        });
+
     for (auto _ : state) {
-        int i = 0;
-		auto expr = ad::sum(values.begin(), values.end(),
-			[&, i](double v) mutable {
-				if (i % values2.size() == 0) i = 0;
-				auto&& expr = -ad::constant(0.5) *
-					ad::pow<2>((ad::constant(v) - w[0] * ad::constant(values2[i])) / w[1]);
-				++i;
-				return expr;
-			});
-        for (int i = 0; i < 20; ++i) {
-            std::for_each(w.begin(), w.end(), [](auto& x) { x.reset_adjoint(); });
-            ad::autodiff(expr);
-        }
+        ad::autodiff(expr);
 		benchmark::DoNotOptimize(expr);
     }
 }

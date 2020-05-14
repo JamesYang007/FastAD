@@ -36,20 +36,18 @@ static void BM_normal_repeated_stddev(benchmark::State& state)
         values[i] = values2[i] = static_cast<double>(i);
     }
 
+    int i = 0;
+    auto expr = ad::sum(values.begin(), values.end(),
+        [&, i](double v) mutable {
+            auto&& expr = -ad::constant(0.5) *
+                ad::pow<2>((ad::constant(v) - w * ad::constant(values2[i])) / ad::constant(2.)) -
+                ad::log(ad::constant(2.));
+            ++i;
+            return expr;
+        });
+
     for (auto _ : state) {
-        int i = 0;
-		auto expr = ad::sum(values.begin(), values.end(),
-			[&, i](double v) mutable {
-				auto&& expr = -ad::constant(0.5) *
-					ad::pow<2>((ad::constant(v) - w * ad::constant(values2[i])) / ad::constant(2.)) -
-                    ad::log(ad::constant(2.));
-                ++i;
-				return expr;
-			});
-        for (int i = 0; i < 20; ++i) {
-            w.reset_adjoint();
-            ad::autodiff(expr);
-        }
+        ad::autodiff(expr);
 		benchmark::DoNotOptimize(expr);
     }
 }
