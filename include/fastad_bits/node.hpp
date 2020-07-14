@@ -405,7 +405,7 @@ struct GlueNode:
     {
         this->set_adjoint(seed); 
         expr_rhs_.beval(seed); 
-        expr_lhs_.beval();
+        expr_lhs_.beval(0);
     }
 
 private:
@@ -588,7 +588,7 @@ struct ForEach:
         it->beval(seed);
         std::for_each(std::next(it), vec_.rend(), 
                 [](expr_t& expr) {
-                    expr.beval(); 
+                    expr.beval(0); 
                 }
         );
     }
