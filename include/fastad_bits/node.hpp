@@ -369,12 +369,13 @@ struct GlueNode:
     public DualNum<ValueType>, 
     ADNodeExpr<GlueNode<ValueType, LeftExprType, RightExprType>>
 {
+    // NOTE: removed the following:
     // Restrics definition to when LeftExprType and RightExprType are both
     // either EqNode or GlueNode.
-    static_assert(details::is_glue_eq<LeftExprType>::value, 
-            "Left expression of comma must be an EqNode or a GlueNode");
-    static_assert(details::is_glue_eq<RightExprType>::value, 
-            "Right expression of comma must be an EqNode or a GlueNode");
+    //static_assert(details::is_glue_eq<LeftExprType>::value, 
+    //        "Left expression of comma must be an EqNode or a GlueNode");
+    //static_assert(details::is_glue_eq<RightExprType>::value, 
+    //        "Right expression of comma must be an EqNode or a GlueNode");
 
     using data_t = DualNum<ValueType>;
 
