@@ -229,11 +229,6 @@ TEST_F(adnode_fixture, sumnode_constant)
 }
 
 // ForEach
-TEST_F(adnode_fixture, foreach_ctor_exception)
-{
-    ASSERT_THROW(ad::for_each(exprs, exprs, mock_lmda), std::length_error); 
-}
-
 TEST_F(adnode_fixture, foreach_feval)
 {
     auto foreach = ad::for_each(exprs, exprs + 3, mock_lmda);
@@ -248,6 +243,18 @@ TEST_F(adnode_fixture, foreach_beval)
     EXPECT_DOUBLE_EQ(exprs[2].get_adjoint(), seed );       // last adjoint set to seed 
     EXPECT_DOUBLE_EQ(exprs[1].get_adjoint(), 0.);          // no seed passed
     EXPECT_DOUBLE_EQ(exprs[0].get_adjoint(), 0.);          // no seed passed
+}
+
+TEST_F(adnode_fixture, foreach_degenerate)
+{
+    auto foreach = ad::for_each(exprs, exprs, mock_lmda);
+    auto fwdval = foreach.feval();
+    EXPECT_DOUBLE_EQ(fwdval, 0.);
+    foreach.beval(seed);
+    EXPECT_DOUBLE_EQ(foreach.get_adjoint(), seed);         // adjoint set to seed
+    EXPECT_DOUBLE_EQ(exprs[2].get_adjoint(), 0. );         // noop 
+    EXPECT_DOUBLE_EQ(exprs[1].get_adjoint(), 0.);          // noop 
+    EXPECT_DOUBLE_EQ(exprs[0].get_adjoint(), 0.);          // noop 
 }
 
 } // namespace core
