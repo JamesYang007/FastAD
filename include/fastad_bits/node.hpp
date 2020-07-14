@@ -237,7 +237,9 @@ struct BinaryNode:
     // @return  forward evaluation value
     ValueType feval()
     {
-        return this->set_value(Binary::fmap(expr_lhs_.feval(), expr_rhs_.feval()));
+        auto lval = expr_lhs_.feval();
+        auto rval = expr_rhs_.feval();
+        return this->set_value(Binary::fmap(lval, rval));
     }
 
     // Backward evaluation sets current adjoint to seed,
@@ -253,10 +255,10 @@ struct BinaryNode:
     void beval(ValueType seed = static_cast<ValueType>(1))
     {
         this->set_adjoint(seed);
-        expr_lhs_.beval(this->get_adjoint() * 
-                Binary::blmap(expr_lhs_.get_value(), expr_rhs_.get_value()));
         expr_rhs_.beval(this->get_adjoint() * 
                 Binary::brmap(expr_lhs_.get_value(), expr_rhs_.get_value()));
+        expr_lhs_.beval(this->get_adjoint() * 
+                Binary::blmap(expr_lhs_.get_value(), expr_rhs_.get_value()));
     }
 
 private:
