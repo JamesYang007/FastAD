@@ -505,7 +505,7 @@ struct SumNode :
     void beval(ValueType seed)
     {
         this->set_adjoint(seed);
-        std::for_each(exprs_.begin(), exprs_.end(),
+        std::for_each(exprs_.rbegin(), exprs_.rend(),
             [=](auto& expr) {
                 expr.beval(seed);
             });
@@ -560,16 +560,13 @@ struct ForEach:
                     this->vec_.emplace_back(this->f_(i)); 
                 }
         );
-
-        if (this->vec_.size() == 0) {
-            throw std::length_error("Not enough elements.");
-        }
     }
 
     // Forward evaluation on every functored expressions.
     // @return  last functored expression forward evaluation value
     ValueType feval()
     {
+        if (vec_.size() == 0) return this->set_value(0);
         std::for_each(vec_.begin(), vec_.end(), 
                 [](expr_t& expr) {
                     expr.feval(); 
@@ -585,6 +582,7 @@ struct ForEach:
     void beval(ValueType seed)
     {
         this->set_adjoint(seed);
+        if (vec_.size() == 0) return;
         auto it = vec_.rbegin();
         it->beval(seed);
         std::for_each(std::next(it), vec_.rend(), 
