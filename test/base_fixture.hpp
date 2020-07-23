@@ -1,93 +1,65 @@
 #pragma once
+#include "gtest/gtest.h"
+#include <array>
+#include <fastad_bits/var.hpp>
 
 namespace ad {
 
-// Represents f(x) = 2*x
-template <class T>
-struct MockUnary
+struct base_fixture : ::testing::Test
 {
-    static T fmap(T x)
+protected:
+    using value_t = double;
+    using scl_expr_t = Var<value_t, ad::scl>;
+    using vec_expr_t = Var<value_t, ad::vec>;
+    using mat_expr_t = Var<value_t, ad::mat>;
+    using scl_expr_view_t = VarView<value_t, ad::scl>;
+    using vec_expr_view_t = VarView<value_t, ad::vec>;
+    using mat_expr_view_t = VarView<value_t, ad::mat>;
+
+    size_t vec_size;
+    size_t mat_rows;
+    size_t mat_cols;
+    size_t mat_size;
+
+    scl_expr_t scl_expr;
+    vec_expr_t vec_expr;
+    mat_expr_t mat_expr;
+
+    base_fixture(size_t vec_size=5,
+                 size_t mat_rows=2,
+                 size_t mat_cols=3)
+        : vec_size(vec_size)
+        , mat_rows(mat_rows)
+        , mat_cols(mat_cols)
+        , mat_size(mat_rows * mat_cols)
+        , scl_expr()
+        , vec_expr(vec_size)
+        , mat_expr(mat_rows, mat_cols)
     {
-        return 2 * x;
+        initialize();
     }
 
-    static T bmap(T) 
+    // random (fixed) initialization
+    // only makes sense when default constructed base fixture
+    void initialize()
     {
-        return 2; 
+        scl_expr.get() = 2.31;
+
+        auto& vec_raw = vec_expr.get();
+        vec_raw(0) = 3.1;
+        vec_raw(1) = -2.3;
+        vec_raw(2) = 1.3;
+        vec_raw(3) = 0.2;
+        vec_raw(4) = 5.1;
+
+        auto& mat_raw = mat_expr.get();
+        mat_raw(0,0) = 3.1;
+        mat_raw(0,1) = -2.3;
+        mat_raw(0,2) = 1.3;
+        mat_raw(1,0) = 0.2;
+        mat_raw(1,1) = 5.1;
+        mat_raw(1,2) = -0.9;
     }
-};
-
-// Represents f(x, y) = x + y
-template <class T>
-struct MockBinary
-{
-    static T fmap(T x, T y)
-    {
-        return x + y;
-    }
-
-    static T blmap(T, T) 
-    {
-        return 1; 
-    }
-
-    static T brmap(T, T)
-    {
-        return 1;
-    }
-};
-
-// Identity expression
-template <class T>
-struct MockExpr
-{
-    using value_type = T;
-
-    MockExpr(T w)
-        : w(w), df(0), df_ptr(&df) 
-    {}
-
-    MockExpr(T w, T* df_ptr)
-        : w(w), df(0), df_ptr(df_ptr) 
-    {}
-
-    T feval() 
-    {
-        return w;
-    }
-
-    void beval(T seed = static_cast<T>(0))
-    {  
-        df = seed;
-        if (df_ptr != &df) {
-            *df_ptr += df;
-        }
-    }
-
-    T get_value() const
-    {
-        return w;
-    }
-
-    void set_value(T x)
-    {
-        w = x;
-    }
-
-    T get_adjoint() const
-    {
-        return *df_ptr;
-    }
-
-    T get_curr_adjoint() const
-    {
-        return df;
-    }
-
-private:
-    T w;
-    T df;
-    T* df_ptr;
 };
 
 } // namespace ad

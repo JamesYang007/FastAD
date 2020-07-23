@@ -1,16 +1,19 @@
 #pragma once
 #include <cmath>
 #include <utility>
-#include "node.hpp"
-#include "forward.hpp"    // USING_STD_AD requires all overloads of ad::fname for various fname's
-                          // Ex. ad::sin, ad::cos, ad::tan.
-                          // adforward.hpp defines some of these overloads.
-                          // Rest of the overloads are in this header
+#include <fastad_bits/type_traits.hpp>
+#include <fastad_bits/unary.hpp>
+#include <fastad_bits/binary.hpp>
+#include <fastad_bits/forward.hpp>    // USING_STD_AD_EIGEN requires all overloads of ad::fname for various fname's
+                                      // Ex. ad::sin, ad::cos, ad::tan.
+                                      // adforward.hpp defines some of these overloads.
+                                      // Rest of the overloads are in this header
 
 // Expose fname from namespace std and ad for look-up.
-#define USING_STD_AD(fname) \
+#define USING_STD_AD_EIGEN(fname) \
 using std::fname;\
-using ad::fname;
+using ad::fname;\
+using Eigen::fname;
 
 // Defines a unary struct with name "name".
 // Unary struct contains two static functions: fmap and bmap.
@@ -26,36 +29,40 @@ using ad::fname;
 //
 // Example generation:
 //
-// UNARY_STRUCT(UnaryMinus, return -x;, return -1;)
+// UNARY_STRUCT(UnaryMinus, return -x;, return -1.;)
 // =>
-// template <class T>
 // struct UnaryMinus
 // {
-// 	    static T fmap(T x)
+//      template <class T>
+// 	    static auto fmap(T x)
 // 	    {
 // 	        return -x;
 // 	    }
-// 	    static T bmap(T x)
+//
+//      template <class T>
+// 	    static auto bmap(T x)
 // 	    {
-// 	        return -1;
+// 	        return -1.;
 // 	    }
 // }; 
 #define UNARY_STRUCT(name, fmap_body, bmap_body) \
-template <class T> \
 struct name \
 { \
-	static T fmap(T x) \
+    template <class T> \
+	static auto fmap(T x) \
 	{ \
 		fmap_body \
 	} \
-	static T bmap(T x) \
+\
+    template <class T> \
+	static auto bmap(T x) \
 	{ \
 		bmap_body \
 	} \
 }; 
 
 // Defines function with name associated with struct_name.
-// Overloaded for constant nodes to be eager-evaluated.
+// TODO: Overloaded for constant nodes to be eager-evaluated.
 // @tparam  Derived     the actual type of node in CRTP
 // @return  Unary Node that will evaluate forward and backward direction 
 //          defined by "struct_name"'s fmap and bmap acting on "node"
@@ -65,37 +72,33 @@ struct name \
 // ADNODE_UNARY_FUNC(operator-, UnaryMinus)
 // =>
 // template <class Derived>
-// inline auto operator-(const ad::core::ADNodeExpr<Derived>& node)
+// inline auto operator-(const core::ExprBase<Derived>& node)
 // {
-//     return ad::core::UnaryNode<
-//         typename Derived::value_type
-//         , typename ad::math::UnaryMinus<typename Derived::value_type>
+//     return core::UnaryNode<math::UnaryMinus
 //         , Derived>(node.self());
 // } 
 // template <class ValueType> 
 // inline auto operator-(const ad::core::ConstNode<ValueType>& node)
 // { 
-//     return ad::core::ConstNode<ValueType>(
-//             ad::math::UnaryMinus<ValueType>::fmap(node.feval())
+//     return ad::constant(
+//             math::UnaryMinus::fmap(node.get())
 //             );
 // }
 #define ADNODE_UNARY_FUNC(name, struct_name) \
 template <class Derived> \
-inline auto name(const ad::core::ADNodeExpr<Derived>& node) \
+inline auto name(const core::ExprBase<Derived>& node) \
 { \
-    return ad::core::UnaryNode< \
-        typename Derived::value_type \
-        , typename ad::math::struct_name<typename Derived::value_type> \
+    return core::UnaryNode<math::struct_name \
         , Derived>(node.self()); \
-} \
-\
-template <class ValueType> \
-inline auto name(const ad::core::ConstNode<ValueType>& node) \
-{ \
-    return ad::constant( \
-            ad::math::struct_name<ValueType>::fmap(node.get_value()) \
-            ); \
 }
+//
+//template <class ValueType> \
+//inline auto name(const core::ConstNode<ValueType>& node) \
+//{ \
+//    return ad::constant( \
+//            math::struct_name::fmap(node.get()) \
+//            ); \
+//}
 
 // Defines a binary struct with name "name".
 // Binary struct contains three static functions: fmap, blmap, brmap.
@@ -107,44 +110,49 @@ inline auto name(const ad::core::ConstNode<ValueType>& node) \
 // The definition is provided by "brmap_body".
 // @tparam T    underlying data type (ex. double, float, ADForward)
 //
-// BINARY_STRUCT(Add, return x + y;, return 1;, return 1;)
+// BINARY_STRUCT(Add, return x + y;, return 1.;, return 1.;)
 // =>
-// template <class T>
 // struct Add
 // {
-// 	    static T fmap(T x, T y)
+//      template <class T, class U>
+// 	    static auto fmap(T x, U y)
 // 	    {
 // 	        return x + y;
 // 	    }
-// 	    static T blmap(T x, T y)
+//      template <class T, class U>
+// 	    static auto blmap(T x, U y)
 // 	    {
-// 	        return 1;
+// 	        return 1.;
 // 	    }
-// 	    static T brmap(T x, T y)
+//      template <class T, class U>
+// 	    static auto brmap(T x, U y)
 // 	    {
-// 	        return 1;
+// 	        return 1.;
 // 	    }
 // }; 
+
 #define BINARY_STRUCT(name, fmap_body, blmap_body, brmap_body) \
-template <class T> \
 struct name \
 { \
-	static T fmap(T x, T y) \
+    template <class T, class U> \
+	static auto fmap(T x, U y) \
 	{ \
         fmap_body \
     } \
-	static T blmap(T x, T y) \
+    template <class T, class U> \
+	static auto blmap(T x, U y) \
 	{ \
         blmap_body \
     } \
-	static T brmap(T x, T y) \
+    template <class T, class U> \
+	static auto brmap(T x, U y) \
 	{ \
         brmap_body \
     } \
 }; 
 
 // Defines function with name associated with struct_name.
-// Overload for constant for eager evaluation.
+// TODO: Overload for constant for eager evaluation.
 // @tparam  Derived1    the actual type of node1 in CRTP
 // @tparam  Derived2    the actual type of node2 in CRTP
 // @tparam  value_type  the underlying data type.
@@ -155,56 +163,41 @@ struct name \
 // ADNODE_BINARY_FUNC(operator+, Add)
 // =>
 // 
-// template <
-//     class Derived1
-//     , class Derived2
-//     , typename value_type = 
-//         typename std::common_type<
-//             typename Derived1::value_type, typename Derived2::value_type
-//             >::type
-//     >
-// inline auto operator+(
-//         const ADNodeExpr<Derived1>& node1
-//         , const ADNodeExpr<Derived2>& node2)
+// template <class Derived1
+//         , class Derived2>
+// inline auto operator+(const core::ExprBase<Derived1>& node1
+//                     , const core::ExprBase<Derived2>& node2)
 // {
-//      return make_binary<value_type, ad::math::Add<value_type>>(
-//             node1.self(), node2.self());
+//      return BinaryNode<math::Add, Derived1, Derived2>(
+//          node1.self(), node2.self());
 // } 
-// template <class ValueType1, class ValueType2>
-// inline auto operator+(const ad::core::ConstNode<ValueType1>& node1, 
-//                       const ad::core::ConstNode<ValueType2>& node2)
+// template <class ValueType>
+// inline auto operator+(const core::ConstNode<ValueType>& node1, 
+//                       const core::ConstNode<ValueType>& node2)
 // {
-//     using value_t = std::common_type_t<ValueType1, ValueType2>;
-//     return ad::constant(ad::math::Add<value_t>::fmap(
-//                 node1.get_value(), node2.get_value()
+//     return ad::constant(math::Add::fmap(
+//                 node1.get(), node2.get()
 //                 ));
 // }
+
 #define ADNODE_BINARY_FUNC(name, struct_name) \
-template < \
-    class Derived1 \
-    , class Derived2 \
-    , typename value_type =  \
-        typename std::common_type< \
-            typename Derived1::value_type, typename Derived2::value_type \
-            >::type \
-    > \
-inline auto name( \
-        const ADNodeExpr<Derived1>& node1 \
-        , const ADNodeExpr<Derived2>& node2) \
+template <class Derived1 \
+        , class Derived2> \
+inline auto name(const ExprBase<Derived1>& node1, \
+                 const ExprBase<Derived2>& node2) \
 { \
-    return make_binary<value_type, ad::math::struct_name<value_type>>( \
+    return BinaryNode<math::struct_name, Derived1, Derived2>(\
             node1.self(), node2.self()); \
-} \
-\
-template <class ValueType1, class ValueType2> \
-inline auto name(const ad::core::ConstNode<ValueType1>& node1, \
-                 const ad::core::ConstNode<ValueType2>& node2) \
-{ \
-    using value_t = std::common_type_t<ValueType1, ValueType2>; \
-    return ad::constant(ad::math::struct_name<value_t>::fmap( \
-                node1.get_value(), node2.get_value() \
-                )); \
 }
+//\
+//template <class ValueType> \
+//inline auto name(const core::ConstNode<ValueType>& node1, \
+//                 const core::ConstNode<ValueType>& node2) \
+//{ \
+//    return ad::constant(math::struct_name::fmap( \
+//                node1.get(), node2.get() \
+//                )); \
+//}
 
 namespace ad {
 namespace math {
@@ -212,42 +205,75 @@ namespace math {
 // Unary struct definitions 
 
 // UnaryMinus struct
-UNARY_STRUCT(UnaryMinus, return -x;, static_cast<void>(x); return -1.;)
+UNARY_STRUCT(UnaryMinus, 
+             return -x;, 
+             static_cast<void>(x); return -1.;)
+
 // Sin struct
-UNARY_STRUCT(Sin, USING_STD_AD(sin) return sin(x);, USING_STD_AD(cos) return cos(x);)
+UNARY_STRUCT(Sin, 
+             USING_STD_AD_EIGEN(sin) 
+             return sin(x);, 
+             USING_STD_AD_EIGEN(cos) return cos(x);)
 // Cos struct
-UNARY_STRUCT(Cos, return Sin<T>::bmap(x);, return -Sin<T>::fmap(x);)
+UNARY_STRUCT(Cos, 
+             USING_STD_AD_EIGEN(cos) 
+             return cos(x);, 
+             return -Sin::fmap(x);)
 // Tan struct
-UNARY_STRUCT(Tan, USING_STD_AD(tan) return tan(x);, auto tmp = Cos<T>::fmap(x); return T(1.) / (tmp * tmp);)
+UNARY_STRUCT(Tan, 
+             USING_STD_AD_EIGEN(tan) 
+             return tan(x);, 
+             auto tmp = Cos::fmap(x); return T(1.) / (tmp * tmp);)
 // Arcsin (degrees)
-UNARY_STRUCT(Arcsin, USING_STD_AD(asin) return asin(x);, USING_STD_AD(sqrt) return 1. / sqrt(1 - x * x);)
+UNARY_STRUCT(Arcsin, 
+             USING_STD_AD_EIGEN(asin) 
+             return asin(x);, 
+             USING_STD_AD_EIGEN(sqrt) return 1. / sqrt(1. - x * x);)
 // Arccos (degrees)
-UNARY_STRUCT(Arccos, USING_STD_AD(acos) return acos(x);, return -Arcsin<T>::bmap(x);)
+UNARY_STRUCT(Arccos, 
+             USING_STD_AD_EIGEN(acos) 
+             return acos(x);, 
+             return -Arcsin::bmap(x);)
 // Arctan (degrees)
-UNARY_STRUCT(Arctan, USING_STD_AD(atan) return atan(x);, return 1. / (1. + x * x);)
+UNARY_STRUCT(Arctan, 
+             USING_STD_AD_EIGEN(atan) 
+             return atan(x);, 
+             return 1. / (1. + x * x);)
 // Exp struct
-UNARY_STRUCT(Exp, USING_STD_AD(exp) return exp(x); , return fmap(x);)
+UNARY_STRUCT(Exp, 
+             USING_STD_AD_EIGEN(exp) 
+             return exp(x);, 
+             return fmap(x);)
 // Log struct
-UNARY_STRUCT(Log, USING_STD_AD(log) return log(x);, return T(1.) / x;)
+UNARY_STRUCT(Log, 
+             USING_STD_AD_EIGEN(log) 
+             return log(x);, 
+             return T(1.) / x;)
 // Identity struct
-UNARY_STRUCT(Id, return x;, static_cast<void>(x); return T(1.);)
+UNARY_STRUCT(Id, 
+             return x;, 
+             static_cast<void>(x); return T(1.);)
 
 // Binary struct definitions
 
 // Add
-BINARY_STRUCT(Add, return x + y;, 
+BINARY_STRUCT(Add, 
+        return x + y;, 
         static_cast<void>(x); static_cast<void>(y); return 1.;, 
         static_cast<void>(x); static_cast<void>(y); return 1.;)
 // Subtract
-BINARY_STRUCT(Sub, return x - y;, 
+BINARY_STRUCT(Sub, 
+        return x - y;,
         static_cast<void>(x); static_cast<void>(y); return 1.;, 
         static_cast<void>(x); static_cast<void>(y); return -1.;)
 // Multiply
-BINARY_STRUCT(Mul, return x * y;, 
+BINARY_STRUCT(Mul, 
+        return x * y;, 
         static_cast<void>(x); return y;, 
         static_cast<void>(y); return x;)
 // Divide
-BINARY_STRUCT(Div, return x / y;, 
+BINARY_STRUCT(Div, 
+        return x / y;, 
         static_cast<void>(x); return T(1.) / y;, 
         return T(-1.)*x / (y*y);)
 
@@ -258,36 +284,62 @@ BINARY_STRUCT(Div, return x / y;,
  */
 
 // LessThan
-BINARY_STRUCT(LessThan, return x < y;,
+BINARY_STRUCT(LessThan, 
+        return x < y;,
         static_cast<void>(x); static_cast<void>(y); return 0;,
         static_cast<void>(x); static_cast<void>(y); return 0;)
+
 // LessThanEq
-BINARY_STRUCT(LessThanEq, return x <= y;,
+BINARY_STRUCT(LessThanEq, 
+        return x <= y;,
         static_cast<void>(x); static_cast<void>(y); return 0;,
         static_cast<void>(x); static_cast<void>(y); return 0;)
+
 // GreaterThan
-BINARY_STRUCT(GreaterThan, return x > y;,
+BINARY_STRUCT(GreaterThan, 
+        return x > y;,
         static_cast<void>(x); static_cast<void>(y); return 0;,
         static_cast<void>(x); static_cast<void>(y); return 0;)
+
 // GreaterThanEq
-BINARY_STRUCT(GreaterThanEq, return x >= y;,
+BINARY_STRUCT(GreaterThanEq, 
+        return x >= y;,
         static_cast<void>(x); static_cast<void>(y); return 0;,
         static_cast<void>(x); static_cast<void>(y); return 0;)
+
 // Equal
-BINARY_STRUCT(Equal, return x == y;,
+BINARY_STRUCT(Equal, 
+        return x == y;,
         static_cast<void>(x); static_cast<void>(y); return 0;,
         static_cast<void>(x); static_cast<void>(y); return 0;)
+
 // NotEqual
-BINARY_STRUCT(NotEqual, return x != y;,
+BINARY_STRUCT(NotEqual, 
+        return x != y;,
         static_cast<void>(x); static_cast<void>(y); return 0;,
         static_cast<void>(x); static_cast<void>(y); return 0;)
 
 // Logical AND
-BINARY_STRUCT(LogicalAnd, return x && y;,
+BINARY_STRUCT(LogicalAnd, 
+        if constexpr (util::is_eigen_matrix_v<T> &&
+                      !util::is_eigen_matrix_v<U>) return (x.min(y));
+        else if constexpr (!util::is_eigen_matrix_v<T> &&
+                           util::is_eigen_matrix_v<U>) return (y.min(x));
+        else if constexpr (util::is_eigen_matrix_v<T> &&
+                           util::is_eigen_matrix_v<U>) return (x.min(y));
+        return x && y;,
         static_cast<void>(x); static_cast<void>(y); return 0;,
         static_cast<void>(x); static_cast<void>(y); return 0;)
+
 // Logical OR
-BINARY_STRUCT(LogicalOr, return x || y;,
+BINARY_STRUCT(LogicalOr, 
+        if constexpr (util::is_eigen_matrix_v<T> &&
+                      !util::is_eigen_matrix_v<U>) return (x.max(y));
+        else if constexpr (!util::is_eigen_matrix_v<T> &&
+                           util::is_eigen_matrix_v<U>) return (y.max(x));
+        else if constexpr (util::is_eigen_matrix_v<T> &&
+                           util::is_eigen_matrix_v<U>) return (x.max(y));
+        return x || y;,
         static_cast<void>(x); static_cast<void>(y); return 0;,
         static_cast<void>(x); static_cast<void>(y); return 0;)
 

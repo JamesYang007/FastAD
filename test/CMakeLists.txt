@@ -7,23 +7,26 @@ endif()
 set(
     TESTS
     # Unit tests
+    var_view_unittest
     dualnum_unittest
-    vec_unittest
-    mat_unittest
+    #vec_unittest
+    #mat_unittest
     math_unittest
-    node_unittest
-    eval_unittest
-    hessian_unittest
-    ifelse_unittest
-    pow_unittest
-    prod_unittest
-    exgen_unittest
-    jacobian_unittest
+    unary_unittest
+    binary_unittest
+    #node_unittest
+    #eval_unittest
+    #hessian_unittest
+    #ifelse_unittest
+    #pow_unittest
+    #prod_unittest
+    #exgen_unittest
+    #jacobian_unittest
     forward_unittest
-    utility_unittest
+    type_traits_unittest
     # Integration tests
-    node_inttest
-    ad_inttest
+    #node_inttest
+    #ad_inttest
 )
 
 foreach( test ${TESTS} )
@@ -33,7 +36,7 @@ foreach( test ${TESTS} )
 		target_compile_options(${test} PRIVATE -Werror -Wextra)
 	endif()
     target_compile_options(${test} PRIVATE -g -Wall)
-    target_include_directories(${test} PRIVATE ${GTEST_DIR}/include)
+    target_include_directories(${test} PRIVATE ${GTEST_DIR}/include ${EIGEN3_INCLUDE_DIR})
     if (FASTAD_ENABLE_COVERAGE)
         target_link_libraries(${test} gcov)
     endif()

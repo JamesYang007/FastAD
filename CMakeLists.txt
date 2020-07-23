@@ -14,6 +14,12 @@ option(FASTAD_ENABLE_COVERAGE "Build FastAD with coverage" OFF)
 # This will be used for install.
 include(GNUInstallDirs)
 
+# Dependency on Eigen
+if(NOT DEFINED EIGEN3_INCLUDE_DIR)
+    find_package(Eigen3 3.3 REQUIRED NO_MODULE)
+endif()
+message(STATUS "Eigen3 found at ${EIGEN3_INCLUDE_DIR}")
+
 # Add this library as interface (header-only)
 add_library(${PROJECT_NAME} INTERFACE)
 
