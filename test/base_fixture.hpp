@@ -5,6 +5,32 @@
 
 namespace ad {
 
+// Represents f(x) = 2*x
+struct MockUnary
+{
+    template <class T>
+    static auto fmap(T x) { return 2.*x; }
+
+    template <class T>
+    static auto bmap(T) { return 2.; }
+};
+
+// Represents f(x, y) = x - 2*y
+struct MockBinary
+{
+    template <class T, class U>
+    static auto fmap(T x, U y)
+    { return x - 2*y; }
+
+    template <class T, class U>
+    static auto blmap(T, U) 
+    { return 1.; }
+
+    template <class T, class U>
+    static auto brmap(T, U)
+    { return -2.; }
+};
+
 struct base_fixture : ::testing::Test
 {
 protected:
@@ -36,22 +62,33 @@ protected:
         , vec_expr(vec_size)
         , mat_expr(mat_rows, mat_cols)
     {
-        initialize();
+        scl_initialize(scl_expr);
+        vec_initialize(vec_expr);
+        mat_initialize(mat_expr);
     }
 
     // random (fixed) initialization
     // only makes sense when default constructed base fixture
-    void initialize()
+    template <class T>
+    void scl_initialize(T& scl_expr)
     {
         scl_expr.get() = 2.31;
+    }
 
+    template <class T>
+    void vec_initialize(T& vec_expr)
+    {
         auto& vec_raw = vec_expr.get();
         vec_raw(0) = 3.1;
         vec_raw(1) = -2.3;
         vec_raw(2) = 1.3;
         vec_raw(3) = 0.2;
         vec_raw(4) = 5.1;
+    }
 
+    template <class T>
+    void mat_initialize(T& mat_expr)
+    {
         auto& mat_raw = mat_expr.get();
         mat_raw(0,0) = 3.1;
         mat_raw(0,1) = -2.3;

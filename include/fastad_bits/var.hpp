@@ -53,7 +53,45 @@ public:
         , adj_(0)
     {}
 
+    Var(const Var& v)
+        : base_t(v)
+        , val_(v.val_)
+        , adj_(v.adj_)
+    { rebind(); }
+
+    Var(Var&& v)
+        : base_t(std::move(v))
+        , val_(std::move(v.val_))
+        , adj_(std::move(v.adj_))
+    { rebind(); }
+
+    Var& operator=(const Var& v)
+    {
+        if (this == &v) return *this;
+        assert(v.rows() == this->rows());
+        assert(v.cols() == this->cols());
+        val_ = v.val_;
+        adj_ = v.adj_;
+        rebind();
+    }
+
+    Var& operator=(Var&& v) 
+    {
+        if (this == &v) return *this;
+        assert(v.rows() == this->rows());
+        assert(v.cols() == this->cols());
+        val_ = std::move(v.val_);
+        adj_ = std::move(v.adj_);
+        rebind();
+    }
+
 private:
+    void rebind() 
+    {
+        this->bind(&val_);
+        this->bind_adj(&adj_);
+    }
+
     value_t val_;
     value_t adj_;
 };
@@ -96,7 +134,45 @@ public:
         this->bind_adj(adj_.data());
     }
 
+    Var(const Var& v)
+        : base_t(v)
+        , val_(v.val_)
+        , adj_(v.adj_)
+    { rebind(); }
+
+    Var(Var&& v)
+        : base_t(std::move(v))
+        , val_(std::move(v.val_))
+        , adj_(std::move(v.adj_))
+    { rebind(); }
+
+    Var& operator=(const Var& v)
+    {
+        if (this == &v) return *this;
+        assert(v.rows() == this->rows());
+        assert(v.cols() == this->cols());
+        val_ = v.val_;
+        adj_ = v.adj_;
+        rebind();
+    }
+
+    Var& operator=(Var&& v) 
+    {
+        if (this == &v) return *this;
+        assert(v.rows() == this->rows());
+        assert(v.cols() == this->cols());
+        val_ = std::move(v.val_);
+        adj_ = std::move(v.adj_);
+        rebind();
+    }
+
 private:
+    void rebind() 
+    {
+        this->bind(val_.data());
+        this->bind_adj(adj_.data());
+    }
+
     vec_t val_;
     vec_t adj_;
 };
@@ -134,12 +210,47 @@ public:
         : base_t(nullptr, nullptr, n_rows, n_cols) 
         , val_(mat_t::Zero(n_rows, n_cols))
         , adj_(mat_t::Zero(n_rows, n_cols))
+    { rebind(); }
+
+    Var(const Var& v)
+        : base_t(v)
+        , val_(v.val_)
+        , adj_(v.adj_)
+    { rebind(); }
+
+    Var(Var&& v)
+        : base_t(std::move(v))
+        , val_(std::move(v.val_))
+        , adj_(std::move(v.adj_))
+    { rebind(); }
+
+    Var& operator=(const Var& v)
+    {
+        if (this == &v) return *this;
+        assert(v.rows() == this->rows());
+        assert(v.cols() == this->cols());
+        val_ = v.val_;
+        adj_ = v.adj_;
+        rebind();
+    }
+
+    Var& operator=(Var&& v) 
+    {
+        if (this == &v) return *this;
+        assert(v.rows() == this->rows());
+        assert(v.cols() == this->cols());
+        val_ = std::move(v.val_);
+        adj_ = std::move(v.adj_);
+        rebind();
+    }
+
+private:
+    void rebind() 
     {
         this->bind(val_.data());
         this->bind_adj(adj_.data());
     }
 
-private:
     mat_t val_;
     mat_t adj_;
 };

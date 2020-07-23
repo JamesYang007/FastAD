@@ -6,16 +6,6 @@
 namespace ad {
 namespace core {
 
-// Represents f(x) = 2*x
-struct MockUnary
-{
-    template <class T>
-    static auto fmap(T x) { return 2.*x; }
-
-    template <class T>
-    static auto bmap(T) { return 2.; }
-};
-
 struct unary_fixture : base_fixture
 {
 protected:
@@ -23,10 +13,12 @@ protected:
     using scl_unary_t = UnaryNode<unary_t, scl_expr_view_t>;
     using vec_unary_t = UnaryNode<unary_t, vec_expr_view_t>;
     using mat_unary_t = UnaryNode<unary_t, mat_expr_view_t>;
+    using scl_scl_unary_t = UnaryNode<unary_t, scl_unary_t>;
 
     scl_unary_t scl_unary;
     vec_unary_t vec_unary;
     mat_unary_t mat_unary;
+    scl_scl_unary_t scl_scl_unary;
 
     value_t seed = 3.14;
 
@@ -37,6 +29,7 @@ protected:
         , scl_unary(scl_expr)
         , vec_unary(vec_expr)
         , mat_unary(mat_expr)
+        , scl_scl_unary(scl_unary)
         , val_buf(std::max(vec_size, mat_size), 0)
     {
         // IMPORTANT: bind value for unary nodes.
@@ -44,6 +37,7 @@ protected:
         scl_unary.bind(val_buf.data());
         vec_unary.bind(val_buf.data());
         mat_unary.bind(val_buf.data());
+        scl_scl_unary.bind(val_buf.data());
     }
 };
 
@@ -105,6 +99,17 @@ TEST_F(unary_fixture, mat_beval)
             }
         }
     }
+}
+
+TEST_F(unary_fixture, scl_scl_feval) 
+{
+    EXPECT_DOUBLE_EQ(scl_scl_unary.feval(), scl_expr.get() * 4);
+}
+
+TEST_F(unary_fixture, scl_scl_beval) 
+{
+    scl_scl_unary.beval(seed,0,0); // last two ignored
+    EXPECT_DOUBLE_EQ(scl_expr.get_adj(0,0), 4.*seed); 
 }
 
 } // namespace core

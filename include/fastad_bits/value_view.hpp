@@ -61,7 +61,8 @@ struct ValueView<ValueType, scl>
      * Returns the raw pointer to the first value viewed by current object.
      * @return  raw pointer
      */
-    value_t* data() const { return val_; }
+    value_t* data() { return val_; }
+    const value_t* data() const { return val_; }
 
     /**
      * Returns the size of the variable.
@@ -82,6 +83,14 @@ struct ValueView<ValueType, scl>
      * @return  number of cols
      */
     constexpr size_t cols() const { return 1; }
+
+    /**
+     * Zero out the underlying value(s).
+     */
+    void zero() { 
+        assert(val_);
+        *val_ = 0;
+    }
 
 private:
     value_t* val_;
@@ -112,7 +121,9 @@ struct ValueView<ValueType, vec>
     size_t size() const { return val_.size(); }
     size_t rows() const { return this->size(); }
     constexpr size_t cols() const { return 1; }
-    value_t* data() const { return val_.data(); }
+    value_t* data() { return val_.data(); }
+    const value_t* data() const { return val_.data(); }
+    void zero() { val_.setZero(); }
 
 private:
     var_t val_;
@@ -143,7 +154,9 @@ struct ValueView<ValueType, mat>
     size_t size() const { return val_.size(); }
     size_t rows() const { return val_.rows(); }
     size_t cols() const { return val_.cols(); }
-    value_t* data() const { return val_.data(); }
+    value_t* data() { return val_.data(); }
+    const value_t* data() const { return val_.data(); }
+    void zero() { val_.setZero(); }
 
 private:
     var_t val_;

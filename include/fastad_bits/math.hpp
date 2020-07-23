@@ -3,6 +3,7 @@
 #include <utility>
 #include <fastad_bits/type_traits.hpp>
 #include <fastad_bits/unary.hpp>
+#include <fastad_bits/constant.hpp>
 #include <fastad_bits/binary.hpp>
 #include <fastad_bits/forward.hpp>    // USING_STD_AD_EIGEN requires all overloads of ad::fname for various fname's
                                       // Ex. ad::sin, ad::cos, ad::tan.
@@ -62,7 +63,7 @@ struct name \
 }; 
 
 // Defines function with name associated with struct_name.
-// TODO: Overloaded for constant nodes to be eager-evaluated.
+// Overloaded for constant nodes to be eager-evaluated.
 // @tparam  Derived     the actual type of node in CRTP
 // @return  Unary Node that will evaluate forward and backward direction 
 //          defined by "struct_name"'s fmap and bmap acting on "node"
@@ -77,8 +78,9 @@ struct name \
 //     return core::UnaryNode<math::UnaryMinus
 //         , Derived>(node.self());
 // } 
-// template <class ValueType> 
-// inline auto operator-(const ad::core::ConstNode<ValueType>& node)
+// template <class ValueType, class ShapeType> 
+// inline auto operator-(const ad::core::ConstantView<
+//                              ValueType, ShapeType>& node)
 // { 
 //     return ad::constant(
 //             math::UnaryMinus::fmap(node.get())
@@ -88,17 +90,34 @@ struct name \
 template <class Derived> \
 inline auto name(const core::ExprBase<Derived>& node) \
 { \
+    using convert_to_view_t = util::convert_to_view_t<Derived>; \
     return core::UnaryNode<math::struct_name \
-        , Derived>(node.self()); \
+        , convert_to_view_t>(node.self()); \
+} \
+\
+template <class Derived> \
+inline auto name(const core::ConstantBase<Derived>& node) \
+{ \
+    if constexpr (util::is_scl_v<Derived>) { \
+        return ad::constant( \
+                math::struct_name::fmap(node.self().feval()) \
+                ); \
+    } else if constexpr (util::is_vec_v<Derived>){ \
+        using value_t = std::decay_t<decltype(\
+            math::struct_name::fmap(node.self().feval().array())(0) \
+                )>; \
+        Eigen::Matrix<value_t, Eigen::Dynamic, 1> res = \
+                math::struct_name::fmap(node.self().feval().array()); \
+        return ad::constant(res); \
+    } else { \
+        using value_t = std::decay_t<decltype(\
+            math::struct_name::fmap(node.self().feval().array())(0,0) \
+                )>; \
+        Eigen::Matrix<value_t, Eigen::Dynamic, Eigen::Dynamic> res = \
+                math::struct_name::fmap(node.self().feval().array()); \
+        return ad::constant(res); \
+    }\
 }
-//
-//template <class ValueType> \
-//inline auto name(const core::ConstNode<ValueType>& node) \
-//{ \
-//    return ad::constant( \
-//            math::struct_name::fmap(node.get()) \
-//            ); \
-//}
 
 // Defines a binary struct with name "name".
 // Binary struct contains three static functions: fmap, blmap, brmap.
@@ -152,7 +171,7 @@ struct name \
 }; 
 
 // Defines function with name associated with struct_name.
-// TODO: Overload for constant for eager evaluation.
+// Overload for constant for eager evaluation.
 // @tparam  Derived1    the actual type of node1 in CRTP
 // @tparam  Derived2    the actual type of node2 in CRTP
 // @tparam  value_type  the underlying data type.
@@ -171,9 +190,9 @@ struct name \
 //      return BinaryNode<math::Add, Derived1, Derived2>(
 //          node1.self(), node2.self());
 // } 
-// template <class ValueType>
-// inline auto operator+(const core::ConstNode<ValueType>& node1, 
-//                       const core::ConstNode<ValueType>& node2)
+// template <class ValueType, class ShapeType>
+// inline auto operator+(const core::ConstantView<ValueType, ShapeType>& node1, 
+//                       const core::ConstantView<ValueType, ShapeType>& node2)
 // {
 //     return ad::constant(math::Add::fmap(
 //                 node1.get(), node2.get()
@@ -186,18 +205,83 @@ template <class Derived1 \
 inline auto name(const ExprBase<Derived1>& node1, \
                  const ExprBase<Derived2>& node2) \
 { \
-    return BinaryNode<math::struct_name, Derived1, Derived2>(\
+    using convert_to_view1_t = util::convert_to_view_t<Derived1>; \
+    using convert_to_view2_t = util::convert_to_view_t<Derived2>; \
+    return BinaryNode<math::struct_name, \
+                      convert_to_view1_t, \
+                      convert_to_view2_t>(\
             node1.self(), node2.self()); \
+}\
+\
+template <class Derived1, class Derived2> \
+inline auto name(const core::ConstantBase<Derived1>& node1, \
+                 const core::ConstantBase<Derived2>& node2) \
+{ \
+    if constexpr (util::is_scl_v<Derived1> && \
+                  util::is_scl_v<Derived2>) { \
+        return ad::constant(math::struct_name::fmap( \
+                    node1.self().feval(), node2.self().feval() \
+                    )); \
+    } else if constexpr (util::is_vec_v<Derived1> &&  \
+                         util::is_scl_v<Derived2>) {\
+        using value_t = std::decay_t<decltype( \
+            math::struct_name::fmap( \
+                    node1.self().feval().array(), node2.self().feval())(0) \
+                )>; \
+        Eigen::Matrix<value_t, Eigen::Dynamic, 1> res = \
+            math::struct_name::fmap( \
+                    node1.self().feval().array(), node2.self().feval()); \
+        return ad::constant(res); \
+    } else if constexpr (util::is_mat_v<Derived1> &&  \
+                         util::is_scl_v<Derived2>) {\
+        using value_t = std::decay_t<decltype( \
+            math::struct_name::fmap( \
+                    node1.self().feval().array(), node2.self().feval())(0,0) \
+                )>; \
+        Eigen::Matrix<value_t, Eigen::Dynamic, Eigen::Dynamic> res = \
+            math::struct_name::fmap( \
+                    node1.self().feval().array(), node2.self().feval()); \
+        return ad::constant(res); \
+    } else if constexpr (util::is_scl_v<Derived1> &&  \
+                         util::is_vec_v<Derived2>) {\
+        using value_t = std::decay_t<decltype( \
+            math::struct_name::fmap( \
+                    node1.self().feval(), node2.self().feval().array())(0) \
+                )>; \
+        Eigen::Matrix<value_t, Eigen::Dynamic, 1> res = \
+            math::struct_name::fmap( \
+                    node1.self().feval(), node2.self().feval().array()); \
+        return ad::constant(res); \
+    } else if constexpr (util::is_scl_v<Derived1> &&  \
+                         util::is_mat_v<Derived2>) {\
+        using value_t = std::decay_t<decltype( \
+            math::struct_name::fmap( \
+                    node1.self().feval(), node2.self().feval().array())(0,0) \
+                )>; \
+        Eigen::Matrix<value_t, Eigen::Dynamic, Eigen::Dynamic> res = \
+            math::struct_name::fmap( \
+                    node1.self().feval(), node2.self().feval().array()); \
+        return ad::constant(res); \
+    } else if constexpr (util::is_vec_v<Derived1>){    \
+        using value_t = std::decay_t<decltype( \
+            math::struct_name::fmap( \
+                    node1.self().feval().array(), node2.self().feval().array())(0) \
+                )>; \
+        Eigen::Matrix<value_t, Eigen::Dynamic, 1> res = \
+            math::struct_name::fmap( \
+                    node1.self().feval().array(), node2.self().feval().array()); \
+        return ad::constant(res); \
+    } else { \
+        using value_t = std::decay_t<decltype( \
+            math::struct_name::fmap( \
+                    node1.self().feval().array(), node2.self().feval().array())(0,0) \
+                )>; \
+        Eigen::Matrix<value_t, Eigen::Dynamic, Eigen::Dynamic> res = \
+            math::struct_name::fmap( \
+                    node1.self().feval().array(), node2.self().feval().array()); \
+        return ad::constant(res); \
+    }\
 }
-//\
-//template <class ValueType> \
-//inline auto name(const core::ConstNode<ValueType>& node1, \
-//                 const core::ConstNode<ValueType>& node2) \
-//{ \
-//    return ad::constant(math::struct_name::fmap( \
-//                node1.get(), node2.get() \
-//                )); \
-//}
 
 namespace ad {
 namespace math {
@@ -320,6 +404,7 @@ BINARY_STRUCT(NotEqual,
         static_cast<void>(x); static_cast<void>(y); return 0;)
 
 // Logical AND
+// Note: only well-defined when inputs are of boolean context
 BINARY_STRUCT(LogicalAnd, 
         if constexpr (util::is_eigen_matrix_v<T> &&
                       !util::is_eigen_matrix_v<U>) return (x.min(y));
@@ -327,11 +412,12 @@ BINARY_STRUCT(LogicalAnd,
                            util::is_eigen_matrix_v<U>) return (y.min(x));
         else if constexpr (util::is_eigen_matrix_v<T> &&
                            util::is_eigen_matrix_v<U>) return (x.min(y));
-        return x && y;,
+        else return x && y;,
         static_cast<void>(x); static_cast<void>(y); return 0;,
         static_cast<void>(x); static_cast<void>(y); return 0;)
 
 // Logical OR
+// Note: only well-defined when inputs are of boolean context
 BINARY_STRUCT(LogicalOr, 
         if constexpr (util::is_eigen_matrix_v<T> &&
                       !util::is_eigen_matrix_v<U>) return (x.max(y));
@@ -339,7 +425,7 @@ BINARY_STRUCT(LogicalOr,
                            util::is_eigen_matrix_v<U>) return (y.max(x));
         else if constexpr (util::is_eigen_matrix_v<T> &&
                            util::is_eigen_matrix_v<U>) return (x.max(y));
-        return x || y;,
+        else return x || y;,
         static_cast<void>(x); static_cast<void>(y); return 0;,
         static_cast<void>(x); static_cast<void>(y); return 0;)
 

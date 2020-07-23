@@ -1,6 +1,7 @@
 #pragma once
 #include <fastad_bits/expr_base.hpp>
 #include <fastad_bits/value_view.hpp>
+#include <fastad_bits/type_traits.hpp>
 
 namespace ad {
 namespace core {
@@ -19,7 +20,7 @@ namespace core {
  * 2) both vector
  * 3) both matrix
  *
- * Left and right expressions must have the same value type.
+ * Left and right expressions must have a common value type as per std::common_type.
  * This is the value type that the BinaryNode assumes.
  *
  * @tparam  Binary          binary functor that stores fmap, blmap, brmap defining
@@ -33,7 +34,7 @@ template <class Binary
         , class LeftExprType
         , class RightExprType>
 struct BinaryNode:
-    ValueView<typename expr_traits<LeftExprType>::value_t,
+    ValueView<typename util::expr_traits<LeftExprType>::value_t,
               util::max_shape_t<typename util::shape_traits<LeftExprType>::shape_t,
                                 typename util::shape_traits<RightExprType>::shape_t>
                 >,
@@ -42,17 +43,18 @@ struct BinaryNode:
 private:
     using left_t = LeftExprType;
     using right_t = RightExprType;
-    using left_value_t = typename expr_traits<left_t>::value_t;
+    using common_value_t = std::common_type_t<
+        typename util::expr_traits<left_t>::value_t,
+        typename util::expr_traits<right_t>::value_t
+            >;
     using max_shape_t = util::max_shape_t<
         typename util::shape_traits<left_t>::shape_t,
         typename util::shape_traits<right_t>::shape_t
             >;
-    using value_view_t = ValueView<left_value_t, max_shape_t>;
 
-    // left and right value types must be the same
-    static_assert(std::is_same_v<
-                typename expr_traits<left_t>::value_t,
-                typename expr_traits<right_t>::value_t>);
+    // both left and right must AD expressions
+    static_assert(util::is_expr_v<left_t> &&
+                  util::is_expr_v<right_t>);
     
     // restrict shape combinations
     static_assert(
@@ -63,9 +65,11 @@ private:
             );
 
 public:
+    using value_view_t = ValueView<common_value_t, max_shape_t>;
     using typename value_view_t::value_t;
     using typename value_view_t::shape_t;
     using typename value_view_t::var_t;
+    using value_view_t::bind;
 
     BinaryNode(const left_t& expr_lhs, 
                const right_t& expr_rhs)
@@ -83,7 +87,7 @@ public:
         }
     }
 
-    /* 
+    /**
      * Forward evaluation first evaluates both expressions,
      * computes Binary value on the two values,
      * caches the result, and returns a const& of the cache.
@@ -111,7 +115,7 @@ public:
         }
     }
 
-    /* 
+    /**
      * Backward evaluation computes Binary partial derivative on expression values, 
      * and multiplies the two quantities as the new seed for the respective expression
      * backward evaluation.
@@ -130,7 +134,26 @@ public:
         expr_lhs_.beval(lhs_seed, i, j);
     }
 
+    /**
+     * Binds left expression, then right expression, then itself.
+     * Ignores a child expression if it is a VarView.
+     *
+     * @return  next pointer not bound by left, right, or itself.
+     */
+    value_t* bind(value_t* begin) 
+    {
+        value_t* next = begin;
+        if constexpr (!util::is_var_view_v<left_t>) {
+            next = expr_lhs_.bind(next);
+        }
+        if constexpr (!util::is_var_view_v<right_t>) {
+            next = expr_rhs_.bind(next);
+        }
+        return value_view_t::bind(next);
+    }
+
 private:
+
     left_t expr_lhs_;
     right_t expr_rhs_;
 };

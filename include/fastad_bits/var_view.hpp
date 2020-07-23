@@ -6,6 +6,14 @@
 
 namespace ad {
 
+// forward declaration
+namespace core {
+
+template <class VarViewType, class ExprType>
+struct EqNode;
+
+} // namespace core
+
 /* 
  * VarView views a variable, which could be a scalar, vector, or matrix.
  * VarView objects are precisely the leaves of the computation tree.
@@ -28,10 +36,7 @@ struct VarView<ValueType, scl>:
     core::ValueView<ValueType, scl>,
     core::ExprBase<VarView<ValueType, scl>>
 {
-private:
     using value_view_t = core::ValueView<ValueType, scl>;
-
-public:
     using typename value_view_t::value_t;
     using typename value_view_t::shape_t;
     using typename value_view_t::var_t;
@@ -54,7 +59,10 @@ public:
      * (leaf = non-leaf expression) returns EqNode
      */
     template <class Derived>
-    inline auto operator=(const core::ExprBase<Derived>&) const;
+    inline auto operator=(const core::ExprBase<Derived>& expr) const
+    {
+        return core::EqNode<VarView, Derived>(*this, expr.self());
+    }
 
     /** 
      * Forward-evaluation simply returns the underlying value.
@@ -118,10 +126,7 @@ struct VarView<ValueType, vec>:
     core::ValueView<ValueType, vec>,
     core::ExprBase<VarView<ValueType, vec>>
 {
-private:
     using value_view_t = core::ValueView<ValueType, vec>;
-
-public:
     using typename value_view_t::value_t;
     using typename value_view_t::shape_t;
     using typename value_view_t::var_t;
@@ -144,7 +149,10 @@ public:
      * (leaf = non-leaf expression) returns EqNode
      */
     template <class Derived>
-    inline auto operator=(const core::ExprBase<Derived>&) const;
+    inline auto operator=(const core::ExprBase<Derived>& expr) const
+    {
+        return core::EqNode<VarView, Derived>(*this, expr.self());
+    }
 
     const var_t& feval() const { return this->get(); }
     void beval(value_t seed, size_t i, size_t) { adj_.get()(i) += seed; }
@@ -173,10 +181,7 @@ struct VarView<ValueType, mat>:
     core::ValueView<ValueType, mat>,
     core::ExprBase<VarView<ValueType, mat>>
 {
-private:
     using value_view_t = core::ValueView<ValueType, mat>;
-
-public:
     using typename value_view_t::value_t;
     using typename value_view_t::shape_t;
     using typename value_view_t::var_t;
@@ -199,7 +204,10 @@ public:
      * (leaf = non-leaf expression) returns EqNode
      */
     template <class Derived>
-    inline auto operator=(const core::ExprBase<Derived>&) const;
+    inline auto operator=(const core::ExprBase<Derived>& expr) const
+    {
+        return core::EqNode<VarView, Derived>(*this, expr.self());
+    }
 
     const var_t& feval() const { return this->get(); }
     void beval(value_t seed, size_t i, size_t j) { adj_.get()(i,j) += seed; }

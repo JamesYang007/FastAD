@@ -1,12 +1,13 @@
 #pragma once
 #include <fastad_bits/expr_base.hpp>
+#include <fastad_bits/type_traits.hpp>
 #include <fastad_bits/shape_traits.hpp>
 #include <fastad_bits/value_view.hpp>
 
 namespace ad {
 namespace core {
 
-/* 
+/**
  * UnaryNode represents a univariate function on an expression.
  * All mathematical functions defined in math.hpp will
  * simply return a UnaryNode that stores all information 
@@ -22,31 +23,33 @@ namespace core {
  *                      its corresponding function and derivative mapping
  * @tparam  ExprType    type of expression to apply Unary on
  */
+
 template <class Unary
-        , class ExprType
-        , class ShapeType = typename expr_traits<ExprType>::shape_t>
+        , class ExprType>
 struct UnaryNode:
-    core::ValueView<typename expr_traits<ExprType>::value_t, ShapeType>,
-    core::ExprBase<UnaryNode<Unary, ExprType, ShapeType>>
+    core::ValueView<typename util::expr_traits<ExprType>::value_t,
+                    typename util::shape_traits<ExprType>::shape_t>,
+    core::ExprBase<UnaryNode<Unary, ExprType>>
 {
 private:
-    using value_view_t = core::ValueView<
-        typename expr_traits<ExprType>::value_t, 
-        ShapeType >;
+    using expr_t = ExprType;
+    static_assert(util::is_expr_v<expr_t>);
 
 public:
-    static_assert(is_expr_v<ExprType>);
-
+    using value_view_t = core::ValueView<
+        typename util::expr_traits<expr_t>::value_t, 
+        typename util::shape_traits<expr_t>::shape_t >;
     using typename value_view_t::value_t;
     using typename value_view_t::shape_t;
     using typename value_view_t::var_t;
+    using value_view_t::bind;
 
-    UnaryNode(const ExprType& expr)
+    UnaryNode(const expr_t& expr)
         : value_view_t(nullptr, expr.rows(), expr.cols())
         , expr_(expr)
     {}
 
-    /*
+    /**
      * Forward evaluation first evaluates given expression,
      * evaluates univariate functor on the result, and caches the result.
      *
@@ -54,14 +57,14 @@ public:
      */
     const var_t& feval()
     {
-        if constexpr (util::is_scl_v<ExprType>) {
+        if constexpr (util::is_scl_v<expr_t>) {
             return this->get() = Unary::fmap(expr_.feval());
         } else {
             return this->get() = Unary::fmap(expr_.feval().array()).matrix();
         }
     }
 
-    /* 
+    /**
      * Backward evaluation sets current adjoint to seed,
      * multiplies seed with univariate function derivative on expression value,
      * and backward evaluate expression with the result as the new seed.
@@ -76,8 +79,25 @@ public:
         expr_.beval(seed * Unary::bmap(expr_.get(i,j)), i, j);
     }
 
+    /**
+     * Disables usual binding rules and applies a recursive form.
+     * First binds for underlying expression then binds itself.
+     * Ignores binding VarViews since the precondition states that
+     * they will have been bound prior to AD expression construction.
+     *
+     * @return  next pointer not bound by underlying expression and itself.
+     */
+    value_t* bind(value_t* begin)
+    { 
+        value_t* next = begin;
+        if constexpr (!util::is_var_view_v<expr_t>) {
+            next = expr_.bind(next);
+        }
+        return value_view_t::bind(next);
+    }
+
 private:
-    ExprType expr_;
+    expr_t expr_;
 };
 
 } // namespace core
