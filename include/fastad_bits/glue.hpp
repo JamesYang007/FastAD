@@ -77,9 +77,9 @@ public:
      * from the backward evaluation on right expression, which will have updated
      * all placeholder adjoints (assuming user passed the correct order of expressions to evaluate).
      *
-     * Note that i,j are -1 when we want the expression to back-evaluate all elements.
-     * In practice, the right-most expression will be seeded with 1. with non-negative-one
-     * i,j, and all other leftward expressions will be seeded with 0 and negative ones.
+     * Note that pol is "all" when we want the expression to back-evaluate all elements.
+     * In practice, the right-most expression will be seeded with 1. with pol = "single", 
+     * and all other leftward expressions will be seeded with 0 and pol = "all".
      *
      * See EqNode and UnaryNode, BinaryNode as examples of how other nodes handle these cases.
      */

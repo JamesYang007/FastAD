@@ -95,7 +95,7 @@ public:
      * It is assumed that at the time of calling beval,
      * all expressions using placeholder have backward evaluated.
      *
-     * When i,j are -1, it is a special signal from GlueNode or ForEachIterNode
+     * When pol is "all", it is a special signal from GlueNode or ForEachIterNode
      * that we should back-evaluate every non-zero adjoint expressions.
      * In general, after the right-most expression is backward-evaluated,
      * every element of every left-ward expression may have been a dependency.

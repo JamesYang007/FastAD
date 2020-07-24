@@ -64,7 +64,7 @@ public:
     /** 
      * Backward evaluate from right to left by seeding the same seed.
      *
-     * Note that GlueNode and alike guarantee to seed 0 when i,j==-1.
+     * Note that GlueNode and alike guarantee to seed 0 when pol is single.
      * See EqNode for why we can preemptively return.
      */
     void beval(value_t seed, size_t i, size_t j, util::beval_policy pol)
@@ -105,6 +105,98 @@ private:
     std::vector<vec_elem_t> exprs_;
 };
 
+/** 
+ * SumElemNode represents a summation of all elements of an expression.
+ * Ex. \sum_{i,j=1}^{m,n} e_{ij}
+ *
+ * Mathematically, the derivative of this expression can be optimized
+ * since the partial derivative w.r.t. e_ij is simply e'_ij
+ * and does not depend on other e_ij values.
+ *
+ * @tparam  VecType     type of vector of expressions to sum over 
+ */
+
+template <class ExprType>
+struct SumElemNode:
+    ValueView<typename util::expr_traits<ExprType>::value_t,
+              ad::scl>,
+    ExprBase<SumIterNode<ExprType>>
+{
+private:
+    using expr_t = ExprType;
+    using expr_value_t = typename util::expr_traits<expr_t>::value_t;
+    
+public:
+    using value_view_t = ValueView<expr_value_t, ad::scl>;
+    using typename value_view_t::value_t;
+    using typename value_view_t::shape_t;
+    using typename value_view_t::var_t;
+    using value_view_t::bind;
+
+    SumElemNode(const expr_t& expr)
+        : value_view_t(nullptr, 1, 1)
+        , expr_{expr}
+    {}
+
+    /** 
+     * Forward evaluate by evaluating the expression and accumulating the elements.
+     *
+     * @return forward evaluation of sum of functor on every expr.
+     */
+    const var_t& feval()
+    {
+        auto&& res = expr_.feval();
+        if constexpr (util::is_scl_v<expr_t>) {
+            return this->get() = res;
+        } else {
+            return this->get() = res.sum();
+        }
+    }
+
+    /** 
+     * Backward evaluate every element of expression with the same seed and policy.
+     * Since the current node is always a scalar, we can ignore the middle two parameters.
+     *
+     * Note that GlueNode and alike guarantee to seed 0 when pol is single.
+     * See EqNode for why we can preemptively return.
+     */
+    void beval(value_t seed, size_t, size_t, util::beval_policy pol)
+    {
+        if (seed == 0) return;
+        for (size_t k = 0; k < expr_.cols(); ++k) {
+            for (size_t l = 0; l < expr_.rows(); ++l) {
+                expr_.beval(seed, l, k, pol);
+            }
+        }
+    }
+
+    /**
+     * Bind the expression then itself to a scalar.
+     *
+     * @return  the next pointer not bound by any of the expressions and itself.
+     */
+    value_t* bind(value_t* begin)
+    {
+        if constexpr (!util::is_var_view_v<expr_t>) {
+            begin = expr_.bind(begin);
+        }
+        return value_view_t::bind(begin);
+    }
+
+    size_t bind_size() const 
+    { 
+        return expr_.bind_size() + single_bind_size();
+    }
+
+    constexpr size_t single_bind_size() const 
+    { 
+        return this->size(); 
+    }
+
+private:
+    expr_t expr_;
+};
+
 } // namespace core
 
 /**
@@ -140,6 +232,23 @@ inline auto sum(Iter begin, Iter end, Lmda&& f)
                     exprs.emplace_back(f(x));
                 });
         return core::SumIterNode<std::vector<expr_t>>(exprs);
+    }
+}
+
+template <class Derived>
+inline auto sum(const core::ExprBase<Derived>& expr)
+{
+    using expr_t = Derived;
+
+    // optimized when expr is constant
+    if constexpr (util::is_constant_v<expr_t>) {
+        if constexpr (util::is_scl_v<expr_t>) return expr.self();
+        else {
+            auto&& res = expr.feval();
+            return ad::constant(res.sum());
+        }
+    } else {
+        return core::SumElemNode<Derived>(expr.self());
     }
 }
 

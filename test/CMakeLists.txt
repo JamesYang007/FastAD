@@ -7,7 +7,6 @@ endif()
 set(
     TESTS
     # Unit tests
-    #vec_unittest
     #mat_unittest
     #hessian_unittest
     #ifelse_unittest
