@@ -125,13 +125,16 @@ public:
      *
      * where f is the bivariate function, w and z are the left and right expression values, respectively.
      * It is assumed that feval is called before beval.
+     *
+     * See EqNode for why we can preemptively return.
      */
-    void beval(value_t seed, size_t i, size_t j)
+    void beval(value_t seed, size_t i, size_t j, util::beval_policy pol)
     {
+        if (seed == 0) return;
         auto rhs_seed = seed * Binary::brmap(expr_lhs_.get(i,j), expr_rhs_.get(i,j));
         auto lhs_seed = seed * Binary::blmap(expr_lhs_.get(i,j), expr_rhs_.get(i,j));
-        expr_rhs_.beval(rhs_seed, i, j);
-        expr_lhs_.beval(lhs_seed, i, j);
+        expr_rhs_.beval(rhs_seed, i, j, pol);
+        expr_lhs_.beval(lhs_seed, i, j, pol);
     }
 
     /**

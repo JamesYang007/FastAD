@@ -85,21 +85,49 @@ public:
      */
     const var_t& feval()
     {
-        return expr_.feval();
+        return this->get() = expr_.feval();
     }
 
     /** 
-     * Backward evaluate i,jth expression and 
-     * then backward evaluates expression using leaf's (full) adjoint.
+     * Backward evaluate all expressions that have non-zero (full) adjoint.
      * We use the full adjoint because many expressions could use the same placeholder,
      * and hence current seed is only a component of the full partial derivative.
      * It is assumed that at the time of calling beval,
      * all expressions using placeholder have backward evaluated.
+     *
+     * When i,j are -1, it is a special signal from GlueNode or ForEachIterNode
+     * that we should back-evaluate every non-zero adjoint expressions.
+     * In general, after the right-most expression is backward-evaluated,
+     * every element of every left-ward expression may have been a dependency.
+     * Note: this is why users should always reset adjoint before back-evaluating -
+     * adjoints can accumulate otherwise.
+     *
+     * Assumptions:
+     * - The only exceptional node is this EqNode and any further embedded
+     *   EqNode inside the (right) expression cannot be referenced outside this current node.
+     *
+     * - If the i,j adjoint of variable is 0 after accounting for seeding,
+     *   there is no need to back-evaluate the i,jth expression by the above reason;
+     *   it implies that the adjoints of these further placeholders will remain 0
+     *   and all other nodes will have only computed a bunch of numbers 
+     *   only to be multiplied by 0 (their seed).
      */
-    void beval(value_t seed, size_t i, size_t j)
+    void beval(value_t seed, size_t i, size_t j, util::beval_policy pol)
     {
-        var_view_.beval(seed, i, j);
-        expr_.beval(var_view_.get_adj(i,j), i, j);
+        if (pol == util::beval_policy::all) {
+            assert(seed == 0);
+            for (size_t k = 0; k < var_view_.cols(); ++k) {
+                for (size_t l = 0; l < var_view_.rows(); ++l) {
+                    if (var_view_.get_adj(l,k)) {
+                        expr_.beval(var_view_.get_adj(l,k), l, k, 
+                                    util::beval_policy::single);
+                    }
+                }
+            }
+        } else {
+            var_view_.beval(seed, i, j, pol);
+            expr_.beval(var_view_.get_adj(i,j), i, j, pol);
+        }
     }
 
     /**

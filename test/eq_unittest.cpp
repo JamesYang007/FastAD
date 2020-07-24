@@ -60,7 +60,7 @@ TEST_F(eq_fixture, scl_feval)
 
 TEST_F(eq_fixture, scl_beval)
 {
-    scl_eq.beval(seed, 0,0);    // last two ignored
+    scl_eq.beval(seed, 0,0, util::beval_policy::single);    // last two ignored
     EXPECT_DOUBLE_EQ(scl_place.get_adj(0,0), seed);
     EXPECT_DOUBLE_EQ(scl_expr.get_adj(0,0), 4.*seed);
 }
@@ -78,7 +78,7 @@ TEST_F(eq_fixture, vec_feval)
 
 TEST_F(eq_fixture, vec_beval)
 {
-    vec_eq.beval(seed, 2,0);    // last ignored
+    vec_eq.beval(seed, 2,0, util::beval_policy::single);    // last ignored
     for (size_t i = 0; i < vec_size; ++i) {
         value_t actual = (i == 2) ? seed : 0;
         EXPECT_DOUBLE_EQ(vec_place.get_adj(i,0), actual);
@@ -101,8 +101,8 @@ TEST_F(eq_fixture, mat_feval)
 
 TEST_F(eq_fixture, mat_beval)
 {
-    mat_eq.beval(seed,1,1);
-    mat_eq.beval(seed,0,2);
+    mat_eq.beval(seed,1,1, util::beval_policy::single);
+    mat_eq.beval(seed,0,2, util::beval_policy::single);
     for (size_t i = 0; i < mat_rows; ++i) {
         for (size_t j = 0; j < mat_cols; ++j) {
             value_t actual = ((i == 1 && j == 1) ||
@@ -110,6 +110,37 @@ TEST_F(eq_fixture, mat_beval)
             EXPECT_DOUBLE_EQ(mat_place.get_adj(i,j), actual);
             EXPECT_DOUBLE_EQ(mat_expr.get_adj(i,j), 4.*actual);
         }
+    }
+}
+
+TEST_F(eq_fixture, vec_nested_eq_feval)
+{
+    Var<value_t, ad::vec> y(vec_size);
+    auto expr = (y = vec_eq);
+    expr.bind(val_buf.data());
+
+    Eigen::VectorXd res = expr.feval();
+    for (int i = 0; i < res.size(); ++i) {
+        EXPECT_DOUBLE_EQ(res(i), 4.*vec_expr.get(i,0));
+        // check that placeholder value has been modified
+        EXPECT_DOUBLE_EQ(vec_place.get(i,0), 4.*vec_expr.get(i,0));
+        EXPECT_DOUBLE_EQ(y.get(i,0), 4.*vec_expr.get(i,0));
+    }
+}
+
+TEST_F(eq_fixture, vec_nested_eq_beval)
+{
+    Var<value_t, ad::vec> y(vec_size);
+    auto expr = (y = vec_eq);
+    expr.bind(val_buf.data());
+
+    expr.beval(seed, 2, 0, util::beval_policy::single);
+    expr.beval(seed, 0, 0, util::beval_policy::single);
+    for (size_t i = 0; i < vec_size; ++i) {
+        value_t actual = (i == 0 || i == 2) ? seed : 0;
+        EXPECT_DOUBLE_EQ(y.get_adj(i,0), actual);
+        EXPECT_DOUBLE_EQ(vec_place.get_adj(i,0), actual);
+        EXPECT_DOUBLE_EQ(vec_expr.get_adj(i,0), actual * 4.);
     }
 }
 

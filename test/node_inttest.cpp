@@ -109,7 +109,7 @@ TEST_F(node_integration_fixture, leaf_unary_binary) {
     auto expr = leaf1 + ad::sin(leaf2 + leaf3);
     bind(expr);
     EXPECT_EQ(expr.feval(), x1 + std::sin(x2 + x3));
-    expr.beval(1,0,0);
+    expr.beval(1,0,0, util::beval_policy::single);
     EXPECT_EQ(dfs[0], 1);
     EXPECT_EQ(dfs[1], std::cos(x2 + x3));
     EXPECT_EQ(dfs[2], std::cos(x2 + x3));
@@ -127,7 +127,7 @@ TEST_F(node_integration_fixture, leaf_unary_binary_2) {
     auto expr = leaf1 * leaf2 + sin(leaf1);
     bind(expr);
     EXPECT_EQ(expr.feval(), x1*x2 + std::sin(x1));
-    expr.beval(1,0,0);
+    expr.beval(1,0,0, util::beval_policy::single);
     EXPECT_EQ(dfs[0], x2 + std::cos(x1));
     EXPECT_EQ(dfs[1], x1);
 }
@@ -141,7 +141,7 @@ TEST_F(node_integration_fixture, leaf_unary_binary_3) {
     auto expr = leaf1 * leaf2 + sin(leaf1 + leaf2) * leaf2 - leaf1 / leaf2;
     bind(expr);
     EXPECT_EQ(expr.feval(), x1*x2 + std::sin(x1 + x2)*x2 - x1 / x2);
-    expr.beval(1,0,0);
+    expr.beval(1,0,0, util::beval_policy::single);
     EXPECT_EQ(dfs[0],
         x2 + std::cos(x1 + x2) * x2 - 1. / x2);
     EXPECT_EQ(dfs[1],
@@ -160,7 +160,7 @@ TEST_F(node_integration_fixture, leaf_unary_binary_4) {
     bind(expr);
     EXPECT_EQ(expr.feval(),
         x1*x3 + std::sin(std::cos(x1 + x2))*x2 - x1 / std::exp(x3));
-    expr.beval(1,0,0);
+    expr.beval(1,0,0, util::beval_policy::single);
     EXPECT_EQ(dfs[0],
         x3 - x2 * std::cos(std::cos(x1 + x2))*std::sin(x1 + x2) - std::exp(-x3));
     EXPECT_EQ(dfs[1],
@@ -200,7 +200,7 @@ TEST_F(node_integration_fixture, leaf_binary_eq_glue)
     EXPECT_DOUBLE_EQ(w3.get(), 2.);
     EXPECT_DOUBLE_EQ(w4.get(), 4.);
 
-    expr.beval(1,0,0);
+    expr.beval(1,0,0, util::beval_policy::single);
     EXPECT_EQ(w4.get_adj(0,0), 1.0);
     EXPECT_EQ(w3.get_adj(0,0), 2 * w3.get());
     EXPECT_EQ(w2.get_adj(0,0), 2 * w2.get()*w1.get()*w1.get());
@@ -223,7 +223,7 @@ TEST_F(node_integration_fixture, leaf_unary_binary_eq_glue)
     EXPECT_EQ(w4.get(), x1*std::sin(x2) + x1 * x2);
     EXPECT_EQ(w3.get(), x1*std::sin(x2));
 
-    expr.beval(1,0,0);
+    expr.beval(1,0,0, util::beval_policy::single);
     EXPECT_EQ(w5.get_adj(0,0), 1);
     EXPECT_EQ(w4.get_adj(0,0), w3.get() * w5.get());
     EXPECT_EQ(w3.get_adj(0,0), (w3.get() + w4.get()) * w5.get());
@@ -245,7 +245,7 @@ TEST_F(node_integration_fixture, sumnode) {
     }
 
     EXPECT_DOUBLE_EQ(expr.feval(), actual_sum);
-    expr.beval(1,0,0);
+    expr.beval(1,0,0, util::beval_policy::single);
     for (size_t i = 0; i < 3; ++i) {
         EXPECT_DOUBLE_EQ(vec[i].get_adj(0,0),
             -std::sin(std::sin(vec[i].get()) *
@@ -263,7 +263,7 @@ TEST_F(node_integration_fixture, sumnode) {
 
     EXPECT_DOUBLE_EQ(expr.feval(), actual_sum);
 
-    expr.beval(1,0,0);
+    expr.beval(1,0,0, util::beval_policy::single);
     for (size_t i = 0; i < 3; ++i) {
         EXPECT_DOUBLE_EQ(vec[i].get_adj(0,0),
             -std::sin(std::sin(vec[i].get()) *
@@ -297,7 +297,7 @@ TEST_F(node_integration_fixture, foreach) {
     bind(expr2);
 
     expr2.feval();
-    expr2.beval(1,0,0);
+    expr2.beval(1,0,0, util::beval_policy::single);
 
     EXPECT_DOUBLE_EQ(res.get(), actual);
     EXPECT_DOUBLE_EQ(w4.get(), actual*actual + vec[0].get());

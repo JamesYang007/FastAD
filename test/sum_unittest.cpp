@@ -69,7 +69,7 @@ TEST_F(sum_fixture, scl_feval)
 TEST_F(sum_fixture, scl_beval)
 {
     auto scl_sum = make_sum<ad::scl>();
-    scl_sum.beval(seed, 0,0);    // last two ignored
+    scl_sum.beval(seed, 0,0, util::beval_policy::single);    // last two ignored
     for (size_t i = 0; i < scl_exprs.size(); ++i) {
         EXPECT_DOUBLE_EQ(scl_exprs[i].get_adj(0,0), 2.*seed);
     }
@@ -87,8 +87,8 @@ TEST_F(sum_fixture, vec_feval)
 TEST_F(sum_fixture, vec_beval)
 {
     auto vec_sum = make_sum<ad::vec>();
-    vec_sum.beval(seed, 1,0);    // last ignored
-    vec_sum.beval(seed, 3,0);    // last ignored
+    vec_sum.beval(seed, 1,0, util::beval_policy::single);    // last ignored
+    vec_sum.beval(seed, 3,0, util::beval_policy::single);    // last ignored
     for (size_t k = 0; k < vec_exprs.size(); ++k) {
         for (size_t i = 0; i < vec_size; ++i) {
             value_t actual = (i == 1 || i == 3) ? 2*seed : 0;
@@ -111,8 +111,8 @@ TEST_F(sum_fixture, mat_feval)
 TEST_F(sum_fixture, mat_beval)
 {
     auto mat_sum = make_sum<ad::mat>();
-    mat_sum.beval(seed, 1,1);    // last ignored
-    mat_sum.beval(seed, 0,0);    // last ignored
+    mat_sum.beval(seed, 1,1, util::beval_policy::single);    // last ignored
+    mat_sum.beval(seed, 0,0, util::beval_policy::single);    // last ignored
     for (size_t k = 0; k < mat_exprs.size(); ++k) {
         for (size_t i = 0; i < mat_rows; ++i) {
             for (size_t j = 0; j < mat_rows; ++j) {

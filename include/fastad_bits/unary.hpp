@@ -73,10 +73,13 @@ public:
      *
      * where f is the univariate function, and w is the expression value.
      * It is assumed that feval is called before beval.
+     *
+     * See EqNode for why we can preemptively return.
      */
-    void beval(value_t seed, size_t i, size_t j)
+    void beval(value_t seed, size_t i, size_t j, util::beval_policy pol)
     {
-        expr_.beval(seed * Unary::bmap(expr_.get(i,j)), i, j);
+        if (seed == 0) return;
+        expr_.beval(seed * Unary::bmap(expr_.get(i,j)), i, j, pol);
     }
 
     /**

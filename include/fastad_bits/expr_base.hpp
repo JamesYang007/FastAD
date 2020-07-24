@@ -38,5 +38,14 @@ template <class T>
 inline constexpr bool is_expr_v =
     std::is_base_of_v<core::ExprBase<T>, T>;
 
+/**
+ * Useful enum to indicate how to handle back-evaluation
+ */
+
+enum class beval_policy : char {
+    single,
+    all
+};
+
 } // namespace util
 } // namespace ad

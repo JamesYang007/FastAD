@@ -62,7 +62,7 @@ TEST_F(glue_fixture, scl_feval)
 
 TEST_F(glue_fixture, scl_beval)
 {
-    scl_glue.beval(seed, 0,0);    // last two ignored
+    scl_glue.beval(seed, 0,0, util::beval_policy::single);    // last two ignored
     EXPECT_DOUBLE_EQ(scl_place.get_adj(0,0), 2.*seed);
     EXPECT_DOUBLE_EQ(scl_expr.get_adj(0,0), 4.*seed);
 }
@@ -80,7 +80,7 @@ TEST_F(glue_fixture, vec_feval)
 
 TEST_F(glue_fixture, vec_beval)
 {
-    vec_glue.beval(seed, 2,0);    // last ignored
+    vec_glue.beval(seed, 2,0, util::beval_policy::single);    // last ignored
     for (size_t i = 0; i < vec_size; ++i) {
         value_t actual = (i == 2) ? seed : 0;
         EXPECT_DOUBLE_EQ(vec_place.get_adj(i,0), 2.*actual);
@@ -103,14 +103,19 @@ TEST_F(glue_fixture, mat_feval)
 
 TEST_F(glue_fixture, mat_beval)
 {
-    mat_glue.beval(seed,1,1);
-    mat_glue.beval(seed,0,2);
+    mat_glue.beval(seed,1,1, util::beval_policy::single);
+    mat_glue.beval(seed,0,2, util::beval_policy::single);
+
+    // back-evaluating glue twice should have updated 
+    // mat expression's 1,1 adjoint twice.
+
     for (size_t i = 0; i < mat_rows; ++i) {
         for (size_t j = 0; j < mat_cols; ++j) {
             value_t actual = ((i == 1 && j == 1) ||
-                              (i == 0 && j == 2)) ? seed : 0;
+                              (i == 0 && j == 2)) ? seed : 0;    
             EXPECT_DOUBLE_EQ(mat_place.get_adj(i,j), 2.*actual);
-            EXPECT_DOUBLE_EQ(mat_expr.get_adj(i,j), 4.*actual);
+            EXPECT_DOUBLE_EQ(mat_expr.get_adj(i,j), 
+                             4.*actual*(1 + (i == 1 && j == 1)) );
         }
     }
 }

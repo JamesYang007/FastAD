@@ -63,12 +63,16 @@ public:
 
     /** 
      * Backward evaluate from right to left by seeding the same seed.
+     *
+     * Note that GlueNode and alike guarantee to seed 0 when i,j==-1.
+     * See EqNode for why we can preemptively return.
      */
-    void beval(value_t seed, size_t i, size_t j)
+    void beval(value_t seed, size_t i, size_t j, util::beval_policy pol)
     {
+        if (seed == 0) return;
         std::for_each(exprs_.rbegin(), exprs_.rend(),
             [=](auto& expr) {
-                expr.beval(seed, i, j);
+                expr.beval(seed, i, j, pol);
             });
     }
 

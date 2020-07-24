@@ -61,7 +61,7 @@ public:
     /**
      * Backward evaluation does nothing.
      */
-    void beval(value_t, size_t, size_t) const {}
+    void beval(value_t, size_t, size_t, util::beval_policy) const {}
 
     /**
      * No binding required for constants

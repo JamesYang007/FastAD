@@ -48,7 +48,7 @@ TEST_F(unary_fixture, scl_feval)
 
 TEST_F(unary_fixture, scl_beval) 
 {
-    scl_unary.beval(seed,0,0); // last two ignored
+    scl_unary.beval(seed,0,0, util::beval_policy::single); // last two ignored
     EXPECT_DOUBLE_EQ(scl_expr.get_adj(0,0), 2.*seed); 
 }
 
@@ -62,8 +62,8 @@ TEST_F(unary_fixture, vec_feval)
 
 TEST_F(unary_fixture, vec_beval) 
 {
-    vec_unary.beval(seed, 1,0); // last param ignored
-    vec_unary.beval(seed, 3,0); // last param ignored
+    vec_unary.beval(seed, 1,0, util::beval_policy::single); // last param ignored
+    vec_unary.beval(seed, 3,0, util::beval_policy::single); // last param ignored
     for (size_t i = 0; i < vec_size; ++i) {
         if (i == 1 || i == 3) {
             EXPECT_DOUBLE_EQ(vec_expr.get_adj(i,0), 2.*seed); 
@@ -85,9 +85,9 @@ TEST_F(unary_fixture, mat_feval)
 
 TEST_F(unary_fixture, mat_beval) 
 {
-    mat_unary.beval(seed, 1, 2);
-    mat_unary.beval(seed, 0, 1);
-    mat_unary.beval(seed, 1, 0);
+    mat_unary.beval(seed, 1, 2, util::beval_policy::single);
+    mat_unary.beval(seed, 0, 1, util::beval_policy::single);
+    mat_unary.beval(seed, 1, 0, util::beval_policy::single);
     for (size_t i = 0; i < mat_rows; ++i) {
         for (size_t j = 0; j < mat_cols; ++j) {
             if ((i == 1 && j == 2) ||
@@ -108,7 +108,7 @@ TEST_F(unary_fixture, scl_scl_feval)
 
 TEST_F(unary_fixture, scl_scl_beval) 
 {
-    scl_scl_unary.beval(seed,0,0); // last two ignored
+    scl_scl_unary.beval(seed,0,0, util::beval_policy::single); // last two ignored
     EXPECT_DOUBLE_EQ(scl_expr.get_adj(0,0), 4.*seed); 
 }
 

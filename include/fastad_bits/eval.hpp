@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <type_traits>
 #include <tuple>
+#include <fastad_bits/expr_base.hpp>
 
 namespace ad {
 
@@ -23,7 +24,7 @@ inline void evaluate_adj(ExprType&& expr,
                          size_t i = 0, 
                          size_t j = 0)
 {
-    expr.beval(1, i, j);
+    expr.beval(1, i, j, util::beval_policy::single);
 }
 
 // Evaluates expression both in the forward and backward direction of reverse-mode AD.

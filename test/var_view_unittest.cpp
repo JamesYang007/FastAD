@@ -84,7 +84,7 @@ TEST_F(var_view_fixture, scl_feval)
 
 TEST_F(var_view_fixture, scl_beval)
 {
-    scalar.beval(3.,0,0); // last two params ignored
+    scalar.beval(3.,0,0, util::beval_policy::single); // last two params ignored
     EXPECT_DOUBLE_EQ(adj_buf[0], 3.);
 }
 
@@ -99,7 +99,7 @@ TEST_F(var_view_fixture, scl_bind_adj)
 {
     auto next = scalar.bind_adj(adj_buf.data() + 1);
     EXPECT_EQ(next, adj_buf.data() + 2);
-    scalar.beval(5.,0,0);   // last two params ignored
+    scalar.beval(5.,0,0, util::beval_policy::single);   // last two params ignored
     EXPECT_DOUBLE_EQ(5., adj_buf[1]);
 }
 
@@ -122,7 +122,7 @@ TEST_F(var_view_fixture, vec_feval)
 
 TEST_F(var_view_fixture, vec_beval)
 {
-    vector.beval(3., 1, 0); // last param ignored
+    vector.beval(3., 1, 0, util::beval_policy::single); // last param ignored
     std::vector<value_t> actual(vector_size, 0.);
     actual[1] = 3.;
     compare_vectors(adj_buf, actual);
@@ -143,7 +143,7 @@ TEST_F(var_view_fixture, vec_bind_adj)
     size_t offset = 1;
     auto next = vector.bind_adj(adj_buf.data() + offset);
     EXPECT_EQ(next, adj_buf.data() + offset + vector_size);
-    vector.beval(5., 2, 0); // last param ignored
+    vector.beval(5., 2, 0, util::beval_policy::single); // last param ignored
     std::vector<value_t> res(adj_buf.data()+offset,
                              adj_buf.data()+offset+vector_size);
     std::vector<value_t> actual(vector_size, 0.);
@@ -175,7 +175,7 @@ TEST_F(var_view_fixture, mat_feval)
 
 TEST_F(var_view_fixture, mat_beval)
 {
-    matrix.beval(3., 1, 2);
+    matrix.beval(3., 1, 2, util::beval_policy::single);
     std::vector<value_t> actual(matrix_size, 0.);
     actual[1 + 2*matrix_rows] = 3.;
     compare_vectors(adj_buf, actual);
@@ -196,7 +196,7 @@ TEST_F(var_view_fixture, mat_bind_adj)
     size_t offset = 1;
     auto next = matrix.bind_adj(adj_buf.data() + offset);
     EXPECT_EQ(next, adj_buf.data() + offset + matrix_size);
-    matrix.beval(5., 0, 2);
+    matrix.beval(5., 0, 2, util::beval_policy::single);
     std::vector<value_t> res(adj_buf.data()+offset,
                              adj_buf.data()+offset+matrix_size);
     std::vector<value_t> actual(matrix_size, 0.);

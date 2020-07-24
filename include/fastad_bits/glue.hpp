@@ -71,15 +71,22 @@ public:
 
     /**
      * Backward evaluates the i,jth right expression with seed,
-     * and then evaluates left expression with seed equal to 0.
+     * and then evaluates left expression with seed equal to 0, i=j=-1.
+     *
      * We do not seed the left expression since all seeding has been implicitly done
      * from the backward evaluation on right expression, which will have updated
      * all placeholder adjoints (assuming user passed the correct order of expressions to evaluate).
+     *
+     * Note that i,j are -1 when we want the expression to back-evaluate all elements.
+     * In practice, the right-most expression will be seeded with 1. with non-negative-one
+     * i,j, and all other leftward expressions will be seeded with 0 and negative ones.
+     *
+     * See EqNode and UnaryNode, BinaryNode as examples of how other nodes handle these cases.
      */
-    void beval(value_t seed, size_t i, size_t j)
+    void beval(value_t seed, size_t i, size_t j, util::beval_policy pol)
     {
-        expr_rhs_.beval(seed, i, j); 
-        expr_lhs_.beval(0, i, j);
+        expr_rhs_.beval(seed, i, j, pol); 
+        expr_lhs_.beval(0, i, j, util::beval_policy::all);
     }
 
     /**

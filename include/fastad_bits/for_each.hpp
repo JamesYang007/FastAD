@@ -64,14 +64,14 @@ public:
      * and backward evaluates every expression in reverse order with 0 seed.
      * See GlueNode::beval for reasons for this design choice.
      */
-    void beval(value_t seed, size_t i, size_t j)
+    void beval(value_t seed, size_t i, size_t j, util::beval_policy pol)
     {
         if (vec_.size() == 0) return;
         auto it = vec_.rbegin();
-        it->beval(seed, i, j);
+        it->beval(seed, i, j, pol);
         std::for_each(std::next(it), vec_.rend(), 
                 [=](auto& expr) {
-                    expr.beval(0, i, j); 
+                    expr.beval(0, i, j, util::beval_policy::all); 
                 }
         );
     }

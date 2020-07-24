@@ -67,7 +67,7 @@ TEST_F(binary_fixture, scl_scl_feval)
 
 TEST_F(binary_fixture, scl_scl_beval)
 {
-    scl_scl_binary.beval(seed, 0,0);    // last two ignored
+    scl_scl_binary.beval(seed, 0,0, util::beval_policy::single);    // last two ignored
     EXPECT_DOUBLE_EQ(scl_expr.get_adj(0,0), -seed);
 }
 
@@ -82,8 +82,8 @@ TEST_F(binary_fixture, scl_vec_feval)
 
 TEST_F(binary_fixture, scl_vec_beval)
 {
-    scl_vec_binary.beval(seed,3,0);    // last param ignored
-    scl_vec_binary.beval(seed,4,0);    // last param ignored
+    scl_vec_binary.beval(seed,3,0, util::beval_policy::single);    // last param ignored
+    scl_vec_binary.beval(seed,4,0, util::beval_policy::single);    // last param ignored
     EXPECT_DOUBLE_EQ(scl_expr.get_adj(0,0), 2*seed);
     for (size_t i = 0; i < vec_size; ++i) {
         if (i == 3 || i == 4) {
@@ -105,8 +105,8 @@ TEST_F(binary_fixture, vec_vec_feval)
 
 TEST_F(binary_fixture, vec_vec_beval)
 {
-    vec_vec_binary.beval(seed, 0,0);    // last param ignored
-    vec_vec_binary.beval(seed, 2,0);    // last param ignored
+    vec_vec_binary.beval(seed, 0,0, util::beval_policy::single);    // last param ignored
+    vec_vec_binary.beval(seed, 2,0, util::beval_policy::single);    // last param ignored
     for (size_t i = 0; i < vec_size; ++i) {
         value_t expected = (i == 0 || i == 2) ?
             -seed : 0.;
@@ -127,8 +127,8 @@ TEST_F(binary_fixture, mat_mat_feval)
 
 TEST_F(binary_fixture, mat_mat_beval)
 {
-    mat_mat_binary.beval(seed, 0,1);
-    mat_mat_binary.beval(seed, 1,2);
+    mat_mat_binary.beval(seed, 0,1, util::beval_policy::single);
+    mat_mat_binary.beval(seed, 1,2, util::beval_policy::single);
     for (size_t i = 0; i < mat_rows; ++i) {
         for (size_t j = 0; j < mat_cols; ++j) {
             value_t expected = ((i == 0 && j == 1) || 
@@ -147,7 +147,7 @@ TEST_F(binary_fixture, scl_scl_scl_feval)
 
 TEST_F(binary_fixture, scl_scl_scl_beval)
 {
-    scl_scl_scl_binary.beval(seed, 0,0);    // last two ignored
+    scl_scl_scl_binary.beval(seed, 0,0, util::beval_policy::single);    // last two ignored
     EXPECT_DOUBLE_EQ(scl_expr.get_adj(0,0), 3.*seed);
 }
 

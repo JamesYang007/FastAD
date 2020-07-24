@@ -79,7 +79,7 @@ struct VarView<ValueType, scl>:
      * If scalar, ignores both, if column vector, ignores second,
      * if row vector, ignores first, and if matrix, does not ignore either.
      */
-    void beval(value_t seed, size_t, size_t) { adj_.get() += seed; }
+    void beval(value_t seed, size_t, size_t, util::beval_policy) { adj_.get() += seed; }
 
     /**
      * Get underlying (full) adjoint.
@@ -161,7 +161,7 @@ struct VarView<ValueType, vec>:
     }
 
     const var_t& feval() const { return this->get(); }
-    void beval(value_t seed, size_t i, size_t) { adj_.get()(i) += seed; }
+    void beval(value_t seed, size_t i, size_t, util::beval_policy) { adj_.get()(i) += seed; }
     const value_t& get_adj(size_t i, size_t) const { return adj_.get()(i); }
     value_t* bind_adj(value_t* begin) { return adj_.bind(begin); }
     value_t* data_adj() const { return adj_.data(); }
@@ -218,7 +218,7 @@ struct VarView<ValueType, mat>:
     }
 
     const var_t& feval() const { return this->get(); }
-    void beval(value_t seed, size_t i, size_t j) { adj_.get()(i,j) += seed; }
+    void beval(value_t seed, size_t i, size_t j, util::beval_policy) { adj_.get()(i,j) += seed; }
     const value_t& get_adj(size_t i, size_t j) const { return adj_.get()(i,j); }
     value_t* bind_adj(value_t* begin) { return adj_.bind(begin); }
 
