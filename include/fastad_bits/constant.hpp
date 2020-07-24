@@ -63,6 +63,11 @@ public:
      */
     void beval(value_t, size_t, size_t) const {}
 
+    /**
+     * No binding required for constants
+     */
+    constexpr size_t bind_size() const { return 0; }
+    constexpr size_t single_bind_size() const { return 0; }
 };
 
 /**
@@ -114,6 +119,8 @@ struct Constant:
 
     const var_t& feval() const { return c_; }
     void beval(value_t, size_t, size_t) const {}
+    constexpr size_t bind_size() const { return 0; }
+    constexpr size_t single_bind_size() const { return 0; }
 
 private:
     var_t c_;

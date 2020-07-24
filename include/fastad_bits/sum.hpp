@@ -16,24 +16,19 @@ namespace core {
  * since the partial derivative w.r.t. xi is simply f'(xi)
  * and does not depend on other xj values.
  *
- * @tparam  Iter        type of iterator of values.
- * @tparam  Lmda        type of functor to apply on each iterated value returning an expression.
+ * @tparam  VecType     type of vector of expressions to sum over 
  */
 
-template <class Iter, class Lmda>
+template <class VecType>
 struct SumIterNode:
-    ValueView<typename util::expr_traits< std::decay_t< std::invoke_result_t<
-                Lmda, typename std::iterator_traits<Iter>::value_type>
-                      > >::value_t,
-              typename util::shape_traits< std::decay_t< std::invoke_result_t<
-                Lmda, typename std::iterator_traits<Iter>::value_type>
-                      > >::shape_t >,
-    ExprBase<SumIterNode<Iter, Lmda>>
+    ValueView<typename util::expr_traits< 
+                typename VecType::value_type >::value_t,
+              typename util::shape_traits< 
+                typename VecType::value_type >::shape_t >,
+    ExprBase<SumIterNode<VecType>>
 {
 private:
-    using iter_value_t = typename std::iterator_traits<Iter>::value_type;
-    using vec_elem_t = std::decay_t< std::invoke_result_t<
-            Lmda, iter_value_t> >;
+    using vec_elem_t = typename VecType::value_type;
     using elem_value_t = typename util::expr_traits<vec_elem_t>::value_t;
     using elem_shape_t = typename util::shape_traits<vec_elem_t>::shape_t;
     
@@ -44,18 +39,12 @@ public:
     using typename value_view_t::var_t;
     using value_view_t::bind;
 
-    SumIterNode(Iter start, Iter end, Lmda f)
+    SumIterNode(const VecType& exprs)
         : value_view_t(nullptr,
-                       (start == end) ? 0 : f(*start).rows(),
-                       (start == end) ? 0 : f(*start).cols())
-        , exprs_{}
-    {
-        exprs_.reserve(std::distance(start, end));
-        std::for_each(start, end,
-            [&](const auto& val) {
-                exprs_.emplace_back(f(val));
-            });
-    }
+                       (exprs.size() == 0) ? 0 : exprs[0].rows(),
+                       (exprs.size() == 0) ? 0 : exprs[0].cols())
+        , exprs_{exprs}
+    {}
 
     /** 
      * Forward evaluate by evaluating every expression left to right
@@ -84,7 +73,7 @@ public:
     }
 
     /**
-     * Bind ever expression from left to right then bind itself.
+     * Bind every expression from left to right then bind itself.
      *
      * @return  the next pointer not bound by any of the expressions and itself.
      */
@@ -94,6 +83,18 @@ public:
             for (auto& expr : exprs_) begin = expr.bind(begin);
         }
         return value_view_t::bind(begin);
+    }
+
+    size_t bind_size() const 
+    { 
+        size_t out = 0;
+        for (const auto& expr : exprs_) out += expr.bind_size();
+        return out + single_bind_size();
+    }
+
+    size_t single_bind_size() const 
+    { 
+        return this->size(); 
     }
 
 private:
@@ -114,13 +115,13 @@ private:
 template <class Iter, class Lmda>
 inline auto sum(Iter begin, Iter end, Lmda&& f)
 {
-    using node_t = std::decay_t<decltype(f(*begin))>;
-    using value_t = typename util::expr_traits<node_t>::value_t;
-    using shape_t = typename util::shape_traits<node_t>::shape_t;
+    using expr_t = std::decay_t<decltype(f(*begin))>;
+    using value_t = typename util::expr_traits<expr_t>::value_t;
+    using shape_t = typename util::shape_traits<expr_t>::shape_t;
     using var_t = core::details::constant_var_t<value_t, shape_t>;
 
     // optimized for f that returns a constant node
-    if constexpr (util::is_constant_v<node_t>) {
+    if constexpr (util::is_constant_v<expr_t>) {
         if (std::distance(begin, end) <= 0) return ad::constant(var_t(0));
         var_t sum = f(*begin).feval(); 
         std::for_each(std::next(begin), end, 
@@ -128,8 +129,13 @@ inline auto sum(Iter begin, Iter end, Lmda&& f)
                 { sum += f(x).feval(); });
         return ad::constant(sum);
     } else {
-        return core::SumIterNode<Iter, Lmda>(
-                begin, end, std::forward<Lmda>(f));
+        std::vector<expr_t> exprs;
+        exprs.reserve(std::distance(begin, end));
+        std::for_each(begin, end, 
+                [&](const auto& x) {
+                    exprs.emplace_back(f(x));
+                });
+        return core::SumIterNode<std::vector<expr_t>>(exprs);
     }
 }
 

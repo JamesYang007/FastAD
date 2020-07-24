@@ -36,8 +36,11 @@ private:
     // check that VarViewType is indeed a VarView
     static_assert(util::is_var_view_v<var_view_t>);
 
-    // check that ExprTpye is indeed an AD expression
+    // check that ExprType is indeed an AD expression
     static_assert(util::is_expr_v<expr_t>);
+
+    // assert that ExprType is not a VarView
+    static_assert(!util::is_var_view_v<expr_t>);
 
     // value types of VarViewType and ExprType must match
     static_assert(std::is_same_v<
@@ -111,19 +114,35 @@ public:
      */
     value_t* bind(value_t* begin) 
     {
-        if constexpr (!util::is_var_view_v<expr_t>) {
-            expr_.bind(begin);
-        }
-        value_t* next = expr_.data();
+        // bind current eqnode to var_view's values
+        value_view_t::bind(var_view_.data());
+
+        begin = expr_.bind(begin);
+        begin -= expr_.single_bind_size();
 
         // only bind root to var_view's values, not recursively down
         expr_.value_view_t::bind(var_view_.data());
 
-        // bind current eqnode to var_view's values
-        value_view_t::bind(var_view_.data());
-
-        return next;
+        return begin;
     }
+
+    /**
+     * Recursively gets the total number of values needed by the expression.
+     * Since a EqNode simply binds to that of the variable viewer,
+     * it does not bind any extra amount.
+     * It also strips the root of expr_ its binding and rebind it
+     * to that of variable view, so we must subtract its size from recursing.
+     *
+     * @return  bind size
+     */
+    size_t bind_size() const 
+    { 
+        assert(expr_.bind_size() >= expr_.single_bind_size());
+        return expr_.bind_size() - expr_.single_bind_size();
+    }
+
+    constexpr size_t single_bind_size() const
+    { return 0; }
 
 private:
     var_view_t var_view_;

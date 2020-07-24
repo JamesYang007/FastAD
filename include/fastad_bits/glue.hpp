@@ -66,7 +66,7 @@ public:
     const var_t& feval()
     {
         expr_lhs_.feval(); 
-        return expr_rhs_.feval();
+        return this->get() = expr_rhs_.feval();
     }
 
     /**
@@ -90,11 +90,31 @@ public:
      */
     value_t* bind(value_t* begin)
     {
-        value_t* next = expr_lhs_.bind(begin);
-        next = expr_rhs_.bind(next);
+        value_t* next = begin;
+        if constexpr (!util::is_var_view_v<left_t>) {
+            next = expr_lhs_.bind(next);
+        }
+        if constexpr (!util::is_var_view_v<left_t>) {
+            next = expr_rhs_.bind(next);
+        }
         value_view_t::bind(expr_rhs_.data());
         return next;
     }
+
+    /**
+     * Recursively gets the total number of values needed by the expression.
+     * Since a GlueNode simply binds to that of right expression,
+     * it does not bind any extra amount.
+     *
+     * @return  bind size
+     */
+    size_t bind_size() const 
+    { 
+        return expr_lhs_.bind_size() + expr_rhs_.bind_size();
+    }
+
+    constexpr size_t single_bind_size() const
+    { return 0; }
 
 private:
     left_t expr_lhs_;
@@ -106,10 +126,7 @@ template <class Derived1, class Derived2>
 inline auto operator,(const ExprBase<Derived1>& node1, 
                       const ExprBase<Derived2>& node2)
 {
-    using convert_to_view1_t = util::convert_to_view_t<Derived1>;
-    using convert_to_view2_t = util::convert_to_view_t<Derived2>;
-    return GlueNode<convert_to_view1_t, 
-                    convert_to_view2_t>(
+    return GlueNode<Derived1, Derived2>(
             node1.self(), node2.self() );
 }
 

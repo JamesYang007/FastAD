@@ -152,6 +152,24 @@ public:
         return value_view_t::bind(next);
     }
 
+    /**
+     * Recursively gets the total number of values needed by the expression.
+     * Since a BinaryNode is a vectorized operation, it binds exactly
+     * the same number as its size.
+     * @return  bind size
+     */
+    size_t bind_size() const 
+    { 
+        return single_bind_size() + 
+                expr_lhs_.bind_size() + 
+                expr_rhs_.bind_size();
+    }
+
+    size_t single_bind_size() const
+    {
+        return this->size();
+    }
+
 private:
 
     left_t expr_lhs_;

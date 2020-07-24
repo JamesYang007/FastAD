@@ -1,48 +1,58 @@
+#include "gtest/gtest.h"
 #include <tuple>
+#include <fastad_bits/unary.hpp>
 #include <fastad_bits/eval.hpp>
 #include "base_fixture.hpp"
-#include "gtest/gtest.h"
 
 namespace ad {
 
-struct adeval_fixture: ::testing::Test
+struct eval_fixture: base_fixture
 {
 protected:
-    MockExpr<double> expr;
-    std::tuple<MockExpr<double>, MockExpr<double>> tup;
+    using unary_t = MockUnary;
+    using scl_unary_t = core::UnaryNode<unary_t, scl_expr_view_t>;
 
-    adeval_fixture()
-        : expr(1.)
-        , tup(1., 2.)
-    {}
+    scl_unary_t scl_unary;
+    std::tuple<scl_unary_t, scl_unary_t> scl_tup;
+
+    std::vector<value_t> val_buf;
+
+    eval_fixture()
+        : base_fixture()
+        , scl_unary(scl_expr)
+        , scl_tup(scl_expr, scl_expr)
+        , val_buf(100, 0)   // obscene amount of buffer
+    {
+        scl_unary.bind(val_buf.data());
+        std::get<0>(scl_tup).bind(val_buf.data());
+        std::get<1>(scl_tup).bind(val_buf.data());
+    }
 };
 
-TEST_F(adeval_fixture, evaluate)
+TEST_F(eval_fixture, evaluate)
 {
-    EXPECT_DOUBLE_EQ(evaluate(expr), 1.);
+    EXPECT_DOUBLE_EQ(evaluate(scl_unary), 2.*scl_expr.get());
 }
 
-TEST_F(adeval_fixture, evaluate_adj)
+TEST_F(eval_fixture, evaluate_adj)
 {
-    evaluate_adj(expr);
-    evaluate_adj(expr); // second time shouldn't change 
-    EXPECT_DOUBLE_EQ(expr.get_adjoint(), 1.);
+    evaluate_adj(scl_unary);
+    evaluate_adj(scl_unary); // second time SHOULD change adj
+    EXPECT_DOUBLE_EQ(scl_expr.get_adj(0,0), 4.);
 }
 
-TEST_F(adeval_fixture, autodiff)
+TEST_F(eval_fixture, autodiff)
 {
-    EXPECT_DOUBLE_EQ(autodiff(expr), 1.);
-    EXPECT_DOUBLE_EQ(expr.get_adjoint(), 1.);
+    EXPECT_DOUBLE_EQ(autodiff(scl_unary), 2.*scl_expr.get());
+    EXPECT_DOUBLE_EQ(scl_expr.get_adj(0,0), 2.);
 }
 
-TEST_F(adeval_fixture, autodiff_tup)
+TEST_F(eval_fixture, autodiff_tup)
 {
-    autodiff(tup);
-    autodiff(tup);
-    EXPECT_DOUBLE_EQ(std::get<0>(tup).get_value(), 1.);
-    EXPECT_DOUBLE_EQ(std::get<1>(tup).get_value(), 2.);
-    EXPECT_DOUBLE_EQ(std::get<0>(tup).get_adjoint(), 1.);
-    EXPECT_DOUBLE_EQ(std::get<1>(tup).get_adjoint(), 1.);
+    autodiff(scl_tup);
+    autodiff(scl_tup);
+    EXPECT_DOUBLE_EQ(scl_expr.get_adj(0,0), 8.);
+    EXPECT_DOUBLE_EQ(scl_expr.get_adj(0,0), 8.);
 }
 
 } // namespace ad

@@ -22,8 +22,7 @@ struct Var;
 
 template <class ValueType>
 struct Var<ValueType, scl>:
-    VarView<ValueType, scl>,
-    core::ExprBase<Var<ValueType, scl>>
+    VarView<ValueType, scl>
 {
 private:
     using base_t = VarView<ValueType, scl>;
@@ -50,6 +49,12 @@ public:
     Var()
         : base_t(&val_, &adj_) 
         , val_(0)
+        , adj_(0)
+    {}
+
+    Var(value_t v)
+        : base_t(&val_, &adj_)
+        , val_(v)
         , adj_(0)
     {}
 
@@ -98,8 +103,7 @@ private:
 
 template <class ValueType>
 struct Var<ValueType, vec>:
-    VarView<ValueType, vec>,
-    core::ExprBase<Var<ValueType, vec>>
+    VarView<ValueType, vec>
 {
 private:
     using base_t = VarView<ValueType, vec>;
@@ -179,8 +183,7 @@ private:
 
 template <class ValueType>
 struct Var<ValueType, mat>:
-    VarView<ValueType, mat>,
-    core::ExprBase<Var<ValueType, mat>>
+    VarView<ValueType, mat>
 {
 private:
     using base_t = VarView<ValueType, mat>;

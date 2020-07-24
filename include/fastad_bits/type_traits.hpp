@@ -42,30 +42,6 @@ template <class T>
 inline constexpr bool is_var_view_v =
     details::is_var_view<T>::value;
 
-/*
- * Converts a variable to viewer type.
- * If not a variable, kept the same.
- */
-namespace details {
-
-template <class T>
-struct convert_to_view
-{
-    using type = T;
-};
-
-template <class ValueType, class ShapeType>
-struct convert_to_view<Var<ValueType, ShapeType>>
-{
-    using type = VarView<ValueType, ShapeType>;
-};
-
-} // namespace details
-
-template <class T>
-using convert_to_view_t = typename
-    details::convert_to_view<T>::type;
-
 // TODO: are these needed?
 // Dummy function used to SFINAE on return value.
 // Checks if type T is pointer-like (dereferenceable)

@@ -9,17 +9,12 @@ set(
     # Unit tests
     #vec_unittest
     #mat_unittest
-    #node_unittest
-    #eval_unittest
     #hessian_unittest
     #ifelse_unittest
     #pow_unittest
     #prod_unittest
     #exgen_unittest
     #jacobian_unittest
-    # Integration tests
-    #node_inttest
-    #ad_inttest
 )
 
 ########################################################################
@@ -49,7 +44,6 @@ add_test(utility_unittest utility_unittest)
 ########################################################################
 
 add_executable(core_unittest
-    ${CMAKE_CURRENT_SOURCE_DIR}/type_traits_unittest.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/var_view_unittest.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/dualnum_unittest.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/math_unittest.cpp
@@ -59,6 +53,7 @@ add_executable(core_unittest
     ${CMAKE_CURRENT_SOURCE_DIR}/glue_unittest.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/sum_unittest.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/forward_unittest.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/eval_unittest.cpp
     )
 if (NOT CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     target_compile_options(core_unittest PRIVATE -Werror -Wextra)
@@ -75,4 +70,26 @@ if (NOT CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 endif()
 add_test(core_unittest core_unittest)
 
+########################################################################
+# Integration TEST
+########################################################################
+
+add_executable(integration_test
+    ${CMAKE_CURRENT_SOURCE_DIR}/node_inttest.cpp
+    #${CMAKE_CURRENT_SOURCE_DIR}/ad_inttest.cpp
+    )
+if (NOT CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    target_compile_options(integration_test PRIVATE -Werror -Wextra)
+endif()
+target_compile_options(integration_test PRIVATE -g -Wall)
+target_include_directories(integration_test PRIVATE
+    ${GTEST_DIR}/include ${EIGEN3_INCLUDE_DIR})
+if (FASTAD_ENABLE_COVERAGE)
+    target_link_libraries(integration_test gcov)
+endif()
+target_link_libraries(integration_test fastad_gtest_main ${PROJECT_NAME})
+if (NOT CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    target_link_libraries(integration_test pthread)
+endif()
+add_test(integration_test integration_test)
 

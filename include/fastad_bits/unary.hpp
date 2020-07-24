@@ -96,6 +96,22 @@ public:
         return value_view_t::bind(next);
     }
 
+    /**
+     * Recursively gets the total number of values needed by the expression.
+     * Since a UnaryNode is a vectorized operation, it binds exactly
+     * the same number as its size.
+     * @return  bind size
+     */
+    size_t bind_size() const 
+    { 
+        return single_bind_size() + expr_.bind_size();
+    }
+
+    size_t single_bind_size() const
+    {
+        return this->size();
+    }
+
 private:
     expr_t expr_;
 };

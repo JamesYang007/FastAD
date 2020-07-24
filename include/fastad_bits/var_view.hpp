@@ -102,7 +102,13 @@ struct VarView<ValueType, scl>:
     /**
      * Resets adjoints to all zeros.
      */
-    void reset_adj() { return adj_.get() = 0; }
+    void reset_adj() { adj_.get() = 0; }
+
+    /**
+     * Bind size is 0 since it will never get rebound once an expression is constructed.
+     */
+    constexpr size_t bind_size() const { return 0; }
+    constexpr size_t single_bind_size() const { return 0; }
 
 private:
     /* 
@@ -171,6 +177,8 @@ struct VarView<ValueType, vec>:
     }
 
     void reset_adj() { adj_.get().setZero(); }
+    constexpr size_t bind_size() const { return 0; }
+    constexpr size_t single_bind_size() const { return 0; }
 
 private:
     value_view_t adj_;
@@ -231,6 +239,8 @@ struct VarView<ValueType, mat>:
 
     value_t* data_adj() const { return adj_.data(); }
     void reset_adj() { adj_.get().setZero(); }
+    constexpr size_t bind_size() const { return 0; }
+    constexpr size_t single_bind_size() const { return 0; }
 
 private:
     value_view_t adj_;

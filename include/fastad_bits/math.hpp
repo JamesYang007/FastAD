@@ -90,9 +90,8 @@ struct name \
 template <class Derived> \
 inline auto name(const core::ExprBase<Derived>& node) \
 { \
-    using convert_to_view_t = util::convert_to_view_t<Derived>; \
-    return core::UnaryNode<math::struct_name \
-        , convert_to_view_t>(node.self()); \
+    return core::UnaryNode<math::struct_name,\
+        Derived>(node.self()); \
 } \
 \
 template <class Derived> \
@@ -205,11 +204,9 @@ template <class Derived1 \
 inline auto name(const ExprBase<Derived1>& node1, \
                  const ExprBase<Derived2>& node2) \
 { \
-    using convert_to_view1_t = util::convert_to_view_t<Derived1>; \
-    using convert_to_view2_t = util::convert_to_view_t<Derived2>; \
     return BinaryNode<math::struct_name, \
-                      convert_to_view1_t, \
-                      convert_to_view2_t>(\
+                      Derived1, \
+                      Derived2>(\
             node1.self(), node2.self()); \
 }\
 \
