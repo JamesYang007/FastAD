@@ -20,9 +20,9 @@ endif()
 
 foreach( benchmark ${BENCHMARKS} )
     add_executable(${benchmark} ${CMAKE_CURRENT_SOURCE_DIR}/${benchmark}.cpp)
-    target_include_directories(${benchmark} PRIVATE
-        ${GBENCH_DIR}/include ${EIGEN3_INCLUDE_DIR})
-    target_link_libraries(${benchmark} benchmark benchmark_main ${PROJECT_NAME})
+    target_include_directories(${benchmark} PRIVATE ${GBENCH_DIR}/include)
+    target_link_libraries(${benchmark} benchmark benchmark_main
+        ${PROJECT_NAME} Eigen3::Eigen)
     if (NOT CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 		target_link_libraries(${benchmark} pthread)
     endif()

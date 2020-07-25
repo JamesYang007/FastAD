@@ -15,9 +15,8 @@ option(FASTAD_ENABLE_COVERAGE "Build FastAD with coverage" OFF)
 include(GNUInstallDirs)
 
 # Dependency on Eigen
-if(NOT DEFINED EIGEN3_INCLUDE_DIR)
-    find_package(Eigen3 3.3 REQUIRED NO_MODULE)
-endif()
+find_package(Eigen3 3.3 CONFIG REQUIRED NO_MODULE
+    HINTS ${CMAKE_CURRENT_SOURCE_DIR}/libs/eigen-3.3.7/build/share)
 message(STATUS "Eigen3 found at ${EIGEN3_INCLUDE_DIR}")
 
 # Add this library as interface (header-only)

@@ -17,7 +17,7 @@ jobs:
           addons:
               apt:
                   sources: ['ubuntu-toolchain-r-test']
-                  packages: ['g++-7', 'cmake', 'ninja-build', 'valgrind', 'libeigen3-dev']
+                  packages: ['g++-7', 'cmake', 'ninja-build', 'valgrind']
           env:
               - COMPILER="g++-7"
               - CTEST_OPTIONS="-T memcheck"
@@ -29,7 +29,7 @@ jobs:
           addons:
               apt:
                   sources: ['ubuntu-toolchain-r-test']
-                  packages: ['g++-7', 'cmake', 'ninja-build', 'libeigen3-dev']
+                  packages: ['g++-7', 'cmake', 'ninja-build']
           before_install:
               - pip install --user cpp-coveralls
           after_success:
@@ -61,7 +61,7 @@ jobs:
           addons:
             apt:
               sources: ['ubuntu-toolchain-r-test']
-              packages: ['g++-7', 'ninja-build', 'libeigen3-dev']
+              packages: ['g++-7', 'ninja-build']
 
         - os: linux
           compiler: gcc
@@ -69,7 +69,7 @@ jobs:
           addons:
             apt:
               sources: ['ubuntu-toolchain-r-test']
-              packages: ['g++-8', 'ninja-build', 'libeigen3-dev']
+              packages: ['g++-8', 'ninja-build']
 
         - os: linux
           compiler: gcc
@@ -77,16 +77,15 @@ jobs:
           addons:
             apt:
               sources: ['ubuntu-toolchain-r-test']
-              packages: ['g++-9', 'ninja-build', 'libeigen3-dev']
+              packages: ['g++-9', 'ninja-build']
 
 # Build Script
 
 script:
-
     # MacOS only: install ninja and cmake
     - if [[ (-x $(which brew)) ]]; then
        brew update;
-       brew install cmake ninja eigen;
+       brew install cmake ninja;
        brew upgrade cmake;
       fi
 
