@@ -120,7 +120,7 @@ template <class ExprType>
 struct SumElemNode:
     ValueView<typename util::expr_traits<ExprType>::value_t,
               ad::scl>,
-    ExprBase<SumIterNode<ExprType>>
+    ExprBase<SumElemNode<ExprType>>
 {
 private:
     using expr_t = ExprType;
@@ -244,7 +244,7 @@ inline auto sum(const core::ExprBase<Derived>& expr)
     if constexpr (util::is_constant_v<expr_t>) {
         if constexpr (util::is_scl_v<expr_t>) return expr.self();
         else {
-            auto&& res = expr.feval();
+            auto&& res = expr.self().feval();
             return ad::constant(res.sum());
         }
     } else {

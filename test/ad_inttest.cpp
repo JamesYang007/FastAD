@@ -1,18 +1,19 @@
+#include "gtest/gtest.h"
 #include <fastad>
 #include <random>
+#include <array>
 #include <time.h>
-#include "gtest/gtest.h"
 
 namespace ad {
 namespace core {
 
-auto F_lmda = [](const Vec<double>& x, const Vec<double>& w) {
+auto F_lmda = [](const auto& x, const auto& w) {
     return (w[0] = ad::sin(x[0])*ad::cos(x[1]),
             w[1] = x[2] + x[3] * x[4],
             w[2] = w[0] + w[1]);
 };
 
-auto G_lmda = [](const Vec<double>& x, const Vec<double>& w) {
+auto G_lmda = [](const auto& x, const auto& w) {
     return (w[0] = ad::sum(x.begin(), x.end(), [](const auto& var)
                             {return ad::sin(var); }),
             w[1] = w[0] * w[0] - ad::sum(x.begin(), x.end(), [](const auto& var)
@@ -20,11 +21,11 @@ auto G_lmda = [](const Vec<double>& x, const Vec<double>& w) {
             );
 };
 
-auto H_lmda = [](const Vec<double>& x, const Vec<double>& w) {
+auto H_lmda = [](const auto& x, const auto& w) {
     return (w[0] = x[0] * x[4]);
 };
 
-auto PHI_lmda = [](const Vec<double>& x, const Vec<double>& w) {
+auto PHI_lmda = [](const auto& x, const auto& w) {
     return (w[0] = ad::sin(x[0])*ad::cos(ad::exp(x[1])) + ad::exp(x[0]) - x[1],
             w[1] = ad::sin(w[0]) - ad::sum(x.begin(), x.end(), [](const auto& var)
                                     {return ad::cos(var) * ad::exp(var); }),
@@ -41,133 +42,118 @@ auto PHI_lmda = [](const Vec<double>& x, const Vec<double>& w) {
     );
 };
 
-auto F = ad::make_exgen<double>(F_lmda);
-auto G = ad::make_exgen<double>(G_lmda);
-auto H = ad::make_exgen<double>(H_lmda);
-auto PHI = ad::make_exgen<double>(PHI_lmda);
-
 struct ad_fixture : ::testing::Test
 {
 protected:
+    enum class Func : char
+    { f, g, h };
 
-    template <class Matrix, class Iter>
-    void f_test(const Matrix& res, size_t i, Iter begin)
+    std::array<double, 5> val = { 0.1, 2.3, -1., 4.1, -5.21 };
+    std::array<double, 5> adj = {0};
+    std::array<ad::VarView<double>, 5> v;
+    std::array<ad::Var<double>, 10> w;
+
+    ad_fixture()
     {
-        EXPECT_DOUBLE_EQ(res(i, 0), std::cos(*begin)*std::cos(*std::next(begin)));
-        EXPECT_DOUBLE_EQ(res(i, 1), -std::sin(*begin)*std::sin(*std::next(begin)));
-        EXPECT_DOUBLE_EQ(res(i, 2), 1);
-        for (size_t j = 0; j < 3; ++j) ++begin;
-        EXPECT_DOUBLE_EQ(res(i, 4), *begin);
-        EXPECT_DOUBLE_EQ(res(i, 3), *(++begin));
+        for (size_t i = 0; i < v.size(); ++i) {
+            v[i].bind(val.data() + i);
+            v[i].bind_adj(adj.data() + i);
+        }
     }
 
-    template <class Matrix, class Iter>
-    void g_test(const Matrix& res, size_t i, Iter begin)
+    template <class AdjType, class ValType>
+    void f_test(const ValType& val, const AdjType& adj)
     {
-        auto it = begin;
-        using T = typename std::iterator_traits<Iter>::value_type;
-        T sum = static_cast<T>(0);
-        for (size_t j = 0; j < res.n_cols(); ++it, ++j)
-            sum += std::sin(*it);
-        for (size_t j = 0; j < res.n_cols(); ++begin, ++j)
-            EXPECT_DOUBLE_EQ(res(i, j), 2 * sum*std::cos(*begin) + std::sin(*begin));
+        EXPECT_DOUBLE_EQ(adj[0], std::cos(val[0])*std::cos(val[1]));
+        EXPECT_DOUBLE_EQ(adj[1], -std::sin(val[0])*std::sin(val[1]));
+        EXPECT_DOUBLE_EQ(adj[2], 1);
+        EXPECT_DOUBLE_EQ(adj[3], val[4]);
+        EXPECT_DOUBLE_EQ(adj[4], val[3]);
     }
 
-    template <class Matrix, class Iter>
-    void h_test(const Matrix& res, size_t i, Iter begin)
+    template <class AdjType, class ValType>
+    void g_test(const ValType& val, const AdjType& adj)
     {
-        EXPECT_DOUBLE_EQ(res(i, 4), *begin);
-        EXPECT_DOUBLE_EQ(res(i, 1), 0);
-        EXPECT_DOUBLE_EQ(res(i, 2), 0);
-        EXPECT_DOUBLE_EQ(res(i, 3), 0);
-        for (size_t j = 0; j < 4; ++j) ++begin;
-        EXPECT_DOUBLE_EQ(res(i, 0), *begin);
+        double sum = 0;
+        for (size_t j = 0; j < adj.size(); ++j)
+            sum += std::sin(val[j]);
+        for (size_t j = 0; j < adj.size(); ++j)
+            EXPECT_DOUBLE_EQ(adj[j], 2 * sum*std::cos(val[j]) + std::sin(val[j]));
+    }
+
+    template <class AdjType, class ValType>
+    void h_test(const ValType& val, const AdjType& adj)
+    {
+        EXPECT_DOUBLE_EQ(adj[0], val[4]);
+        EXPECT_DOUBLE_EQ(adj[1], 0);
+        EXPECT_DOUBLE_EQ(adj[2], 0);
+        EXPECT_DOUBLE_EQ(adj[3], 0);
+        EXPECT_DOUBLE_EQ(adj[4], val[0]);
     }
 
     // Scalar Function test
-    template <class Iter, class F>
-    void test_scalar(Iter begin, Iter end, F& f)
+    template <class ExprType, class ValType, class AdjType>
+    void test_scalar(ExprType& expr, 
+                     const ValType& val, 
+                     AdjType& adj,
+                     Func test_func)
     {
-        using T = typename std::iterator_traits<Iter>::value_type;
-        ad::Mat<T> res;
-        jacobian(res, begin, end, f);
-        f_test(res, 0, begin);
+        std::vector<double> tmp(expr.bind_size());
+        expr.bind(tmp.data());
+        autodiff(expr);
+        switch(test_func) {
+            case Func::f:
+                f_test(val, adj);
+                break;
+            case Func::g:
+                g_test(val, adj);
+                break;
+            case Func::h:
+                h_test(val, adj);
+                break;
+        }
     }
-
-    // Vector Function Test
-    template <class Iter, class... Fs>
-    void test_vector(Iter begin, Iter end, Fs&... fs)
-    {
-        using T = typename std::iterator_traits<Iter>::value_type;
-        ad::Mat<T> res;
-        jacobian(res, begin, end, fs...);
-        f_test(res, 0, begin);
-        g_test(res, 1, begin);
-        h_test(res, 2, begin);
-    }
-
-
 };
 
-// Scalar Function f:R^n -> R
-TEST_F(ad_fixture, function_scalar) {
-    double x[] = { 0.1, 2.3, -1., 4.1, -5.21 };
-    double y[] = { 2.1, 5.3, -1.23, 0.0012, -5.13 };
-    test_scalar(x, x + 5, F_lmda);
-    test_scalar(y, y + 5, F_lmda);
+TEST_F(ad_fixture, F_test) {
+    auto expr = F_lmda(v, w);
+    test_scalar(expr, val, adj, Func::f);
 }
 
-// Scalar function with constant
-TEST_F(ad_fixture, function_with_constant)
+TEST_F(ad_fixture, F_with_constant_test)
 {
-    double x[] = { 0.1, 2.3, -1., 4.1, -5.21 };
-
-    auto f_lmda = [](const Vec<double>& x, const Vec<double>& w) {
-        return (w[0] = ad::sin(x[0])*ad::cos(x[1]),
-                w[1] = x[2] + x[3] * x[4],
+    auto expr = (w[0] = ad::sin(v[0])*ad::cos(v[1]),
+                w[1] = v[2] + v[3] * v[4],
                 w[2] = w[0] + w[1] + ad::constant(3.14));
-    };
-
-    // Gradient should not change from before
-    test_scalar(x, x + 5, f_lmda);
-
-    // Function values should differ by 1
-    auto f_gen = make_exgen<double>(f_lmda);
-    Vec<double> v(x, x + 5);
-    double res = evaluate(std::get<0>(f_gen.generate(v)));
-    res -= evaluate(std::get<0>(F.generate(v)));    // subtract away original generator value
-    EXPECT_DOUBLE_EQ(res, 3.14);
+    test_scalar(expr, val, adj, Func::f);
 }
 
-// Vector Function f:R^n -> R^m
-TEST_F(ad_fixture, function_vector) {
-    double x[] = { 0.1, 2.3, -1., 4.1, -5.21 };
-    double y[] = { 2.1, 5.3, -1.23, 0.0012, -5.13 };
-    test_vector(x, x + 5, F_lmda, G_lmda, H_lmda);
-    test_vector(y, y + 5, F_lmda, G_lmda, H_lmda);
+TEST_F(ad_fixture, G_test) {
+    auto expr = G_lmda(v, w);
+    test_scalar(expr, val, adj, Func::g);
 }
 
-// Vector Function f:R^n -> R^m
-// same lambda
-TEST_F(ad_fixture, function_vector_same_lmda) {
-    double x[] = { 0.1, 2.3, -1., 4.1, -5.21 };
-    test_vector(x, x + 5, F_lmda, G_lmda, H_lmda, F_lmda);
+TEST_F(ad_fixture, H_test) {
+    auto expr = H_lmda(v, w);
+    test_scalar(expr, val, adj, Func::h);
 }
 
 // Complex Vector Function
 TEST_F(ad_fixture, function_vector_complex) {
-    constexpr size_t n = 10;
-    std::vector<double> x;
+    constexpr size_t n = 1000;
+    std::vector<Var<double>> x;
     std::default_random_engine gen;
     std::normal_distribution<double> dist(0., 1.);
 
+    x.reserve(n);
     for (size_t i = 0; i < n; ++i) {
         x.push_back(dist(gen));
     }
 
-    test_vector(x.begin(), x.end(), 
-        F_lmda, G_lmda, H_lmda, F_lmda, G_lmda, PHI_lmda, PHI_lmda
-            );
+    auto expr = PHI_lmda(x, w);
+    std::vector<double> tmp(expr.bind_size());
+    expr.bind(tmp.data());
+    autodiff(expr);
 }
 
 } // namespace core

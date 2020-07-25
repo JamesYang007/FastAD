@@ -4,17 +4,8 @@ if (FASTAD_ENABLE_COVERAGE)
 endif()
 
 # All tests
-set(
-    TESTS
-    # Unit tests
-    #mat_unittest
-    #hessian_unittest
-    #ifelse_unittest
-    #pow_unittest
-    #prod_unittest
-    #exgen_unittest
-    #jacobian_unittest
-)
+# TODO:
+# - hessian_unittest
 
 ########################################################################
 # Utility TEST
@@ -53,6 +44,9 @@ add_executable(core_unittest
     ${CMAKE_CURRENT_SOURCE_DIR}/sum_unittest.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/forward_unittest.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/eval_unittest.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/prod_unittest.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/pow_unittest.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/if_else_unittest.cpp
     )
 if (NOT CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     target_compile_options(core_unittest PRIVATE -Werror -Wextra)
@@ -75,7 +69,7 @@ add_test(core_unittest core_unittest)
 
 add_executable(integration_test
     ${CMAKE_CURRENT_SOURCE_DIR}/node_inttest.cpp
-    #${CMAKE_CURRENT_SOURCE_DIR}/ad_inttest.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/ad_inttest.cpp
     )
 if (NOT CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     target_compile_options(integration_test PRIVATE -Werror -Wextra)

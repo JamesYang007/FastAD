@@ -47,6 +47,8 @@ struct VarView<ValueType, scl>:
     using value_view_t::cols;
     using value_view_t::data;
 
+    VarView() : VarView(nullptr, nullptr) {}
+
     VarView(value_t* val_begin,
             value_t* adj_begin,
             size_t=1,
@@ -92,12 +94,6 @@ struct VarView<ValueType, scl>:
      * @return  the next pointer from adj_begin that is not viewed by current object.
      */
     value_t* bind_adj(value_t* begin) { return adj_.bind(begin); }
-
-    /**
-     * Returns the raw pointer to the first adjoint viewed by current object.
-     * @return  raw pointer
-     */
-    value_t* data_adj() const { return adj_.data(); }
     
     /**
      * Resets adjoints to all zeros.
@@ -143,6 +139,9 @@ struct VarView<ValueType, vec>:
     using value_view_t::cols;
     using value_view_t::data;
 
+    VarView(size_t rows) 
+        : VarView(nullptr, nullptr, rows, 0) {}
+
     VarView(value_t* val_begin,
             value_t* adj_begin,
             size_t rows,
@@ -164,7 +163,6 @@ struct VarView<ValueType, vec>:
     void beval(value_t seed, size_t i, size_t, util::beval_policy) { adj_.get()(i) += seed; }
     const value_t& get_adj(size_t i, size_t) const { return adj_.get()(i); }
     value_t* bind_adj(value_t* begin) { return adj_.bind(begin); }
-    value_t* data_adj() const { return adj_.data(); }
 
     size_t size() const {
         assert(value_view_t::size() == adj_.size());
@@ -199,6 +197,9 @@ struct VarView<ValueType, mat>:
     using value_view_t::rows;
     using value_view_t::cols;
     using value_view_t::data;
+
+    VarView(size_t rows, size_t cols) 
+        : VarView(nullptr, nullptr, rows, cols) {}
 
     VarView(value_t* val_begin,
             value_t* adj_begin,
@@ -237,7 +238,6 @@ struct VarView<ValueType, mat>:
         return value_view_t::cols();
     }
 
-    value_t* data_adj() const { return adj_.data(); }
     void reset_adj() { adj_.get().setZero(); }
     constexpr size_t bind_size() const { return 0; }
     constexpr size_t single_bind_size() const { return 0; }

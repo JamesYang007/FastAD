@@ -118,9 +118,46 @@ struct Constant:
     {}
 
     const var_t& feval() const { return c_; }
-    void beval(value_t, size_t, size_t) const {}
+    void beval(value_t, size_t, size_t, util::beval_policy) const {}
     constexpr size_t bind_size() const { return 0; }
     constexpr size_t single_bind_size() const { return 0; }
+
+    const var_t& get() const { return c_; }
+    const value_t& get(size_t i, size_t j) const { 
+        if constexpr (std::is_same_v<shape_t, scl>) {
+            static_cast<void>(i);
+            static_cast<void>(j);
+            return c_;
+        } else {
+            return c_(i,j); 
+        }
+    }
+
+    value_t* bind(value_t* begin) const { return begin; }
+
+    const value_t* data() const { 
+        if constexpr (std::is_same_v<shape_t, scl>) {
+            return &c_;
+        } else {
+            return c_.data(); 
+        }
+    }
+
+    size_t rows() const { 
+        if constexpr (std::is_same_v<shape_t, scl>) {
+            return 1;
+        } else {
+            return c_.rows(); 
+        }
+    }
+
+    size_t cols() const { 
+        if constexpr (std::is_same_v<shape_t, scl>) {
+            return 1;
+        } else {
+            return c_.cols(); 
+        }
+    }
 
 private:
     var_t c_;

@@ -1,11 +1,9 @@
 #pragma once
 #include <type_traits>
 #include <algorithm>
-#include "exgen.hpp"
 #include "eval.hpp"
-#include "vec.hpp"
 #include "forward.hpp"
-#include "utility.hpp"
+#include "type_traits.hpp"
 
 namespace ad {
 namespace core {

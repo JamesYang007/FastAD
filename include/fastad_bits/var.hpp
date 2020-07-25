@@ -42,7 +42,6 @@ public:
     using base_t::rows;
     using base_t::cols;
     using base_t::data;
-    using base_t::data_adj;
     using base_t::reset_adj;
     using base_t::operator=;
 
@@ -125,7 +124,6 @@ public:
     using base_t::rows;
     using base_t::cols;
     using base_t::data;
-    using base_t::data_adj;
     using base_t::reset_adj;
     using base_t::operator=;
 
@@ -205,7 +203,6 @@ public:
     using base_t::rows;
     using base_t::cols;
     using base_t::data;
-    using base_t::data_adj;
     using base_t::reset_adj;
     using base_t::operator=;
 

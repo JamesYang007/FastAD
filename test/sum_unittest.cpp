@@ -59,6 +59,8 @@ protected:
     }
 };
 
+// Sum (iter) TEST
+
 TEST_F(sum_fixture, scl_feval)
 {
     auto scl_sum = make_sum<ad::scl>();
@@ -102,7 +104,7 @@ TEST_F(sum_fixture, mat_feval)
     auto mat_sum = make_sum<ad::mat>();
     Eigen::MatrixXd res = mat_sum.feval();
     for (int i = 0; i < res.rows(); ++i) {
-        for (int j = 0; j < res.rows(); ++j) {
+        for (int j = 0; j < res.cols(); ++j) {
             EXPECT_DOUBLE_EQ(res(i,j), size*2.*mat_expr.get(i,j));
         }
     }
@@ -115,7 +117,7 @@ TEST_F(sum_fixture, mat_beval)
     mat_sum.beval(seed, 0,0, util::beval_policy::single);    // last ignored
     for (size_t k = 0; k < mat_exprs.size(); ++k) {
         for (size_t i = 0; i < mat_rows; ++i) {
-            for (size_t j = 0; j < mat_rows; ++j) {
+            for (size_t j = 0; j < mat_cols; ++j) {
                 value_t actual = ((i == 0 && j == 0) ||
                                   (i == 1 && j == 1)) ? 2*seed : 0;
                 EXPECT_DOUBLE_EQ(mat_exprs[k].get_adj(i,j), actual);
@@ -148,6 +150,101 @@ TEST_F(sum_fixture, vec_constant)
     for (int i = 0; i < res.size(); ++i) {
         EXPECT_DOUBLE_EQ(res(i), size*vec_expr.get(i,0));
     }
+}
+
+// Sum (expr) TEST
+
+TEST_F(sum_fixture, scl_expr_feval)
+{
+    auto scl_sum = ad::sum(scl_unary_t(scl_expr));
+    val_buf.resize(scl_sum.bind_size());
+    scl_sum.bind(val_buf.data());
+    value_t res = scl_sum.feval();
+    EXPECT_DOUBLE_EQ(res, 2.*scl_expr.get());
+}
+
+TEST_F(sum_fixture, scl_expr_beval)
+{
+    auto scl_sum = ad::sum(scl_unary_t(scl_expr));
+    val_buf.resize(scl_sum.bind_size());
+    scl_sum.bind(val_buf.data());
+    scl_sum.beval(seed, 0,0, util::beval_policy::single);    // last two ignored
+    EXPECT_DOUBLE_EQ(scl_expr.get_adj(0,0), 2.*seed);
+}
+
+TEST_F(sum_fixture, vec_expr_feval)
+{
+    auto vec_sum = ad::sum(vec_unary_t(vec_expr));
+    val_buf.resize(vec_sum.bind_size());
+    vec_sum.bind(val_buf.data());
+    value_t res = vec_sum.feval();
+    value_t actual = 0;
+    for (size_t i = 0; i < vec_expr.size(); ++i) {
+        actual += 2.*vec_expr.get(i,0);
+    }
+    EXPECT_DOUBLE_EQ(res, actual);
+}
+
+TEST_F(sum_fixture, vec_expr_beval)
+{
+    auto vec_sum = ad::sum(vec_unary_t(vec_expr));
+    val_buf.resize(vec_sum.bind_size());
+    vec_sum.bind(val_buf.data());
+    vec_sum.beval(seed, 0,0, util::beval_policy::single);    // last two ignored
+    for (size_t i = 0; i < vec_expr.size(); ++i) {
+        EXPECT_DOUBLE_EQ(vec_expr.get_adj(i,0), 2.*seed);
+    }
+}
+
+TEST_F(sum_fixture, mat_expr_feval)
+{
+    auto mat_sum = ad::sum(mat_unary_t(mat_expr));
+    val_buf.resize(mat_sum.bind_size());
+    mat_sum.bind(val_buf.data());
+    value_t res = mat_sum.feval();
+    value_t actual = 0;
+    for (size_t i = 0; i < mat_expr.rows(); ++i) {
+        for (size_t j = 0; j < mat_expr.cols(); ++j) {
+            actual += 2.*mat_expr.get(i,j);
+        }
+    }
+    EXPECT_DOUBLE_EQ(res, actual);
+}
+
+TEST_F(sum_fixture, mat_expr_beval)
+{
+    auto mat_sum = ad::sum(mat_unary_t(mat_expr));
+    val_buf.resize(mat_sum.bind_size());
+    mat_sum.bind(val_buf.data());
+    mat_sum.beval(seed, 0,0, util::beval_policy::single);    // last two ignored
+    for (size_t i = 0; i < mat_expr.rows(); ++i) {
+        for (size_t j = 0; j < mat_expr.cols(); ++j) {
+            EXPECT_DOUBLE_EQ(mat_expr.get_adj(i,j), 2.*seed);
+        }
+    }
+}
+
+TEST_F(sum_fixture, scl_expr_constant)
+{
+    auto sumnode = ad::sum(ad::constant(scl_expr.get()));
+    static_assert(std::is_same_v<
+            std::decay_t<decltype(sumnode)>,
+            Constant<double, ad::scl> >);
+    EXPECT_DOUBLE_EQ(sumnode.feval(), scl_expr.get());
+}
+
+TEST_F(sum_fixture, vec_expr_constant)
+{
+    auto sumnode = ad::sum(ad::constant(Eigen::VectorXd(vec_expr.get())));
+    static_assert(std::is_same_v<
+            std::decay_t<decltype(sumnode)>,
+            Constant<double, ad::scl> >);
+    auto res = sumnode.feval();
+    value_t actual = 0;
+    for (size_t i = 0; i < vec_expr.size(); ++i) {
+        actual += vec_expr.get(i,0);
+    }
+    EXPECT_DOUBLE_EQ(res, actual);
 }
 
 } // namespace core

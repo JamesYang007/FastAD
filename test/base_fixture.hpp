@@ -82,7 +82,7 @@ protected:
         vec_raw(0) = 3.1;
         vec_raw(1) = -2.3;
         vec_raw(2) = 1.3;
-        vec_raw(3) = 0.2;
+        vec_raw(3) = 0.;
         vec_raw(4) = 5.1;
     }
 

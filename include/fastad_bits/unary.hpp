@@ -27,16 +27,16 @@ namespace core {
 template <class Unary
         , class ExprType>
 struct UnaryNode:
-    core::ValueView<typename util::expr_traits<ExprType>::value_t,
-                    typename util::shape_traits<ExprType>::shape_t>,
-    core::ExprBase<UnaryNode<Unary, ExprType>>
+    ValueView<typename util::expr_traits<ExprType>::value_t,
+              typename util::shape_traits<ExprType>::shape_t>,
+    ExprBase<UnaryNode<Unary, ExprType>>
 {
 private:
     using expr_t = ExprType;
     static_assert(util::is_expr_v<expr_t>);
 
 public:
-    using value_view_t = core::ValueView<
+    using value_view_t = ValueView<
         typename util::expr_traits<expr_t>::value_t, 
         typename util::shape_traits<expr_t>::shape_t >;
     using typename value_view_t::value_t;

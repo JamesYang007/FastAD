@@ -308,5 +308,27 @@ TEST_F(node_integration_fixture, foreach) {
     }
 }
 
+TEST_F(node_integration_fixture, mat_scl_reduction) 
+{
+    Var<double, ad::mat> v(3, 2), w(3, 2);
+    Var<double> x;
+    v.get(0,0) = 2.;
+    v.get(1,0) = 3.;
+    v.get(2,0) = 4.;
+
+    auto expr = (w = v * v,
+                 x = ad::sum(w));
+    bind(expr);
+
+    double val = autodiff(expr);
+    EXPECT_DOUBLE_EQ(val, 29.);
+
+    for (size_t i = 0; i < v.rows(); ++i) {
+        for (size_t j = 0; j < v.cols(); ++j) {
+            EXPECT_DOUBLE_EQ(v.get_adj(i,j), v.get(i,j) * 2.);
+        }
+    }
+}
+
 } // namespace core
 } // namespace ad

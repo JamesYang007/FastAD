@@ -92,6 +92,14 @@ struct ValueView<ValueType, scl>
         *val_ = 0;
     }
 
+    /**
+     * One out the underlying value(s).
+     */
+    void ones() { 
+        assert(val_);
+        *val_ = 1;
+    }
+
 private:
     value_t* val_;
 };
@@ -124,6 +132,7 @@ struct ValueView<ValueType, vec>
     value_t* data() { return val_.data(); }
     const value_t* data() const { return val_.data(); }
     void zero() { val_.setZero(); }
+    void ones() { val_.setOnes(); }
 
 private:
     var_t val_;
@@ -157,6 +166,7 @@ struct ValueView<ValueType, mat>
     value_t* data() { return val_.data(); }
     const value_t* data() const { return val_.data(); }
     void zero() { val_.setZero(); }
+    void ones() { val_.setOnes(); }
 
 private:
     var_t val_;
