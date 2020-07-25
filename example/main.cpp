@@ -1,5 +1,6 @@
 #include <fastad>
 #include <iostream>
+#include <vector>
 
 // Forward AD
 void forward()
@@ -37,18 +38,21 @@ void reverse_simple()
 		, w5 = exp(w4*w3)
 		);
 
+    std::vector<double> tmp(expr.bind_size());
+    expr.bind(tmp.data());
+
 	autodiff(expr);
 
 	std::cout << "f(x, y) = exp((x * sin(y) + x * y) * x * sin(y))\n"
-            << "df/dx = " << w1.get_adjoint() << std::endl
-            << "df/dy = " << w2.get_adjoint() << std::endl;
+            << "df/dx = " << w1.get_adj(0,0) << std::endl
+            << "df/dy = " << w2.get_adj(0,0) << std::endl;
 }
 
 void reverse_vec()
 {
 	using namespace ad;
-	Vec<double> x(0);
-	Vec<double> w(3);
+	std::vector<Var<double>> x(0);
+	std::vector<Var<double>> w(3);
 	double x_val[] = { -0.201, 1.2241 };
     for (size_t i = 0; i < 2; ++i) {
 		x.emplace_back(x_val[i]);
@@ -59,103 +63,105 @@ void reverse_vec()
 		, w[1] = w[0] + x[0] * x[1]
 		, w[2] = exp(w[1] * w[0])
 		);
+    std::vector<double> tmp(expr.bind_size());
+    expr.bind(tmp.data());
 
 	autodiff(expr);
 
 	std::cout << "f(x, y) = exp((x * sin(y) + x * y) * x * sin(y))\n"
-            << "df/dx = " << x[0].get_adjoint() << std::endl
-            << "df/dy = " << x[1].get_adjoint() << std::endl;
+            << "df/dx = " << x[0].get_adj(0,0) << std::endl
+            << "df/dy = " << x[1].get_adj(0,0) << std::endl;
 }
 
-void reverse_function()
-{
-	using namespace ad;
-	Vec<double> x = { -0.201, 1.2241 };
-	auto F_lmda = [](const auto& x, const auto& w) {
-		return (w[0] = x[0] * ad::sin(x[1]),
-                w[1] = w[0] + x[0] * x[1],
-                w[2] = ad::exp(w[1] * w[0]));
-	};
-
-	auto gen = make_exgen<double>(F_lmda);
-	autodiff(gen.generate(x));
-
-	std::cout << "f(x, y) = exp((x * sin(y) + x * y) * x * sin(y))\n"
-            << "df/dx = " << x[0].get_adjoint() << std::endl
-            << "df/dy = " << x[1].get_adjoint() << std::endl;
-}
-
-void reverse_jacobian()
-{
-	using namespace ad;
-	auto F_lmda = [](const auto& x, const auto& w) {
-		return (w[0] = x[0] * ad::sin(x[1]),
-                w[1] = w[0] + x[0] * x[1],
-                w[2] = ad::exp(w[1] * w[0]));
-	};
-	double x_val[] = { -0.201, 1.2241 };		// substitute for any data structure that is iterable
-	Mat<double> jacobi;					// substitute for a 2D-array data structure
-												// (more information in documentation)
-	jacobian(jacobi, x_val, x_val + 2, F_lmda);
-	std::cout << "f(x, y) = exp((x * sin(y) + x * y) * x * sin(y))" << std::endl;
-	jacobi.print("Jacobian of f(x, y)");
-}
-
-void reverse_vector()
-{
-	using namespace ad;
-	auto F_lmda = [](const auto& x, const auto& w) {
-		return (w[0] = x[0] * ad::sin(x[1]),
-                w[1] = w[0] + x[0] * x[1],
-                w[2] = ad::exp(w[1] * w[0]));
-	};
-	auto G_lmda = [](const auto& x, const auto& w) {
-		return (w[0] = x[0] + ad::exp(ad::sin(x[1])),
-		        w[1] = w[0] * w[0] * x[1]);
-    };
-
-	double x_val[] = { -0.201, 1.2241 };
-	Mat<double> jacobi;
-
-	jacobian(jacobi, x_val, x_val + 2, F_lmda, G_lmda); 
-	std::cout << "f(x, y) = exp((x * sin(y) + x * y) * x * sin(y))\n"
-            << "g(x, y) = (x + exp(sin(y)))^2 * y" << std::endl;
-	jacobi.print("Jacobian of (f(x, y), g(x, y))");
-}
-
-// Hessian
-void hessian()
-{
-	using namespace ad;
-	auto F_lmda = [](const auto& x, const auto& w) {
-		return (w[0] = x[0] * ad::sin(x[1]),
-                w[1] = w[0] + x[0] * x[1],
-                w[2] = ad::exp(w[1] * w[0]));
-	};
-	double x_val[] = { -0.201, 1.2241 };
-	Mat<double> hess;
-	Mat<double> jacobi;
-
-	// Computes Hessian and stores into "hess"
-	hessian(hess, x_val, x_val + 2, F_lmda);
-	// Computes Hessian and stores Hessian into "hess" and Jacobian into "jacobi"
-	hessian(hess, jacobi, x_val, x_val + 2, F_lmda);
-
-	std::cout << "f(x, y) = exp((x * sin(y) + x * y) * x * sin(y))" << std::endl;
-	hess.print("Hessian of f(x, y)");
-	jacobi.print("Jacobian of f(x, y)");
-}
+//void reverse_function()
+//{
+//	using namespace ad;
+//	std::vector<Var<double>> x = { -0.201, 1.2241 };
+//	auto F_lmda = [](const auto& x, const auto& w) {
+//		return (w[0] = x[0] * ad::sin(x[1]),
+//                w[1] = w[0] + x[0] * x[1],
+//                w[2] = ad::exp(w[1] * w[0]));
+//	};
+//
+//	auto gen = make_exgen<double>(F_lmda);
+//	autodiff(gen.generate(x));
+//
+//	std::cout << "f(x, y) = exp((x * sin(y) + x * y) * x * sin(y))\n"
+//            << "df/dx = " << x[0].get_adj(0,0) << std::endl
+//            << "df/dy = " << x[1].get_adj(0,0) << std::endl;
+//}
+//
+//void reverse_jacobian()
+//{
+//	using namespace ad;
+//	auto F_lmda = [](const auto& x, const auto& w) {
+//		return (w[0] = x[0] * ad::sin(x[1]),
+//                w[1] = w[0] + x[0] * x[1],
+//                w[2] = ad::exp(w[1] * w[0]));
+//	};
+//	double x_val[] = { -0.201, 1.2241 };		// substitute for any data structure that is iterable
+//	Mat<double> jacobi;					// substitute for a 2D-array data structure
+//												// (more information in documentation)
+//	jacobian(jacobi, x_val, x_val + 2, F_lmda);
+//	std::cout << "f(x, y) = exp((x * sin(y) + x * y) * x * sin(y))" << std::endl;
+//	jacobi.print("Jacobian of f(x, y)");
+//}
+//
+//void reverse_vector()
+//{
+//	using namespace ad;
+//	auto F_lmda = [](const auto& x, const auto& w) {
+//		return (w[0] = x[0] * ad::sin(x[1]),
+//                w[1] = w[0] + x[0] * x[1],
+//                w[2] = ad::exp(w[1] * w[0]));
+//	};
+//	auto G_lmda = [](const auto& x, const auto& w) {
+//		return (w[0] = x[0] + ad::exp(ad::sin(x[1])),
+//		        w[1] = w[0] * w[0] * x[1]);
+//    };
+//
+//	double x_val[] = { -0.201, 1.2241 };
+//	Mat<double> jacobi;
+//
+//	jacobian(jacobi, x_val, x_val + 2, F_lmda, G_lmda); 
+//	std::cout << "f(x, y) = exp((x * sin(y) + x * y) * x * sin(y))\n"
+//            << "g(x, y) = (x + exp(sin(y)))^2 * y" << std::endl;
+//	jacobi.print("Jacobian of (f(x, y), g(x, y))");
+//}
+//
+//// Hessian
+//void hessian()
+//{
+//	using namespace ad;
+//	auto F_lmda = [](const auto& x, const auto& w) {
+//		return (w[0] = x[0] * ad::sin(x[1]),
+//                w[1] = w[0] + x[0] * x[1],
+//                w[2] = ad::exp(w[1] * w[0]));
+//	};
+//	double x_val[] = { -0.201, 1.2241 };
+//	Mat<double> hess;
+//	Mat<double> jacobi;
+//
+//	// Computes Hessian and stores into "hess"
+//	hessian(hess, x_val, x_val + 2, F_lmda);
+//	// Computes Hessian and stores Hessian into "hess" and Jacobian into "jacobi"
+//	hessian(hess, jacobi, x_val, x_val + 2, F_lmda);
+//
+//	std::cout << "f(x, y) = exp((x * sin(y) + x * y) * x * sin(y))" << std::endl;
+//	hess.print("Hessian of f(x, y)");
+//	jacobi.print("Jacobian of f(x, y)");
+//}
 
 int main()
 {
 	forward();
 	reverse_simple();
 	reverse_vec();
-	reverse_function();
+	//reverse_function();
 
-	reverse_jacobian();
-	reverse_vector();
-	hessian();
+	//reverse_jacobian();
+	//reverse_vector();
+	//hessian();
 
 	return 0;
 }
