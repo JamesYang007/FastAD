@@ -1,7 +1,8 @@
-#include <fastad_bits/node.hpp>
+#include <fastad_bits/var.hpp>
 #include <fastad_bits/math.hpp>
 #include <fastad_bits/eval.hpp>
 #include <fastad_bits/pow.hpp>
+#include <fastad_bits/sum.hpp>
 #include <benchmark/benchmark.h>
 #include <vector>
 #include <numeric>
@@ -33,18 +34,20 @@ static void BM_normal_repeated_stddev(benchmark::State& state)
     Var<double> w(2.);
 
     for (size_t i = 0; i < size; ++i) {
-        values[i] = values2[i] = static_cast<double>(i);
+        values[i] = values2[i] = i;
     }
 
     int i = 0;
     auto expr = ad::sum(values.begin(), values.end(),
-        [&, i](double v) mutable {
+        [&](double v) {
             auto&& expr = -ad::constant(0.5) *
                 ad::pow<2>((ad::constant(v) - w * ad::constant(values2[i])) / ad::constant(2.)) -
                 ad::log(ad::constant(2.));
             ++i;
             return expr;
         });
+    std::vector<double> tmp(expr.bind_size());
+    expr.bind(tmp.data());
 
     for (auto _ : state) {
         ad::autodiff(expr);

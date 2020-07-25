@@ -1,7 +1,7 @@
-#include <fastad_bits/node.hpp>
+#include <fastad_bits/var.hpp>
+#include <fastad_bits/eq.hpp>
 #include <fastad_bits/prod.hpp>
 #include <fastad_bits/math.hpp>
-#include <fastad_bits/vec.hpp>
 #include <fastad_bits/eval.hpp>
 #include <benchmark/benchmark.h>
 #ifdef USE_ADEPT
@@ -22,11 +22,11 @@ static inline double f_test(const std::vector<double>& x)
 static void BM_prod_fd(benchmark::State& state)
 {
     constexpr double h = 1e-10;
+    std::vector<double> x(10);
+    for (size_t i = 0; i < x.size(); ++i) {
+        x[i] = i;
+    }
     for (auto _ : state) {
-        std::vector<double> x(10);
-        for (size_t i = 0; i < x.size(); ++i) {
-            x[i] = i;
-        } 
         double f = f_test(x);
         for (size_t i = 0; i < x.size(); ++i) {
             x[i] += h;
@@ -44,17 +44,21 @@ BENCHMARK(BM_prod_fd);
 static void BM_prod_fastad(benchmark::State& state) 
 {
     using namespace ad;
+    std::vector<Var<double>> vec; 
+    for (size_t i = 0; i < 1e1; ++i) {
+        vec.emplace_back(i);
+    }
+    Var<double> w4, w5;
+    auto prod_expr = ad::prod(vec.begin(), vec.end()
+        , [](const auto& x) {
+            return x * x;
+        });
+    auto expr = (w4 = prod_expr, w5 = w4 * w4 + ad::cos(w4));
+    std::vector<double> tmp(expr.bind_size());
+    expr.bind(tmp.data());
+
     for (auto _ : state) {
-        Vec<double> vec; 
-        for (size_t i = 0; i < 1e1; ++i) {
-            vec.emplace_back(i);
-        }
-        Var<double> w4, w5;
-        auto expr = ad::prod(vec.begin(), vec.end()
-            , [](const Vec<double>::value_type& x) {
-                return x * x;
-            });
-        autodiff((w4 = expr, w5 = w4 * w4 + ad::cos(w4)));
+        autodiff(expr);
         benchmark::ClobberMemory();
     }
 }
