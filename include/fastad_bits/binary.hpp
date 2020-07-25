@@ -174,7 +174,6 @@ public:
     }
 
 private:
-
     left_t expr_lhs_;
     right_t expr_rhs_;
 };

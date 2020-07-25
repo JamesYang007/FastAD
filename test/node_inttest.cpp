@@ -1,16 +1,18 @@
-#include "gtest/gtest.h"
+#include "base_fixture.hpp"
 #include <fastad_bits/eval.hpp>
 #include <fastad_bits/math.hpp>
 #include <fastad_bits/var.hpp>
 #include <fastad_bits/eq.hpp>
 #include <fastad_bits/glue.hpp>
 #include <fastad_bits/sum.hpp>
+#include <fastad_bits/norm.hpp>
+#include <fastad_bits/dot.hpp>
 #include <fastad_bits/for_each.hpp>
 
 namespace ad {
 namespace core {
 
-struct node_integration_fixture: ::testing::Test
+struct node_integration_fixture: base_fixture
 {
 protected:
     using value_t = double;
@@ -326,6 +328,48 @@ TEST_F(node_integration_fixture, mat_scl_reduction)
     for (size_t i = 0; i < v.rows(); ++i) {
         for (size_t j = 0; j < v.cols(); ++j) {
             EXPECT_DOUBLE_EQ(v.get_adj(i,j), v.get(i,j) * 2.);
+        }
+    }
+}
+
+TEST_F(node_integration_fixture, dot_sum_norm)
+{
+    Var<value_t, mat> M(mat_rows, mat_cols);
+    Var<value_t, vec> x(mat_cols), v(mat_rows);
+    Var<value_t> w;
+    auto c = ad::constant(3.);
+
+    this->mat_initialize(M);
+    auto x_raw = x.get();
+    x_raw(0) = 1.;
+    x_raw(0) = 0.;
+    x_raw(0) = 2.;
+
+    auto expr = (v = ad::dot(M, x),
+                 w = ad::norm(v) + ad::sum(v - c));
+    bind(expr);
+
+    value_t res = ad::autodiff(expr);
+
+    // compare actual expression value
+    Eigen::VectorXd v_actual = M.get() * x.get();
+    value_t w_actual = v_actual.squaredNorm() + 
+        (v_actual.array() - c.feval()).sum();
+
+    EXPECT_DOUBLE_EQ(res, w_actual);
+
+    // compare adjoints for x
+    Eigen::VectorXd x_adj = M.get().transpose() *
+        ((2.*M.get()*x.get()).array() + 1).matrix();
+    for (size_t i = 0; i < x.size(); ++i) {
+        EXPECT_DOUBLE_EQ(x_adj(i), x.get_adj(i,0));
+    }
+
+    // compare adjoints for M
+    for (size_t i = 0; i < M.rows(); ++i) {
+        for (size_t j = 0; j < M.cols(); ++j) {
+            value_t Mij_adj = (2.*M.get().row(i)*x.get() + 1) * x.get(j,0);
+            EXPECT_DOUBLE_EQ(Mij_adj, M.get_adj(i,j));
         }
     }
 }

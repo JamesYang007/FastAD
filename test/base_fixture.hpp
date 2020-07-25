@@ -51,6 +51,8 @@ protected:
     vec_expr_t vec_expr;
     mat_expr_t mat_expr;
 
+    std::vector<value_t> val_buf;
+
     base_fixture(size_t vec_size=5,
                  size_t mat_rows=2,
                  size_t mat_cols=3)
@@ -61,10 +63,17 @@ protected:
         , scl_expr()
         , vec_expr(vec_size)
         , mat_expr(mat_rows, mat_cols)
+        , val_buf()
     {
+        // if default setting, initialize
         scl_initialize(scl_expr);
-        vec_initialize(vec_expr);
-        mat_initialize(mat_expr);
+        if (vec_size == 5) {
+            vec_initialize(vec_expr);
+        }
+        if (mat_rows == 2 &&
+            mat_cols == 3) {
+            mat_initialize(mat_expr);
+        }
     }
 
     // random (fixed) initialization
@@ -96,6 +105,14 @@ protected:
         mat_raw(1,0) = 0.2;
         mat_raw(1,1) = 5.1;
         mat_raw(1,2) = -0.9;
+    }
+
+    template <class T>
+    void bind(T& expr)
+    {
+        size_t buf_size = expr.bind_size();
+        val_buf.resize(buf_size);
+        expr.bind(val_buf.data());
     }
 };
 
