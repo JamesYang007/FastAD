@@ -3,6 +3,7 @@
 #include <type_traits>
 #include <tuple>
 #include <fastad_bits/expr_base.hpp>
+#include <fastad_bits/bind.hpp>
 
 namespace ad {
 
@@ -40,6 +41,26 @@ inline auto autodiff(ExprType&& expr,
     evaluate_adj(expr, i, j);
     return t;
 }
+
+/** 
+ * Evaluates expression both in the forward and backward direction of reverse-mode AD.
+ * Overload for ExprBind helper class.
+ *
+ * @tparam ExprType expression type
+ * @param expr  expression to forward and backward evaluate
+ * Returns the forward expression value
+ */
+template <class ExprType>
+inline auto autodiff(core::ExprBind<ExprType>& expr,
+                     size_t i = 0,
+                     size_t j = 0)
+{ return autodiff(expr.get(), i, j); }
+
+template <class ExprType>
+inline auto autodiff(core::ExprBind<ExprType>&& expr,
+                     size_t i = 0,
+                     size_t j = 0)
+{ return autodiff(expr.get(), i, j); }
 
 namespace details {
 

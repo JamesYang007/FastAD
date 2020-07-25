@@ -47,6 +47,7 @@ add_executable(core_unittest
     ${CMAKE_CURRENT_SOURCE_DIR}/prod_unittest.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/pow_unittest.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/if_else_unittest.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/bind_unittest.cpp
     )
 if (NOT CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     target_compile_options(core_unittest PRIVATE -Werror -Wextra)
