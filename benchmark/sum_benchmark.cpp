@@ -1,9 +1,9 @@
-#include <fastad_bits/math.hpp>
-#include <fastad_bits/var.hpp>
-#include <fastad_bits/eval.hpp>
-#include <fastad_bits/eq.hpp>
-#include <fastad_bits/pow.hpp>
-#include <fastad_bits/sum.hpp>
+#include <fastad_bits/core/reverse/math.hpp>
+#include <fastad_bits/core/reverse/var.hpp>
+#include <fastad_bits/core/reverse/eval.hpp>
+#include <fastad_bits/core/reverse/eq.hpp>
+#include <fastad_bits/core/reverse/pow.hpp>
+#include <fastad_bits/core/reverse/sum.hpp>
 #include <benchmark/benchmark.h>
 #include <numeric>
 #ifdef USE_ADEPT
