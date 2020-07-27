@@ -16,6 +16,7 @@ if [ ! -d "$eigen3path" ]; then
     mkdir -p build && cd build
     cmake .. -DCMAKE_INSTALL_PREFIX="." # installs into build directory
     make install
+    cd ../../../ &> /dev/null
 fi
 
 # setup only for devs
