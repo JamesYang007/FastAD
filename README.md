@@ -108,7 +108,7 @@ This will build and install the header files into the system.
 For users who want to install `FastAD` locally, run the following from `workspace_dir`:
 ```bash
 mkdir -p build && cd build
-cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=. -DFASTAD_ENABLE_TEST=OFF ..
+cmake -DCMAKE_INSTALL_PREFIX=. -DFASTAD_ENABLE_TEST=OFF ..
 make install
 ```
 One can set the `CMAKE_INSTALL_PREFIX` to anything.
@@ -179,6 +179,8 @@ An example build command would be:
 ```
 g++ main.cpp -Ipath_to_install/include
 ```
+
+If Eigen3.3 was installed locally, you must provide its path as well.
 
 ## User Guide
 
@@ -315,7 +317,8 @@ std::cout << v.get_adj(2,0) << std::endl;
 ```
 
 _Note: once you have differentiated an expression, 
-you must reset the adjoints of all variables to 0_.
+you must reset the adjoints of all variables to 0 before differentiating again.
+This includes placeholder variables (see below)._
 To that end, we provide a member function for `Var` called `reset_adj()`.
 
 #### Placeholder
@@ -497,7 +500,7 @@ When opening an issue, please describe in the fullest detail with a minimal exam
 For other general questions that cannot be resolved through opening issues,
 feel free to [send me an email](mailto:jamesyang916@gmail.com).
 
-## Team
+## Contributors
 
 | **James Yang** | **Kent Hall** |
 | :---: | :---: |
@@ -513,6 +516,7 @@ Many third party tools were used for this project.
 - [Codacy](https://app.codacy.com/welcome/organizations): rigorous code analysis.
 - [Coveralls](https://coveralls.io/): for measuring and uploading [code coverage](https://coveralls.io/github/JamesYang007/FastAD).
 - [Cpp Coveralls](https://github.com/eddyxu/cpp-coveralls): for measuring code coverage in Coveralls.
+- [Eigen](http://eigen.tuxfamily.org/index.php?title=Main_Page): matrix library that we wrapped to create AD expressions.
 - [GCC](https://gcc.gnu.org/): compiler used to develop in linux environment.
 - [Github Changelog Generator](https://github.com/github-changelog-generator/github-changelog-generator): generate [CHANGELOG](https://github.com/JamesYang007/FastAD/blob/master/CHANGELOG.md).
 - [Google Benchmark](https://github.com/google/benchmark): benchmark against various methods.
