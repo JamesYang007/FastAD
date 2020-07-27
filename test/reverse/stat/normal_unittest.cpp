@@ -33,8 +33,12 @@ protected:
     using vsm_normal_t = NormalAdjLogPDFNode<
         vec_expr_view_t, 
         scl_expr_view_t, 
+        mat_expr_view_t>;
+    using vsm_selfadj_normal_t = NormalAdjLogPDFNode<
+        vec_expr_view_t, 
+        scl_expr_view_t, 
         sym_mat_expr_view_t>;
-    using vvm_normal_t = NormalAdjLogPDFNode<
+    using vvm_selfadj_normal_t = NormalAdjLogPDFNode<
         vec_expr_view_t, 
         vec_expr_view_t, 
         sym_mat_expr_view_t>;
@@ -45,7 +49,8 @@ protected:
     vec_expr_t vec_x;
     vec_expr_t vec_mu;
     vec_expr_t vec_sigma;
-    sym_mat_expr_t mat_sigma;
+    sym_mat_expr_t mat_selfadj_sigma;
+    mat_expr_t mat_sigma;
 
     sss_normal_t sss_normal;
     vss_normal_t vss_normal;
@@ -53,7 +58,8 @@ protected:
     vsv_normal_t vsv_normal;
     vvv_normal_t vvv_normal;
     vsm_normal_t vsm_normal;
-    vvm_normal_t vvm_normal;
+    vsm_selfadj_normal_t vsm_selfadj_normal;
+    vvm_selfadj_normal_t vvm_selfadj_normal;
 
     value_t tol = 1e-15;
 
@@ -62,6 +68,7 @@ protected:
         , vec_x(3)
         , vec_mu(3)
         , vec_sigma(3)
+        , mat_selfadj_sigma(3,3)
         , mat_sigma(3,3)
         , sss_normal(scl_x, scl_mu, scl_sigma)
         , vss_normal(vec_x, scl_mu, scl_sigma)
@@ -69,7 +76,8 @@ protected:
         , vsv_normal(vec_x, scl_mu, vec_sigma)
         , vvv_normal(vec_x, vec_mu, vec_sigma)
         , vsm_normal(vec_x, scl_mu, mat_sigma)
-        , vvm_normal(vec_x, vec_mu, mat_sigma)
+        , vsm_selfadj_normal(vec_x, scl_mu, mat_selfadj_sigma)
+        , vvm_selfadj_normal(vec_x, vec_mu, mat_selfadj_sigma)
     {
         // initialize some values
         this->scl_initialize(scl_x);
@@ -90,12 +98,19 @@ protected:
         vec_sigma.get(1,0) = 1.03;
         vec_sigma.get(2,0) = 2.41;
 
-        mat_sigma.get(0,0) = 1.0;
-        mat_sigma.get(1,0) = 0.3;
-        mat_sigma.get(2,0) = 0.2;
-        mat_sigma.get(1,1) = 2.0;
-        mat_sigma.get(2,1) = -0.3;
-        mat_sigma.get(2,2) = 3.0;
+        mat_initialize(mat_sigma);
+        mat_initialize(mat_selfadj_sigma);
+    }
+
+    template <class ExprType>
+    void mat_initialize(ExprType& expr)
+    {
+        expr.get(0,0) = 1.0;
+        expr.get(1,0) = 0.3;
+        expr.get(2,0) = 0.2;
+        expr.get(1,1) = 2.0;
+        expr.get(2,1) = -0.3;
+        expr.get(2,2) = 3.0;
     }
 };
 
@@ -139,6 +154,29 @@ TEST_F(normal_fixture, vss_beval)
                      20999.9999999999963620);
     EXPECT_DOUBLE_EQ(vec_x.get_adj(2,0), 
                      -15000.0000000000000000);
+    EXPECT_DOUBLE_EQ(scl_mu.get_adj(0,0), 
+                     27000.0000000000036380);
+    EXPECT_DOUBLE_EQ(scl_sigma.get_adj(0,0), 
+                     17549700.0000000000000000);
+}
+
+TEST_F(normal_fixture, vss_constant_feval)
+{
+    auto x = ad::constant(Eigen::VectorXd(vec_x.get()));
+    auto vss_normal_constant = normal_adj_log_pdf(x, scl_mu, scl_sigma);
+    bind(vss_normal_constant);
+    value_t res = vss_normal_constant.feval();
+    EXPECT_DOUBLE_EQ(res, -87736.1844894420355558);
+}
+
+TEST_F(normal_fixture, vss_constant_beval)
+{
+    auto x = ad::constant(Eigen::VectorXd(vec_x.get()));
+    auto vss_normal_constant = normal_adj_log_pdf(x, scl_mu, scl_sigma);
+    bind(vss_normal_constant);
+    vss_normal_constant.feval();
+    vss_normal_constant.beval(1.,0,0,util::beval_policy::single);
+
     EXPECT_DOUBLE_EQ(scl_mu.get_adj(0,0), 
                      27000.0000000000036380);
     EXPECT_DOUBLE_EQ(scl_sigma.get_adj(0,0), 
@@ -200,6 +238,28 @@ TEST_F(normal_fixture, vsv_beval)
                      -0.2541950106736757);
 }
 
+TEST_F(normal_fixture, vsv_constant_feval)
+{
+    auto x = ad::constant(Eigen::VectorXd(vec_x.get()));
+    auto s = ad::constant(Eigen::VectorXd(vec_sigma.get()));
+    auto vsv_normal_constant = normal_adj_log_pdf(x, scl_mu, s);
+    bind(vsv_normal_constant);
+    value_t res = vsv_normal_constant.feval();
+    EXPECT_DOUBLE_EQ(res, -54448.5761343555350322);
+}
+
+TEST_F(normal_fixture, vsv_constant_beval)
+{
+    auto x = ad::constant(Eigen::VectorXd(vec_x.get()));
+    auto s = ad::constant(Eigen::VectorXd(vec_sigma.get()));
+    auto vsv_normal_constant = normal_adj_log_pdf(x, scl_mu, s);
+    bind(vsv_normal_constant);
+    vsv_normal_constant.feval();
+    vsv_normal_constant.beval(1.,0,0,util::beval_policy::single);
+    EXPECT_DOUBLE_EQ(scl_mu.get_adj(0,0), 
+                     32998.2788086070067948);
+}
+
 TEST_F(normal_fixture, vvv_feval)
 {
     bind(vvv_normal);
@@ -232,6 +292,43 @@ TEST_F(normal_fixture, vvv_beval)
                      0.0315698758372999);
 }
 
+TEST_F(normal_fixture, vsm_selfadj_feval)
+{
+    bind(vsm_selfadj_normal);
+    value_t res = vsm_selfadj_normal.feval();
+    EXPECT_DOUBLE_EQ(res, -8.8105250497069019);
+}
+
+TEST_F(normal_fixture, vsm_selfadj_beval)
+{
+    bind(vsm_selfadj_normal);
+    vsm_selfadj_normal.feval();
+    vsm_selfadj_normal.beval(1.,0,0,util::beval_policy::single);
+
+    EXPECT_DOUBLE_EQ(vec_x.get_adj(0,0), 
+                     -3.7624909485879803);
+    EXPECT_DOUBLE_EQ(vec_x.get_adj(1,0), 
+                     1.6010137581462704);
+    EXPECT_DOUBLE_EQ(vec_x.get_adj(2,0), 
+                     -0.0890658942795076);
+
+    EXPECT_DOUBLE_EQ(scl_mu.get_adj(0,0), 2.2505430847212176);
+
+    EXPECT_DOUBLE_EQ(mat_selfadj_sigma.get_adj(0,0), 
+                     6.5432306187049774);
+    EXPECT_DOUBLE_EQ(mat_selfadj_sigma.get_adj(1,0), 
+                     -5.8500126628008848);
+    EXPECT_NEAR(mat_selfadj_sigma.get_adj(2,0), 
+                0.4238134588532380,
+                tol);
+    EXPECT_DOUBLE_EQ(mat_selfadj_sigma.get_adj(1,1),
+                1.0137007310866775);
+    EXPECT_DOUBLE_EQ(mat_selfadj_sigma.get_adj(2,1),
+                -0.2077658886690741);
+    EXPECT_DOUBLE_EQ(mat_selfadj_sigma.get_adj(2,2),
+                -0.1689156028253514);
+}
+
 TEST_F(normal_fixture, vsm_feval)
 {
     bind(vsm_normal);
@@ -257,30 +354,30 @@ TEST_F(normal_fixture, vsm_beval)
     EXPECT_DOUBLE_EQ(mat_sigma.get_adj(0,0), 
                      6.5432306187049774);
     EXPECT_DOUBLE_EQ(mat_sigma.get_adj(1,0), 
-                     -5.8500126628008848);
+                     -2.9250063314004424);
     EXPECT_NEAR(mat_sigma.get_adj(2,0), 
-                0.4238134588532380,
+                0.2119067294266190,
                 tol);
     EXPECT_DOUBLE_EQ(mat_sigma.get_adj(1,1),
                 1.0137007310866775);
     EXPECT_DOUBLE_EQ(mat_sigma.get_adj(2,1),
-                -0.2077658886690741);
+                -0.1038829443345370);
     EXPECT_DOUBLE_EQ(mat_sigma.get_adj(2,2),
                 -0.1689156028253514);
 }
 
-TEST_F(normal_fixture, vvm_feval)
+TEST_F(normal_fixture, vvm_selfadj_feval)
 {
-    bind(vvm_normal);
-    value_t res = vvm_normal.feval();
+    bind(vvm_selfadj_normal);
+    value_t res = vvm_selfadj_normal.feval();
     EXPECT_DOUBLE_EQ(res, -7.3649692930088602);
 }
 
-TEST_F(normal_fixture, vvm_beval)
+TEST_F(normal_fixture, vvm_selfadj_beval)
 {
-    bind(vvm_normal);
-    vvm_normal.feval();
-    vvm_normal.beval(1.,0,0,util::beval_policy::single);
+    bind(vvm_selfadj_normal);
+    vvm_selfadj_normal.feval();
+    vvm_selfadj_normal.beval(1.,0,0,util::beval_policy::single);
 
     EXPECT_DOUBLE_EQ(vec_x.get_adj(0,0), 
                      -3.4158218682114407);
@@ -293,17 +390,17 @@ TEST_F(normal_fixture, vvm_beval)
         EXPECT_DOUBLE_EQ(vec_mu.get_adj(i,0), -vec_x.get_adj(i,0));
     }
 
-    EXPECT_DOUBLE_EQ(mat_sigma.get_adj(0,0), 
+    EXPECT_DOUBLE_EQ(mat_selfadj_sigma.get_adj(0,0), 
                      5.2989810672774862);
-    EXPECT_DOUBLE_EQ(mat_sigma.get_adj(1,0), 
+    EXPECT_DOUBLE_EQ(mat_selfadj_sigma.get_adj(1,0), 
                      -1.2880164548247368);
-    EXPECT_DOUBLE_EQ(mat_sigma.get_adj(2,0), 
+    EXPECT_DOUBLE_EQ(mat_selfadj_sigma.get_adj(2,0), 
                     2.0111857690567287);
-    EXPECT_DOUBLE_EQ(mat_sigma.get_adj(1,1),
+    EXPECT_DOUBLE_EQ(mat_selfadj_sigma.get_adj(1,1),
                     -0.1763508691715067);
-    EXPECT_DOUBLE_EQ(mat_sigma.get_adj(2,1),
+    EXPECT_DOUBLE_EQ(mat_selfadj_sigma.get_adj(2,1),
                     -0.3060280437781603);
-    EXPECT_NEAR(mat_sigma.get_adj(2,2),
+    EXPECT_NEAR(mat_selfadj_sigma.get_adj(2,2),
                 -0.0145005947321700,
                 tol);
 }

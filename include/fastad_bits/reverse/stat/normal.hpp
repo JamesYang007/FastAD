@@ -74,6 +74,7 @@ public:
         , x_{x}
         , mean_{mean}
         , sigma_{sigma}
+        , log_sigma_{0}
     {
         if constexpr (util::is_constant_v<sigma_t>) {
             this->update_cache();
@@ -180,9 +181,18 @@ public:
         , sigma_{sigma}
         , log_sigma_{0}
         , z_sq{0}
+        , x_mean_{0}
+        , x_var_{0}
     {
         if constexpr (util::is_constant_v<sigma_t>) {
             this->update_cache();
+        }
+
+        // optimization when x_ is constant
+        // reduced exponential form
+        if constexpr (util::is_constant_v<x_t>) {
+            x_mean_ = x_.get().mean();
+            x_var_ = (x_.get().array() - x_mean_).matrix().squaredNorm();
         }
     }
 
@@ -197,10 +207,17 @@ public:
             this->update_cache();
         }
 
-        auto z = ((x.array() - m) / s).matrix();
-        z_sq = z.squaredNorm();
-        
-        return this->get() = -0.5 * z_sq - x_.rows() * log_sigma_; 
+        if constexpr (util::is_constant_v<x_t>) {
+            value_t centered = (m - x_mean_);
+            value_t inv_s_sq = 1./(s * s);
+            return this->get() = 
+                -0.5 * inv_s_sq * (x_var_ + x_.rows() * centered * centered) 
+                        - x_.rows() * log_sigma_;
+        } else {
+            auto z = ((x.array() - m) / s).matrix();
+            z_sq = z.squaredNorm();
+            return this->get() = -0.5 * z_sq - x_.rows() * log_sigma_; 
+        }
     }
 
     void beval(value_t seed, size_t, size_t, util::beval_policy pol)
@@ -213,17 +230,34 @@ public:
         auto&& x = x_.get();
         auto&& m = mean_.get();
 
-        if constexpr (!util::is_constant_v<sigma_t>) {
-            sigma_.beval(seed * (z_sq - x_.rows()) * inv_s, 0, 0, pol);
+        // if x is constant, more optimized beval
+        if constexpr (util::is_constant_v<x_t>) {
+
+            if constexpr (!util::is_constant_v<sigma_t>) {
+                value_t c = (m - x_mean_);
+                value_t sigma_adj = ((x_var_ + x_.rows() * c * c) * inv_s_sq - x_.rows()) * inv_s;
+                sigma_.beval(seed * sigma_adj, 0, 0, pol);
+            }
+
+            value_t mean_adj = x_.rows() * (x_mean_ - m) * inv_s_sq;
+            mean_.beval(seed * mean_adj, 0, 0, pol);
+
+        } else {
+
+            if constexpr (!util::is_constant_v<sigma_t>) {
+                sigma_.beval(seed * (z_sq - x_.rows()) * inv_s, 0, 0, pol);
+            }
+
+            value_t mean_adj = (x.array() - m).sum() * inv_s_sq;
+            mean_.beval(seed * mean_adj, 0, 0, pol);
+
+            if constexpr (!util::is_constant_v<x_t>) {
+                for (size_t i = 0; i < x_.rows(); ++i) {
+                    x_.beval(seed * (-(x(i) - m) * inv_s_sq), i, 0, pol);
+                }
+            }
+
         }
-
-        value_t mean_adj = (x.array() - m).sum() * inv_s_sq;
-        mean_.beval(seed * mean_adj, 0, 0, pol);
-
-        for (size_t i = 0; i < x_.rows(); ++i) {
-            x_.beval(seed * (-(x(i) - m) * inv_s_sq), i, 0, pol);
-        }
-
     }
 
     value_t* bind(value_t* begin) 
@@ -261,7 +295,13 @@ private:
     sigma_t sigma_;
 
     value_t log_sigma_;
+
+    // only used when x is not constant
     value_t z_sq;
+
+    // only used when x is constant
+    value_t x_mean_;    
+    value_t x_var_;
 };
 
 // Case 3: vvs
@@ -417,9 +457,21 @@ public:
         , sigma_{sigma}
         , log_sigma_{0}
         , is_pos_def_{false}
+        , sq_term_{0}
+        , lin_term_{0}
+        , const_term_{0}
     {
         if constexpr (util::is_constant_v<sigma_t>) {
             this->update_cache();
+
+            // if additionally x is constant, more optimized form
+            if constexpr (util::is_constant_v<x_t>) {
+                auto&& x = x_.get().array();
+                auto&& s = sigma_.get().array();
+                sq_term_ = (x/s).matrix().squaredNorm(); 
+                lin_term_ = (x/(s * s)).sum();
+                const_term_ = (1./s).matrix().squaredNorm();
+            }
         }
     }
 
@@ -437,9 +489,15 @@ public:
             return this->get() = util::neg_inf<value_t>;
         }
 
-        auto z = ((x.array() - m) / s.array()).matrix();
-        
-        return this->get() = -0.5 * z.squaredNorm() - log_sigma_; 
+        if constexpr (util::is_constant_v<x_t> &&
+                      util::is_constant_v<sigma_t>) {
+            return this->get() = 
+                -0.5 * (sq_term_ - 2 * m * lin_term_ + m * m * const_term_)
+                    - log_sigma_;
+        } else {
+            auto z = ((x.array() - m) / s.array()).matrix();
+            return this->get() = -0.5 * z.squaredNorm() - log_sigma_; 
+        }
     }
 
     void beval(value_t seed, size_t, size_t, util::beval_policy pol)
@@ -450,24 +508,31 @@ public:
         auto&& m = mean_.get();
         auto&& s = sigma_.get();
 
-        if constexpr (!util::is_constant_v<sigma_t>) {
-            for (size_t i = 0; i < sigma_.rows(); ++i) {
-                value_t inv_s = 1./s(i);
-                value_t sigma_adj = (x(i) - m) * inv_s;
-                sigma_adj *= sigma_adj;
-                sigma_adj = (sigma_adj - 1) * inv_s;
-                sigma_.beval(seed * sigma_adj, i, 0, pol);
+        if constexpr (util::is_constant_v<x_t> &&
+                      util::is_constant_v<sigma_t>) {
+            value_t mean_adj = lin_term_ - m * const_term_;
+            mean_.beval(seed * mean_adj, 0, 0, pol);
+        } else {
+
+            if constexpr (!util::is_constant_v<sigma_t>) {
+                for (size_t i = 0; i < sigma_.rows(); ++i) {
+                    value_t inv_s = 1./s(i);
+                    value_t sigma_adj = (x(i) - m) * inv_s;
+                    sigma_adj *= sigma_adj;
+                    sigma_adj = (sigma_adj - 1) * inv_s;
+                    sigma_.beval(seed * sigma_adj, i, 0, pol);
+                }
             }
+
+            value_t mean_adj = ((x.array() - m) / s.array().square()).sum();
+            mean_.beval(seed * mean_adj, 0, 0, pol);
+
+            for (size_t i = 0; i < x_.rows(); ++i) {
+                value_t inv_s = 1./s(i);
+                x_.beval(seed * (-(x(i) - m) * inv_s * inv_s), i, 0, pol);
+            }
+
         }
-
-        value_t mean_adj = ((x.array() - m) / s.array().square()).sum();
-        mean_.beval(seed * mean_adj, 0, 0, pol);
-
-        for (size_t i = 0; i < x_.rows(); ++i) {
-            value_t inv_s = 1./s(i);
-            x_.beval(seed * (-(x(i) - m) * inv_s * inv_s), i, 0, pol);
-        }
-
     }
 
     value_t* bind(value_t* begin) 
@@ -507,6 +572,11 @@ private:
 
     value_t log_sigma_;
     size_t is_pos_def_;
+
+    // only used when x and sigma are both constant
+    value_t sq_term_;
+    value_t lin_term_;
+    value_t const_term_;
 };
 
 // Case 5: vvv
@@ -643,7 +713,9 @@ template <class XExprType
         , class MeanExprType
         , class SigmaExprType>
 struct NormalAdjLogPDFNode<XExprType, MeanExprType, SigmaExprType,
-                           std::tuple<vec, scl, selfadjmat> >:
+                           std::tuple<vec, scl, 
+                                std::enable_if_t<util::is_mat_v<SigmaExprType>,
+                                    typename util::shape_traits<SigmaExprType>::shape_t>> >:
     ValueView<util::common_value_t<XExprType, 
                                    MeanExprType, 
                                    SigmaExprType>, ad::scl>,
@@ -780,7 +852,9 @@ template <class XExprType
         , class MeanExprType
         , class SigmaExprType>
 struct NormalAdjLogPDFNode<XExprType, MeanExprType, SigmaExprType,
-                           std::tuple<vec, vec, selfadjmat> >:
+                           std::tuple<vec, vec, 
+                                std::enable_if_t<util::is_mat_v<SigmaExprType>,
+                                    typename util::shape_traits<SigmaExprType>::shape_t>> >:
     ValueView<util::common_value_t<XExprType, 
                                    MeanExprType, 
                                    SigmaExprType>, ad::scl>,
@@ -916,4 +990,17 @@ private:
 };
 
 } // namespace core
+
+template <class XExprType
+        , class MeanExprType
+        , class SigmaExprType>
+inline auto normal_adj_log_pdf(const core::ExprBase<XExprType>& x,
+                               const core::ExprBase<MeanExprType>& mean,
+                               const core::ExprBase<SigmaExprType>& sigma)
+{
+    return core::NormalAdjLogPDFNode<
+        XExprType, MeanExprType, SigmaExprType>(
+                x.self(), mean.self(), sigma.self() );
+}
+
 } // namespace ad

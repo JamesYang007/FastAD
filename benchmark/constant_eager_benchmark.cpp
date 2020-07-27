@@ -1,8 +1,8 @@
-#include <fastad_bits/core/reverse/var.hpp>
-#include <fastad_bits/core/reverse/math.hpp>
-#include <fastad_bits/core/reverse/eval.hpp>
-#include <fastad_bits/core/reverse/pow.hpp>
-#include <fastad_bits/core/reverse/sum.hpp>
+#include <fastad_bits/reverse/core/var.hpp>
+#include <fastad_bits/reverse/core/math.hpp>
+#include <fastad_bits/reverse/core/eval.hpp>
+#include <fastad_bits/reverse/core/pow.hpp>
+#include <fastad_bits/reverse/core/sum.hpp>
 #include <benchmark/benchmark.h>
 #include <vector>
 #include <numeric>

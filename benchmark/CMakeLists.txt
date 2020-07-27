@@ -1,6 +1,7 @@
 # All tests
 set(
     BENCHMARKS
+    normal_benchmark
     sum_benchmark
     prod_benchmark
     ad_benchmark

@@ -1,8 +1,8 @@
-#include <fastad_bits/core/reverse/var.hpp>
-#include <fastad_bits/core/reverse/eq.hpp>
-#include <fastad_bits/core/reverse/prod.hpp>
-#include <fastad_bits/core/reverse/math.hpp>
-#include <fastad_bits/core/reverse/eval.hpp>
+#include <fastad_bits/reverse/core/var.hpp>
+#include <fastad_bits/reverse/core/eq.hpp>
+#include <fastad_bits/reverse/core/prod.hpp>
+#include <fastad_bits/reverse/core/math.hpp>
+#include <fastad_bits/reverse/core/eval.hpp>
 #include <benchmark/benchmark.h>
 #ifdef USE_ADEPT
 #include <adept_arrays.h>

@@ -79,7 +79,7 @@ def vsm_beval():
     dx = -inv.dot(vec_x - scl_mu)
     dmu = -np.sum(dx)
     dsigma = -0.5 * (inv - np.outer(dx, np.transpose(dx)))
-    return np.concatenate([dx, [dmu], (2.*dsigma).flatten()])
+    return np.concatenate([dx, [dmu], (dsigma).flatten()])
 
 def vvm_feval():
     return [log_pdf_adj(vec_x, vec_mu, mat_sigma)]
@@ -92,6 +92,6 @@ def vvm_beval():
     return np.concatenate([dx, dmu, (dsigma).flatten()])
 
 if __name__ == "__main__":
-    res = vvm_beval()
+    res = vsm_beval()
     for r in res:
         print('{0:.16f}'.format(r))
