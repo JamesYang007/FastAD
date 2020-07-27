@@ -15,4 +15,4 @@ googletest-master/
 *build_install/
 *.DS_Store
 CMakeSettings.json
-libs/eigen*
+*libs/
