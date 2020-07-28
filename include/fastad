@@ -28,3 +28,5 @@
 
 #include "fastad_bits/util/shape_traits.hpp"
 #include "fastad_bits/util/type_traits.hpp"
+
+#include "fastad_bits/reverse/stat/normal.hpp"
