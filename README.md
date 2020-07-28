@@ -288,6 +288,9 @@ _If the expression is not bound to any temporary storage, it will lead to segfau
 To differentiate the expression, simply call the following:
 ```cpp
 auto f = ad::autodiff(expr_bound, i, j);
+
+// or if the raw expression is manually bound,
+// auto f = ad::autodiff(expr, i, j);
 ```
 where `i,j` refer to the `(i,j)`th element of the expression.
 This will return the evaluated function value, if the user is interested.
@@ -308,21 +311,64 @@ v.get_adj(2,0); // get adjoint for v at index 2
 
 The full code for this example is the following:
 ```cpp
-// More low-level version:
-// auto expr = (sin(x) + cos(v));
-// std::vector<double> tmp(expr.bind_size());
-// expr.bind(tmp.data());
+#include <fastad>
+#include <iostream>
 
-auto expr_bound = ad::bind(sin(x) + cos(v));
-auto f = ad::autodiff(expr_bound, 0); // differentiate first element of expr_bound
-std::cout << x.get_adj(0,0) << std::endl;
-std::cout << v.get_adj(2,0) << std::endl;
+int main()
+{
+    using namespace ad;
+
+    Var<double, scl> x(2);
+    Var<double, vec> v(5);
+
+    auto expr_bound = bind(sin(x) + cos(v));
+    auto f = autodiff(expr_bound, 0); // differentiate first element of expr_bound
+
+    std::cout << x.get_adj(0,0) << std::endl;
+    std::cout << v.get_adj(2,0) << std::endl;
+
+    return 0;
+}
 ```
 
 _Note: once you have differentiated an expression, 
 you must reset the adjoints of all variables to 0 before differentiating again.
 This includes placeholder variables (see below)._
 To that end, we provide a member function for `Var` called `reset_adj()`.
+
+Here is a more complicated example:
+
+```cpp
+#include <fastad>
+
+int main()
+{
+    Var<double, vec> v1(6);
+    Var<double, vec> v2(5);
+    Var<double, mat> M(5, 6);
+    Var<double, vec> w(5);
+    Var<double, scl> r;
+
+    auto& v1_raw = v1.get();  // Eigen::Map
+    auto& v2_raw = v2.get();  // Eigen::Map
+    auto& M_raw = M.get();  // Eigen::Map
+
+    // initialize...
+
+    auto expr = bind((
+        w = ad::dot(M, v1) + v2,
+        r = sum(w) * sum(w * v2)
+    ));
+
+    autodiff(expr);
+
+    std::cout << v1.get_adj(0,0) << std::endl;  // adjoint of v1 at index 0
+    std::cout << v2.get_adj(1,0) << std::endl;  // adjoint of v2 at index 1
+    std::cout << M.get_adj(1,2) << std::endl;   // adjoint of M at index (1,2)
+
+    return 0;
+}
+```
 
 #### Placeholder
 
@@ -338,6 +384,8 @@ and also save a lot of memory.
 Placeholder expressions are created by using `operator=` with
 a `Var` and an expression:
 ```cpp
+Var<double, scl> x;
+Var<double, vec> v(5);
 Var<double, vec> w(v.size());
 auto expr = (
     w = cos(v),
