@@ -97,7 +97,7 @@ For general users, if they wish to install Eigen locally, they can run
 ./setup.sh
 ``` 
 from `workspace_dir`. 
-This will install Eigen3.3 into `workspace_dir/libs`.
+This will install Eigen3.3 into `workspace_dir/libs/eigen-3.3.7/build`.
 
 For those who want to install `FastAD` globally into the system, simply run:
 ```bash
@@ -184,6 +184,8 @@ If Eigen3.3 was installed locally, you must provide its path as well.
 
 ## User Guide
 
+The only header the user needs to include is `fastad`.
+
 ### Forward Mode
 
 Forward mode is extremely simple to use.
@@ -205,6 +207,7 @@ with operator overloading.
 Here is an example program that differentiates a complicated function:
 ```cpp
 #include <fastad>
+#include <iostream>
 
 int main()
 {
