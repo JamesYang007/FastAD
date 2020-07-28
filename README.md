@@ -35,7 +35,7 @@
   - [Forward](#forward)
   - [Reverse](#reverse)
 - [Contact](#contact)
-- [Team](#team)
+- [Contributors](#contributors)
 - [Third Party Tools](#third-party-tools)
 - [License](#license)
 
