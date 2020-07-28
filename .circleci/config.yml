@@ -54,7 +54,7 @@ jobs:
           command: 'git submodule init'
       - run:
           name: Setup
-          command: './setup.sh'
+          command: './setup.sh dev'
       - run:
           name: Versions
           command: 'cmake --version; uname -a'

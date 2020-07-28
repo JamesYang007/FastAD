@@ -5,6 +5,7 @@ make/*unittest*
 *.VC.db
 vs_autodiff/Debug/
 vs_autodiff/Release/
+.vscode/
 *x64/
 *.vs/
 armadillo/
@@ -14,3 +15,5 @@ googletest-master/
 *build_install/
 *.DS_Store
 CMakeSettings.json
+libs/*
+!libs/CMakeLists.txt

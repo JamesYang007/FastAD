@@ -1,8 +1,9 @@
-#include <fastad_bits/vec.hpp>
-#include <fastad_bits/math.hpp>
-#include <fastad_bits/node.hpp>
-#include <fastad_bits/eval.hpp>
-#include <fastad_bits/pow.hpp>
+#include <fastad_bits/reverse/core/math.hpp>
+#include <fastad_bits/reverse/core/var.hpp>
+#include <fastad_bits/reverse/core/eval.hpp>
+#include <fastad_bits/reverse/core/eq.hpp>
+#include <fastad_bits/reverse/core/pow.hpp>
+#include <fastad_bits/reverse/core/sum.hpp>
 #include <benchmark/benchmark.h>
 #include <numeric>
 #ifdef USE_ADEPT
@@ -22,11 +23,11 @@ static inline double f_test(const std::vector<double>& x)
 static void BM_sumnode_fd(benchmark::State& state)
 {
     constexpr double h = 1e-10;
+    std::vector<double> x(10);
+    for (size_t i = 0; i < x.size(); ++i) {
+        x[i] = i;
+    }
     for (auto _ : state) {
-        std::vector<double> x(10);
-        for (size_t i = 0; i < x.size(); ++i) {
-            x[i] = i;
-        }
         double f = f_test(x);
         for (size_t i = 0; i < x.size(); ++i) {
             x[i] += h;
@@ -44,14 +45,18 @@ BENCHMARK(BM_sumnode_fd);
 static void BM_sumnode_fastad(benchmark::State& state) 
 {
     using namespace ad;
+    std::vector<Var<double>> vec;
+    for (size_t i = 0; i < 1e1; ++i) {
+        vec.emplace_back(i);
+    }
+    Var<double> w4, w5;
+    auto sum_expr = ad::sum(vec.begin(), vec.end(), [](const auto& x) {return x * x;});
+    auto expr = (w4=sum_expr, w5 = w4 * w4 + ad::sin(w4));
+    std::vector<double> tmp(expr.bind_size());
+    expr.bind(tmp.data());
+
     for (auto _ : state) {
-        Vec<double> vec;
-        for (size_t i = 0; i < 1e1; ++i) {
-            vec.emplace_back(i);
-        }
-        Var<double> w4, w5;
-        auto expr = ad::sum(vec.begin(), vec.end(), [](const auto& x) {return x * x;});
-        autodiff((w4=expr, w5 = w4 * w4 + ad::sin(w4)));
+        autodiff(expr);
         benchmark::ClobberMemory();
     }
 }
@@ -64,23 +69,23 @@ static void BM_sumnode_fastad_large_vectorized(benchmark::State& state)
     constexpr size_t size = 1000;
     std::vector<double> values(size);
     std::vector<double> values2(size);
-    Vec<double> w(2);
-    w[0].set_value(2.);
-    w[1].set_value(1.);
+    std::vector<Var<double>> w({2., 1.});
 
     for (size_t i = 0; i < size; ++i) {
-        values[i] = values2[i] = static_cast<double>(i);
+        values[i] = values2[i] = i;
     }
 
     int i = 0;
     auto expr = ad::sum(values.begin(), values.end(),
-        [&, i](double v) mutable {
+        [&](double v) {
             if (i % values2.size() == 0) i = 0;
             auto&& expr = -ad::constant(0.5) *
                 ad::pow<2>((ad::constant(v) - w[0] * ad::constant(values2[i])) / w[1]);
             ++i;
             return expr;
         });
+    std::vector<double> tmp(expr.bind_size());
+    expr.bind(tmp.data());
 
     for (auto _ : state) {
         ad::autodiff(expr);

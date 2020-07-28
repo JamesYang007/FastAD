@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.7)
 
 set(CMAKE_TRY_COMPILE_TARGET_TYPE "STATIC_LIBRARY")
 
-project("FastAD" VERSION 2.1
+project("FastAD" VERSION 3.0.0
                  DESCRIPTION "A light-weight header-only C++ library of automatic differentiation.")
 
 option(FASTAD_ENABLE_TEST "Enable unit tests to be built." ON)
@@ -13,6 +13,11 @@ option(FASTAD_ENABLE_COVERAGE "Build FastAD with coverage" OFF)
 # This is to make this library portable to other machines.
 # This will be used for install.
 include(GNUInstallDirs)
+
+# Dependency on Eigen
+find_package(Eigen3 3.3 CONFIG REQUIRED NO_MODULE
+    HINTS ${CMAKE_CURRENT_SOURCE_DIR}/libs/eigen-3.3.7/build/share)
+message(STATUS "Eigen3 found at ${EIGEN3_INCLUDE_DIR}")
 
 # Add this library as interface (header-only)
 add_library(${PROJECT_NAME} INTERFACE)

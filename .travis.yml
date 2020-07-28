@@ -82,7 +82,6 @@ jobs:
 # Build Script
 
 script:
-
     # MacOS only: install ninja and cmake
     - if [[ (-x $(which brew)) ]]; then
        brew update;
@@ -101,7 +100,7 @@ script:
     - cmake --version
 
     # setup, clean build, and test
-    - ./setup.sh
+    - ./setup.sh dev
     - ./clean-build.sh release ${CMAKE_OPTIONS}
     - cd build/release
     - ctest ${CTEST_OPTIONS} -j12
