@@ -524,8 +524,9 @@ int main()
 }
 ```
 
-We observed the same output as the one shown in for the prices and deltas (S's adjoints).
-[boost](https://www.boost.org/doc/libs/master/libs/math/doc/html/math_toolkit/autodiff.html#math_toolkit.autodiff.example-black_scholes).
+We observed the same output as the one shown in 
+[boost](https://www.boost.org/doc/libs/master/libs/math/doc/html/math_toolkit/autodiff.html#math_toolkit.autodiff.example-black_scholes)
+for the prices and deltas (S's adjoints).
 
 ## Quick Reference
 
