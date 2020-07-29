@@ -30,33 +30,26 @@ auto black_scholes_option_price(const Price& S,
             cache[2] = cache[1] - (sigma * std::sqrt(tau))
     );
     if constexpr (cp == option_type::call) {
-        return (
-            common_expr,
-            Phi(cache[1]) * S - Phi(cache[2]) * PV
-        );
+        return (common_expr,
+                Phi(cache[1]) * S - Phi(cache[2]) * PV);
     } else {
-        return (
-            common_expr,
-            Phi(-cache[2]) * PV - Phi(-cache[1]) * S
-       );
+        return (common_expr,
+                Phi(-cache[2]) * PV - Phi(-cache[1]) * S);
     }
 }
 
 int main()
 {
-    double K = 100.0;        // Strike price.
-    double sigma = 5;        // Volatility.
-    double tau = 30.0 / 365; // Time to expiration in years. (30 days).
-    double r = 1.25 / 100;   // Interest rate.
-    ad::Var<double> S(105);  // Stock price.
+    double K = 100.0;        
+    double sigma = 5;        
+    double tau = 30.0 / 365; 
+    double r = 1.25 / 100;   
+    ad::Var<double> S(105);  
     std::vector<ad::Var<double>> cache;
 
-    // call
-    
     auto call_expr = ad::bind(
             black_scholes_option_price<option_type::call>(
-                S, K, sigma, tau, r, cache)
-        );
+                S, K, sigma, tau, r, cache));
 
     double call_price = ad::autodiff(call_expr);
 
@@ -67,12 +60,9 @@ int main()
     S.reset_adj();
     for (auto& c : cache) c.reset_adj();
 
-    // put
-
     auto put_expr = ad::bind(
             black_scholes_option_price<option_type::put>(
-                S, K, sigma, tau, r, cache)
-        );
+                S, K, sigma, tau, r, cache));
 
     double put_price = ad::autodiff(put_expr);
 
