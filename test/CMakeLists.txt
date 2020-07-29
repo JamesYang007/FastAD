@@ -77,6 +77,7 @@ add_executable(reverse_core_unittest
     ${CMAKE_CURRENT_SOURCE_DIR}/reverse/core/bind_unittest.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/reverse/core/dot_unittest.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/reverse/core/norm_unittest.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/reverse/core/sqrt_unittest.cpp
     )
 
 if (NOT CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
@@ -102,6 +103,7 @@ add_test(reverse_core_unittest reverse_core_unittest)
 
 add_executable(reverse_stat_unittest
     ${CMAKE_CURRENT_SOURCE_DIR}/reverse/stat/normal_unittest.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/reverse/stat/uniform_unittest.cpp
     )
 
 if (NOT CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")

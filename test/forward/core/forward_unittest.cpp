@@ -103,6 +103,15 @@ TEST_F(adforward_fixture, sqrt)
     EXPECT_DOUBLE_EQ(res.get_adjoint(), 0.25);
 }
 
+TEST_F(adforward_fixture, erf)
+{
+    ForwardVar<double> x(4);
+    x.set_adjoint(1);   // set direction
+    ForwardVar<double> res = ad::erf(x);
+    EXPECT_DOUBLE_EQ(res.get_value(), 0.9999999845827420);
+    EXPECT_DOUBLE_EQ(res.get_adjoint(), 1.2698234671866558e-7);
+}
+
 ////////////////////////////////////////////////////////////
 // Binary
 ////////////////////////////////////////////////////////////

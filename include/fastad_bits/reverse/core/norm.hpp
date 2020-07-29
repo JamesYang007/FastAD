@@ -85,20 +85,25 @@ private:
 
 } // namespace core
 
-template <class ExprType>
-inline auto norm(const core::ExprBase<ExprType>& expr)
+template <class T
+        , class = std::enable_if_t<
+            util::is_convertible_to_ad_v<T> &&
+            util::any_ad_v<T> > >
+inline auto norm(const T& x)
 {
-    using expr_t = ExprType;
+    using expr_t = util::convert_to_ad_t<T>;
     using value_t = typename util::expr_traits<expr_t>::value_t;
+
+    expr_t expr = x;
 
     // optimization for when expression is constant
     if constexpr (util::is_constant_v<expr_t>) {
-        static_assert(util::is_vec_v<ExprType>);
+        static_assert(util::is_vec_v<expr_t>);
         using var_t = core::details::constant_var_t<value_t, ad::scl>;
-        var_t out = expr.self().feval().squaredNorm();
+        var_t out = expr.feval().squaredNorm();
         return ad::constant(out);
     } else {
-        return core::VecNormNode<expr_t>(expr.self());
+        return core::VecNormNode<expr_t>(expr);
     }
 }
 

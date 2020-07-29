@@ -26,8 +26,8 @@ protected:
     prod_fixture()
         : base_fixture()
         , scl_exprs(size)
-        , vec_exprs(size, {vec_size})
-        , mat_exprs(size, {mat_rows, mat_cols})
+        , vec_exprs(size, vec_expr_t{vec_size})
+        , mat_exprs(size, mat_expr_t{mat_rows, mat_cols})
         , val_buf((size+1)*std::max(vec_size, mat_size), 0)
     {
         for (auto& expr : scl_exprs) this->scl_initialize(expr);
@@ -274,7 +274,7 @@ TEST_F(prod_fixture, scl_expr_constant)
 
 TEST_F(prod_fixture, vec_expr_constant)
 {
-    auto prodnode = ad::prod(ad::constant(Eigen::VectorXd(vec_expr.get())));
+    auto prodnode = ad::prod(ad::constant(vec_expr.get()));
     static_assert(std::is_same_v<
             std::decay_t<decltype(prodnode)>,
             Constant<double, ad::scl> >);

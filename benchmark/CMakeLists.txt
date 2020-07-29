@@ -8,9 +8,6 @@ set(
     constant_eager_benchmark
 )
 
-# Add path to static google benchmark static library
-link_directories(${GBENCH_DIR}/build/src)
-
 # Try to find Adept and if exists, find path, library
 if (NOT DEFINED ADEPT_INCLUDE_DIR)
     find_path(ADEPT_INCLUDE_DIR adept)
@@ -21,7 +18,6 @@ endif()
 
 foreach( benchmark ${BENCHMARKS} )
     add_executable(${benchmark} ${CMAKE_CURRENT_SOURCE_DIR}/${benchmark}.cpp)
-    target_include_directories(${benchmark} PRIVATE ${GBENCH_DIR}/include)
     target_link_libraries(${benchmark} benchmark benchmark_main
         ${PROJECT_NAME} Eigen3::Eigen)
     if (NOT CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")

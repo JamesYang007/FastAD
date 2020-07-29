@@ -224,6 +224,17 @@ TEST_F(math_fixture, Id_vec)
     check_unary_vec<Id>([](auto x) { return x; });
 }
 
+TEST_F(math_fixture, Erf_scl)
+{
+    EXPECT_DOUBLE_EQ(Erf::fmap(4.), 0.9999999845827420);
+    EXPECT_DOUBLE_EQ(Erf::bmap(4.), 1.2698234671866558e-7);
+}
+
+TEST_F(math_fixture, Erf_vec) 
+{
+    check_unary_vec<Erf>([](auto x) { return std::erf(x); });
+}
+
 ////////////////////////////////////////////////////////////
 // Binary
 ////////////////////////////////////////////////////////////

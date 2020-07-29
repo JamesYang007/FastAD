@@ -157,7 +157,7 @@ TEST_F(if_else_fixture, if_constants)
 {
     auto expr = if_else(const_exprs[0],
                         const_exprs[1],
-                        const_exprs[2]);
+                        const_exprs[2].get());
     static_assert(std::is_same_v<
             std::decay_t<decltype(expr)>,
             Constant<double, scl> >);

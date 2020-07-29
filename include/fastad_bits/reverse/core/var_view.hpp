@@ -1,7 +1,9 @@
 #pragma once
 #include <fastad_bits/reverse/core/expr_base.hpp>
 #include <fastad_bits/util/shape_traits.hpp>
+#include <fastad_bits/util/type_traits.hpp>
 #include <fastad_bits/reverse/core/value_view.hpp>
+#include <fastad_bits/reverse/core/constant.hpp>
 #include <Eigen/Core>
 
 namespace ad {
@@ -59,11 +61,16 @@ struct VarView<ValueType, scl>:
 
     /* 
      * (leaf = non-leaf expression) returns EqNode
+     * Optimized for constant expressions to simply copy into value.
      */
-    template <class Derived>
-    inline auto operator=(const core::ExprBase<Derived>& expr) const
+    template <class Derived
+            , class = std::enable_if_t<
+                util::is_convertible_to_ad_v<Derived>> >
+    inline auto operator=(const Derived& x) const
     {
-        return core::EqNode<VarView, Derived>(*this, expr.self());
+        using expr_t = util::convert_to_ad_t<Derived>;
+        expr_t expr = x;
+        return core::EqNode<VarView, expr_t>(*this, expr);
     }
 
     /** 
@@ -87,6 +94,7 @@ struct VarView<ValueType, scl>:
      * Get underlying (full) adjoint.
      * @return  const reference to underlying adjoint.
      */
+    const var_t& get_adj() const { return adj_.get(); }
     const value_t& get_adj(size_t, size_t) const { return adj_.get(); }
 
     /**
@@ -94,6 +102,9 @@ struct VarView<ValueType, scl>:
      * @return  the next pointer from adj_begin that is not viewed by current object.
      */
     value_t* bind_adj(value_t* begin) { return adj_.bind(begin); }
+
+    value_t* data_adj() { return adj_.data(); }
+    const value_t* data_adj() const { return adj_.data(); }
     
     /**
      * Resets adjoints to all zeros.
@@ -150,19 +161,23 @@ struct VarView<ValueType, vec>:
         , adj_(adj_begin, rows)
     {}
 
-    /* 
-     * (leaf = non-leaf expression) returns EqNode
-     */
-    template <class Derived>
-    inline auto operator=(const core::ExprBase<Derived>& expr) const
+    template <class Derived
+            , class = std::enable_if_t<
+                util::is_convertible_to_ad_v<Derived>> >
+    inline auto operator=(const Derived& x) const
     {
-        return core::EqNode<VarView, Derived>(*this, expr.self());
+        using expr_t = util::convert_to_ad_t<Derived>;
+        expr_t expr = x;
+        return core::EqNode<VarView, expr_t>(*this, expr);
     }
 
     const var_t& feval() const { return this->get(); }
     void beval(value_t seed, size_t i, size_t, util::beval_policy) { adj_.get()(i) += seed; }
+    const var_t& get_adj() const { return adj_.get(); }
     const value_t& get_adj(size_t i, size_t) const { return adj_.get()(i); }
     value_t* bind_adj(value_t* begin) { return adj_.bind(begin); }
+    value_t* data_adj() { return adj_.data(); }
+    const value_t* data_adj() const { return adj_.data(); }
 
     size_t size() const {
         assert(value_view_t::size() == adj_.size());
@@ -209,19 +224,23 @@ struct VarView<ValueType, mat>:
         , adj_(adj_begin, n_rows, n_cols)
     {}
 
-    /* 
-     * (leaf = non-leaf expression) returns EqNode
-     */
-    template <class Derived>
-    inline auto operator=(const core::ExprBase<Derived>& expr) const
+    template <class Derived
+            , class = std::enable_if_t<
+                util::is_convertible_to_ad_v<Derived>> >
+    inline auto operator=(const Derived& x) const
     {
-        return core::EqNode<VarView, Derived>(*this, expr.self());
+        using expr_t = util::convert_to_ad_t<Derived>;
+        expr_t expr = x;
+        return core::EqNode<VarView, expr_t>(*this, expr);
     }
 
     const var_t& feval() const { return this->get(); }
     void beval(value_t seed, size_t i, size_t j, util::beval_policy) { adj_.get()(i,j) += seed; }
+    const var_t& get_adj() const { return adj_.get(); }
     const value_t& get_adj(size_t i, size_t j) const { return adj_.get()(i,j); }
     value_t* bind_adj(value_t* begin) { return adj_.bind(begin); }
+    value_t* data_adj() { return adj_.data(); }
+    const value_t* data_adj() const { return adj_.data(); }
 
     size_t size() const { 
         assert(value_view_t::size() == adj_.size());
@@ -273,10 +292,14 @@ struct VarView<ValueType, selfadjmat>:
         , adj_(adj_begin, n_rows, n_cols)
     {}
 
-    template <class Derived>
-    inline auto operator=(const core::ExprBase<Derived>& expr) const
+    template <class Derived
+            , class = std::enable_if_t<
+                util::is_convertible_to_ad_v<Derived>> >
+    inline auto operator=(const Derived& x) const
     {
-        return core::EqNode<VarView, Derived>(*this, expr.self());
+        using expr_t = util::convert_to_ad_t<Derived>;
+        expr_t expr = x;
+        return core::EqNode<VarView, expr_t>(*this, expr);
     }
 
     const var_t& feval() { 
@@ -290,10 +313,14 @@ struct VarView<ValueType, selfadjmat>:
         else adj_.get()(j,i) += seed;
     }
 
+    const var_t& get_adj() const { return adj_.get(); }
     const value_t& get_adj(size_t i, size_t j) const 
     { return adj_.get()(i,j); }
 
     value_t* bind_adj(value_t* begin) { return adj_.bind(begin); }
+
+    value_t* data_adj() { return adj_.data(); }
+    const value_t* data_adj() const { return adj_.data(); }
 
     size_t size() const { 
         assert(value_view_t::size() == adj_.size());

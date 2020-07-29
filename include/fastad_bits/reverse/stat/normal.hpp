@@ -991,16 +991,26 @@ private:
 
 } // namespace core
 
-template <class XExprType
-        , class MeanExprType
-        , class SigmaExprType>
-inline auto normal_adj_log_pdf(const core::ExprBase<XExprType>& x,
-                               const core::ExprBase<MeanExprType>& mean,
-                               const core::ExprBase<SigmaExprType>& sigma)
+template <class XType
+        , class MeanType
+        , class SigmaType
+        , class = std::enable_if_t<
+            util::is_convertible_to_ad_v<XType> &&
+            util::is_convertible_to_ad_v<MeanType> &&
+            util::is_convertible_to_ad_v<SigmaType> &&
+            util::any_ad_v<XType, MeanType, SigmaType> > >
+inline auto normal_adj_log_pdf(const XType& x,
+                               const MeanType& mean,
+                               const SigmaType& sigma)
 {
+    using x_expr_t = util::convert_to_ad_t<XType>;
+    using mean_expr_t = util::convert_to_ad_t<MeanType>;
+    using sigma_expr_t = util::convert_to_ad_t<SigmaType>;
+    x_expr_t x_expr = x;
+    mean_expr_t mean_expr = mean;
+    sigma_expr_t sigma_expr = sigma;
     return core::NormalAdjLogPDFNode<
-        XExprType, MeanExprType, SigmaExprType>(
-                x.self(), mean.self(), sigma.self() );
+        x_expr_t, mean_expr_t, sigma_expr_t>(x_expr, mean_expr, sigma_expr);
 }
 
 } // namespace ad

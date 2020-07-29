@@ -147,7 +147,7 @@ TEST_F(ad_fixture, function_vector_complex) {
 
     x.reserve(n);
     for (size_t i = 0; i < n; ++i) {
-        x.push_back(dist(gen));
+        x.emplace_back(dist(gen));
     }
 
     auto expr = PHI_lmda(x, w);

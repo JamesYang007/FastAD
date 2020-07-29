@@ -130,38 +130,49 @@ private:
 
 } // namespace core
 
-template <class CondExprType
-        , class IfExprType
-        , class ElseExprType>
-inline constexpr auto if_else(const core::ExprBase<CondExprType>& cond_expr,
-                              const core::ExprBase<IfExprType>& if_expr,
-                              const core::ExprBase<ElseExprType>& else_expr)
+template <class CondType
+        , class IfType
+        , class ElseType
+        , class = std::enable_if_t<
+            util::is_convertible_to_ad_v<CondType> &&
+            util::is_convertible_to_ad_v<IfType> && 
+            util::is_convertible_to_ad_v<ElseType> &&
+            util::any_ad_v<CondType, IfType, ElseType> >>
+inline constexpr auto if_else(const CondType& c,
+                              const IfType& i,
+                              const ElseType& e)
 {
-    using if_t = IfExprType;
+    using cond_t = util::convert_to_ad_t<CondType>;
+    using if_t = util::convert_to_ad_t<IfType>;
+    using else_t = util::convert_to_ad_t<ElseType>;
     using if_value_t = typename util::expr_traits<if_t>::value_t;
     using if_shape_t = typename util::shape_traits<if_t>::shape_t;
 
+    cond_t cond_expr = c;
+    if_t if_expr = i;
+    else_t else_expr = e;
+
     // optimized if every expression type is constant
-    if constexpr (util::is_constant_v<CondExprType> &&
-                  util::is_constant_v<IfExprType> &&
-                  util::is_constant_v<ElseExprType>) {
+    if constexpr (util::is_constant_v<cond_t> &&
+                  util::is_constant_v<if_t> &&
+                  util::is_constant_v<else_t>) {
 
         using var_t = core::details::constant_var_t<if_value_t, if_shape_t>;
 
-        var_t if_out = if_expr.self().feval();
-        var_t else_out = else_expr.self().feval();
+        var_t if_out = if_expr.feval();
+        var_t else_out = else_expr.feval();
 
-        assert(if_expr.self().rows() == else_expr.self().rows());
-        assert(if_expr.self().cols() == else_expr.self().cols());
+        assert(if_expr.rows() == else_expr.rows());
+        assert(if_expr.cols() == else_expr.cols());
 
-        return cond_expr.self().feval() ? 
+        return cond_expr.feval() ? 
             ad::constant(if_out) :
             ad::constant(else_out);
 
     } else {
-        return core::IfElseNode(cond_expr.self(), 
-                                if_expr.self(), 
-                                else_expr.self());
+        return core::IfElseNode(cond_expr, 
+                                if_expr, 
+                                else_expr);
     }
 }
 

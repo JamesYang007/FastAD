@@ -162,7 +162,7 @@ TEST_F(normal_fixture, vss_beval)
 
 TEST_F(normal_fixture, vss_constant_feval)
 {
-    auto x = ad::constant(Eigen::VectorXd(vec_x.get()));
+    auto x = ad::constant(vec_x.get());
     auto vss_normal_constant = normal_adj_log_pdf(x, scl_mu, scl_sigma);
     bind(vss_normal_constant);
     value_t res = vss_normal_constant.feval();
@@ -171,7 +171,7 @@ TEST_F(normal_fixture, vss_constant_feval)
 
 TEST_F(normal_fixture, vss_constant_beval)
 {
-    auto x = ad::constant(Eigen::VectorXd(vec_x.get()));
+    auto x = ad::constant(vec_x.get());
     auto vss_normal_constant = normal_adj_log_pdf(x, scl_mu, scl_sigma);
     bind(vss_normal_constant);
     vss_normal_constant.feval();
@@ -240,8 +240,8 @@ TEST_F(normal_fixture, vsv_beval)
 
 TEST_F(normal_fixture, vsv_constant_feval)
 {
-    auto x = ad::constant(Eigen::VectorXd(vec_x.get()));
-    auto s = ad::constant(Eigen::VectorXd(vec_sigma.get()));
+    auto x = ad::constant(vec_x.get());
+    auto s = ad::constant(vec_sigma.get());
     auto vsv_normal_constant = normal_adj_log_pdf(x, scl_mu, s);
     bind(vsv_normal_constant);
     value_t res = vsv_normal_constant.feval();
@@ -250,8 +250,8 @@ TEST_F(normal_fixture, vsv_constant_feval)
 
 TEST_F(normal_fixture, vsv_constant_beval)
 {
-    auto x = ad::constant(Eigen::VectorXd(vec_x.get()));
-    auto s = ad::constant(Eigen::VectorXd(vec_sigma.get()));
+    auto x = ad::constant(vec_x.get());
+    auto s = ad::constant(vec_sigma.get());
     auto vsv_normal_constant = normal_adj_log_pdf(x, scl_mu, s);
     bind(vsv_normal_constant);
     vsv_normal_constant.feval();

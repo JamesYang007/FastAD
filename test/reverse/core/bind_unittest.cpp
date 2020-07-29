@@ -22,7 +22,7 @@ protected:
     template <class ExprBindType>
     void test(ExprBindType&& expr_bind)
     {
-        value_t res = ad::autodiff(std::forward<ExprBindType>(expr_bind));
+        value_t res = ad::autodiff(expr_bind);
         EXPECT_DOUBLE_EQ(res, 4.);
         EXPECT_DOUBLE_EQ(w1.get(), 1.);
         EXPECT_DOUBLE_EQ(w2.get(), 2.);

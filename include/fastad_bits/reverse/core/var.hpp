@@ -51,7 +51,7 @@ public:
         , adj_(0)
     {}
 
-    Var(value_t v)
+    explicit Var(value_t v)
         : base_t(&val_, &adj_)
         , val_(v)
         , adj_(0)
@@ -77,6 +77,7 @@ public:
         val_ = v.val_;
         adj_ = v.adj_;
         rebind();
+        return *this;
     }
 
     Var& operator=(Var&& v) 
@@ -87,6 +88,7 @@ public:
         val_ = std::move(v.val_);
         adj_ = std::move(v.adj_);
         rebind();
+        return *this;
     }
 
 private:
@@ -127,7 +129,7 @@ public:
     using base_t::reset_adj;
     using base_t::operator=;
 
-    Var(size_t size)
+    explicit Var(size_t size)
         : base_t(nullptr, nullptr, size) 
         , val_(vec_t::Zero(size))
         , adj_(vec_t::Zero(size))
@@ -156,6 +158,7 @@ public:
         val_ = v.val_;
         adj_ = v.adj_;
         rebind();
+        return *this;
     }
 
     Var& operator=(Var&& v) 
@@ -166,6 +169,7 @@ public:
         val_ = std::move(v.val_);
         adj_ = std::move(v.adj_);
         rebind();
+        return *this;
     }
 
 private:
@@ -206,7 +210,7 @@ public:
     using base_t::reset_adj;
     using base_t::operator=;
 
-    Var(size_t n_rows, size_t n_cols)
+    explicit Var(size_t n_rows, size_t n_cols)
         : base_t(nullptr, nullptr, n_rows, n_cols) 
         , val_(mat_t::Zero(n_rows, n_cols))
         , adj_(mat_t::Zero(n_rows, n_cols))
@@ -232,6 +236,7 @@ public:
         val_ = v.val_;
         adj_ = v.adj_;
         rebind();
+        return *this;
     }
 
     Var& operator=(Var&& v) 
@@ -242,6 +247,7 @@ public:
         val_ = std::move(v.val_);
         adj_ = std::move(v.adj_);
         rebind();
+        return *this;
     }
 
 private:
@@ -282,7 +288,7 @@ public:
     using base_t::reset_adj;
     using base_t::operator=;
 
-    Var(size_t n_rows, size_t n_cols)
+    explicit Var(size_t n_rows, size_t n_cols)
         : base_t(nullptr, nullptr, n_rows, n_cols) 
         , val_(mat_t::Zero(n_rows, n_cols))
         , adj_(mat_t::Zero(n_rows, n_cols))
@@ -308,6 +314,7 @@ public:
         val_ = v.val_;
         adj_ = v.adj_;
         rebind();
+        return *this;
     }
 
     Var& operator=(Var&& v) 
@@ -318,6 +325,7 @@ public:
         val_ = std::move(v.val_);
         adj_ = std::move(v.adj_);
         rebind();
+        return *this;
     }
 
 private:

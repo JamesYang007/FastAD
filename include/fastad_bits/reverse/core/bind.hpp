@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include <fastad_bits/reverse/core/expr_base.hpp>
+#include <fastad_bits/util/type_traits.hpp>
 
 namespace ad {
 namespace core {

@@ -47,7 +47,7 @@ TEST_F(norm_fixture, vec_expr_beval)
 
 TEST_F(norm_fixture, vec_expr_constant)
 {
-    auto normnode = ad::norm(ad::constant(Eigen::VectorXd(vec_expr.get())));
+    auto normnode = ad::norm(ad::constant(vec_expr.get()));
     static_assert(std::is_same_v<
             std::decay_t<decltype(normnode)>,
             Constant<double, ad::scl> >);

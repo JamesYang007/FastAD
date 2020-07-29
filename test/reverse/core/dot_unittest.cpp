@@ -108,7 +108,7 @@ TEST_F(dot_fixture, dot_unary_beval)
 
 TEST_F(dot_fixture, dot_constant_var_feval)
 {
-    auto mat_const = ad::constant(Eigen::MatrixXd(mat_expr.get()));
+    auto mat_const = ad::constant(mat_expr.get());
     auto dot_constant_var = ad::dot(mat_const, vec_expr);
 
     this->bind(dot_constant_var);
@@ -122,7 +122,7 @@ TEST_F(dot_fixture, dot_constant_var_feval)
 
 TEST_F(dot_fixture, dot_constant_var_beval)
 {
-    auto mat_const = ad::constant(Eigen::MatrixXd(mat_expr.get()));
+    auto mat_const = ad::constant(mat_expr.get());
     auto dot_constant_var = ad::dot(mat_const, vec_expr);
 
     this->bind(dot_constant_var);
@@ -137,10 +137,8 @@ TEST_F(dot_fixture, dot_constant_var_beval)
 
 TEST_F(dot_fixture, dot_constant)
 {
-    auto mat_const = ad::constant(Eigen::MatrixXd(mat_expr.get()));
-    auto vec_const = ad::constant(Eigen::VectorXd(vec_expr.get()));
-
-    auto dot_constant = ad::dot(mat_const, vec_const);
+    auto vec_const = ad::constant(vec_expr.get());
+    auto dot_constant = ad::dot(mat_expr.get(), vec_const);
 
     static_assert(std::is_same_v<
             std::decay_t<decltype(dot_constant)>,

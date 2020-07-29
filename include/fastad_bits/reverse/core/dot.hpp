@@ -109,20 +109,24 @@ private:
 
 } // namespace core
 
-template <class MatExprType
-        , class VecExprType
+template <class MatType
+        , class VecType
         , class = std::enable_if_t<
-            util::is_mat_v<MatExprType> &&
-            util::is_vec_v<VecExprType>
+            util::is_mat_v<util::convert_to_ad_t<MatType>> &&
+            util::is_vec_v<util::convert_to_ad_t<VecType>> &&
+            util::any_ad_v<MatType, VecType>
         >
     >
-inline auto dot(const core::ExprBase<MatExprType>& mat_expr,
-                const core::ExprBase<VecExprType>& vec_expr)
+inline auto dot(const MatType& mat,
+                const VecType& vec)
 {
-    using mat_expr_t = MatExprType;
-    using vec_expr_t = VecExprType;
+    using mat_expr_t = util::convert_to_ad_t<MatType>;
+    using vec_expr_t = util::convert_to_ad_t<VecType>;
     using mat_value_t = typename util::expr_traits<mat_expr_t>::value_t;
     using vec_value_t = typename util::expr_traits<vec_expr_t>::value_t;
+
+    mat_expr_t mat_expr = mat;
+    vec_expr_t vec_expr = vec;
 
     // optimization for when both expressions are constant
     if constexpr (util::is_constant_v<mat_expr_t> &&
@@ -130,11 +134,11 @@ inline auto dot(const core::ExprBase<MatExprType>& mat_expr,
         static_assert(std::is_same_v<mat_value_t, vec_value_t>);
 
         using var_t = core::details::constant_var_t<vec_value_t, ad::vec>;
-        var_t out = mat_expr.self().feval() * vec_expr.self().feval();
+        var_t out = mat_expr.feval() * vec_expr.feval();
         return ad::constant(out);
     } else {
         return core::MatVecDotNode<mat_expr_t, vec_expr_t>(
-                mat_expr.self(), vec_expr.self());
+                mat_expr, vec_expr);
     }
 }
 

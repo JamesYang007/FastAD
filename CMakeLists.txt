@@ -80,7 +80,6 @@ if (FASTAD_ENABLE_TEST)
 
     # Points to the root of Google Test
     set(GTEST_DIR ${PROJECT_SOURCE_DIR}/libs/benchmark/googletest/googletest)
-    set(GBENCH_DIR ${PROJECT_SOURCE_DIR}/libs/benchmark)
 
     # add test subdirectory
     add_subdirectory(${PROJECT_SOURCE_DIR}/test ${PROJECT_BINARY_DIR}/test)

@@ -69,7 +69,9 @@ static void BM_sumnode_fastad_large_vectorized(benchmark::State& state)
     constexpr size_t size = 1000;
     std::vector<double> values(size);
     std::vector<double> values2(size);
-    std::vector<Var<double>> w({2., 1.});
+    std::vector<Var<double>> w(2);
+    w[0].get() = 2.;
+    w[1].get() = 1.;
 
     for (size_t i = 0; i < size; ++i) {
         values[i] = values2[i] = i;
