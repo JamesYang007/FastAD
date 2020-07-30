@@ -86,11 +86,6 @@ protected:
  *
  * No other shapes are permitted for this node.
  *
- * At construction, the actual sizes of the three expressions are checked -
- * specifically if x is a vector, and mean and sigma are not scalar,
- * then size of x must be the same as that of mean rows and sigma rows.
- * Additionally, we check that sigma is square if it is a matrix.
- *
  * @tparam  XExprType           type of x expression at which to evaluate log-pdf
  * @tparam  MinExprType         type of min expression
  * @tparam  MaxExprType         type of max expression
