@@ -33,3 +33,4 @@
 #include "fastad_bits/reverse/stat/normal.hpp"
 #include "fastad_bits/reverse/stat/uniform.hpp"
 #include "fastad_bits/reverse/stat/bernoulli.hpp"
+#include "fastad_bits/reverse/stat/wishart.hpp"
