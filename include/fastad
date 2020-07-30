@@ -19,6 +19,7 @@
 #include "fastad_bits/reverse/core/norm.hpp"
 #include "fastad_bits/reverse/core/pow.hpp"
 #include "fastad_bits/reverse/core/prod.hpp"
+#include "fastad_bits/reverse/core/sqrt.hpp"
 #include "fastad_bits/reverse/core/sum.hpp"
 #include "fastad_bits/reverse/core/unary.hpp"
 #include "fastad_bits/reverse/core/value_view.hpp"
@@ -30,3 +31,6 @@
 #include "fastad_bits/util/type_traits.hpp"
 
 #include "fastad_bits/reverse/stat/normal.hpp"
+#include "fastad_bits/reverse/stat/uniform.hpp"
+#include "fastad_bits/reverse/stat/bernoulli.hpp"
+#include "fastad_bits/reverse/stat/wishart.hpp"

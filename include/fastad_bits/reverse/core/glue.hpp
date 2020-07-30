@@ -129,12 +129,21 @@ private:
 };
 
 // operator, overload to create GlueNode
-template <class Derived1, class Derived2>
-inline auto operator,(const ExprBase<Derived1>& node1, 
-                      const ExprBase<Derived2>& node2)
+template <class Derived1
+        , class Derived2
+        , class = std::enable_if_t<
+            util::is_convertible_to_ad_v<Derived1> &&
+            util::is_convertible_to_ad_v<Derived2> &&
+            util::any_ad_v<Derived1, Derived2>
+        >>
+inline auto operator,(const Derived1& node1, 
+                      const Derived2& node2)
 {
-    return GlueNode<Derived1, Derived2>(
-            node1.self(), node2.self() );
+    using expr1_t = util::convert_to_ad_t<Derived1>;
+    using expr2_t = util::convert_to_ad_t<Derived2>;
+    expr1_t expr1 = node1;
+    expr2_t expr2 = node2;
+    return GlueNode<expr1_t, expr2_t>(expr1, expr2);
 }
 
 } // namespace core

@@ -8,31 +8,28 @@ namespace ad {
 namespace core {
 
 /**
- * VecNormNode represents the (squared) norm of a vector.
+ * NormNode represents the (squared) norm of a matrix or vector.
+ * If matrix, then uses Frobenius norm.
  * Currently, we do not support the feature for row vectors.
- * Indeed, the expression a vector shape.
  * No other shapes are permitted for this node.
  *
  * The node assumes the same value type as that of the vector expression.
  * It is always a scalar shape.
  *
- * We assert that the value type be the same for the two expressions.
- * The output shape is always a (column) vector.
- *
- * @tparam  VecExprType     type of vector expression
+ * @tparam  ExprType     type of vector expression
  */
 
-template <class VecExprType>
-struct VecNormNode:
-    ValueView<typename util::expr_traits<VecExprType>::value_t,
+template <class ExprType>
+struct NormNode:
+    ValueView<typename util::expr_traits<ExprType>::value_t,
               ad::scl>,
-    ExprBase<VecNormNode<VecExprType>>
+    ExprBase<NormNode<ExprType>>
 {
 private:
-    using expr_t = VecExprType;
+    using expr_t = ExprType;
     using expr_value_t = typename util::expr_traits<expr_t>::value_t;
 
-    static_assert(util::is_vec_v<VecExprType>);
+    static_assert(!util::is_scl_v<expr_t>);
 
 public:
     using value_view_t = ValueView<expr_value_t, ad::scl>;
@@ -41,7 +38,7 @@ public:
     using typename value_view_t::var_t;
     using value_view_t::bind;
 
-    VecNormNode(const expr_t& expr)
+    NormNode(const expr_t& expr)
         : value_view_t(nullptr, 1, 1)
         , expr_{expr}
     {}
@@ -52,12 +49,13 @@ public:
         return this->get() = res.squaredNorm();
     }
 
-    // current implementation assumes that expr_ is a column vector
     void beval(value_t seed, size_t, size_t, util::beval_policy pol)
     {
         if (seed == 0) return;
-        for (size_t k = 0; k < expr_.rows(); ++k) {
-            expr_.beval(seed * 2. * expr_.get(k,0), k, 0, pol);
+        for (size_t j = 0; j < expr_.cols(); ++j) {
+            for (size_t i = 0; i < expr_.rows(); ++i) {
+                expr_.beval(seed * 2. * expr_.get(i,j), i, j, pol);
+            }
         }
     }
 
@@ -85,20 +83,25 @@ private:
 
 } // namespace core
 
-template <class ExprType>
-inline auto norm(const core::ExprBase<ExprType>& expr)
+template <class T
+        , class = std::enable_if_t<
+            util::is_convertible_to_ad_v<T> &&
+            util::any_ad_v<T> > >
+inline auto norm(const T& x)
 {
-    using expr_t = ExprType;
+    using expr_t = util::convert_to_ad_t<T>;
     using value_t = typename util::expr_traits<expr_t>::value_t;
+
+    expr_t expr = x;
 
     // optimization for when expression is constant
     if constexpr (util::is_constant_v<expr_t>) {
-        static_assert(util::is_vec_v<ExprType>);
+        static_assert(!util::is_scl_v<expr_t>);
         using var_t = core::details::constant_var_t<value_t, ad::scl>;
-        var_t out = expr.self().feval().squaredNorm();
+        var_t out = expr.feval().squaredNorm();
         return ad::constant(out);
     } else {
-        return core::VecNormNode<expr_t>(expr.self());
+        return core::NormNode<expr_t>(expr);
     }
 }
 

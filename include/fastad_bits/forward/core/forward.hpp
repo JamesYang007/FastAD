@@ -132,6 +132,12 @@ FORWARD_UNARY_FUNC(log, std::log(x.get_value()),
 // ad::sqrt(core::ADForward)
 FORWARD_UNARY_FUNC(sqrt, tmp, x.get_adjoint() / (2 * tmp), 
         auto tmp = std::sqrt(x.get_value());)
+// ad::erf(core::ADForward)
+FORWARD_UNARY_FUNC(erf, std::erf(x.get_value()), 
+        two_over_sqrt_pi * std::exp(-t_sq), 
+        static constexpr double two_over_sqrt_pi =
+                1.1283791670955126;
+        auto t_sq = x.get_value() * x.get_value();)
 
 //================================================================================
 

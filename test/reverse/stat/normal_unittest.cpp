@@ -2,7 +2,7 @@
 #include <fastad_bits/reverse/stat/normal.hpp>
 
 namespace ad {
-namespace core {
+namespace stat {
 
 struct normal_fixture : base_fixture
 {
@@ -162,7 +162,7 @@ TEST_F(normal_fixture, vss_beval)
 
 TEST_F(normal_fixture, vss_constant_feval)
 {
-    auto x = ad::constant(Eigen::VectorXd(vec_x.get()));
+    auto x = ad::constant(vec_x.get());
     auto vss_normal_constant = normal_adj_log_pdf(x, scl_mu, scl_sigma);
     bind(vss_normal_constant);
     value_t res = vss_normal_constant.feval();
@@ -171,7 +171,7 @@ TEST_F(normal_fixture, vss_constant_feval)
 
 TEST_F(normal_fixture, vss_constant_beval)
 {
-    auto x = ad::constant(Eigen::VectorXd(vec_x.get()));
+    auto x = ad::constant(vec_x.get());
     auto vss_normal_constant = normal_adj_log_pdf(x, scl_mu, scl_sigma);
     bind(vss_normal_constant);
     vss_normal_constant.feval();
@@ -216,6 +216,14 @@ TEST_F(normal_fixture, vsv_feval)
     EXPECT_DOUBLE_EQ(res, -54448.5761343555350322);
 }
 
+TEST_F(normal_fixture, vsv_feval_not_pos_def)
+{
+    vec_sigma.get()(0) = -1;
+    bind(vsv_normal);
+    value_t res = vsv_normal.feval();
+    EXPECT_DOUBLE_EQ(res, util::neg_inf<value_t>);
+}
+
 TEST_F(normal_fixture, vsv_beval)
 {
     bind(vsv_normal);
@@ -240,8 +248,8 @@ TEST_F(normal_fixture, vsv_beval)
 
 TEST_F(normal_fixture, vsv_constant_feval)
 {
-    auto x = ad::constant(Eigen::VectorXd(vec_x.get()));
-    auto s = ad::constant(Eigen::VectorXd(vec_sigma.get()));
+    auto x = ad::constant(vec_x.get());
+    auto s = ad::constant(vec_sigma.get());
     auto vsv_normal_constant = normal_adj_log_pdf(x, scl_mu, s);
     bind(vsv_normal_constant);
     value_t res = vsv_normal_constant.feval();
@@ -250,8 +258,8 @@ TEST_F(normal_fixture, vsv_constant_feval)
 
 TEST_F(normal_fixture, vsv_constant_beval)
 {
-    auto x = ad::constant(Eigen::VectorXd(vec_x.get()));
-    auto s = ad::constant(Eigen::VectorXd(vec_sigma.get()));
+    auto x = ad::constant(vec_x.get());
+    auto s = ad::constant(vec_sigma.get());
     auto vsv_normal_constant = normal_adj_log_pdf(x, scl_mu, s);
     bind(vsv_normal_constant);
     vsv_normal_constant.feval();
@@ -265,6 +273,14 @@ TEST_F(normal_fixture, vvv_feval)
     bind(vvv_normal);
     value_t res = vvv_normal.feval();
     EXPECT_DOUBLE_EQ(res, -57796.8420570641465019);
+}
+
+TEST_F(normal_fixture, vvv_feval_not_pos_def)
+{
+    vec_sigma.get(0,0) = 0;
+    bind(vvv_normal);
+    value_t res = vvv_normal.feval();
+    EXPECT_DOUBLE_EQ(res, util::neg_inf<value_t>);
 }
 
 TEST_F(normal_fixture, vvv_beval)
@@ -336,6 +352,14 @@ TEST_F(normal_fixture, vsm_feval)
     EXPECT_DOUBLE_EQ(res, -8.8105250497069019);
 }
 
+TEST_F(normal_fixture, vsm_feval_not_pos_def)
+{
+    mat_sigma.get().setZero();
+    bind(vsm_normal);
+    value_t res = vsm_normal.feval();
+    EXPECT_DOUBLE_EQ(res, util::neg_inf<value_t>);
+}
+
 TEST_F(normal_fixture, vsm_beval)
 {
     bind(vsm_normal);
@@ -373,6 +397,14 @@ TEST_F(normal_fixture, vvm_selfadj_feval)
     EXPECT_DOUBLE_EQ(res, -7.3649692930088602);
 }
 
+TEST_F(normal_fixture, vvm_selfadj_feval_not_pos_def)
+{
+    mat_selfadj_sigma.get().setZero();
+    bind(vvm_selfadj_normal);
+    value_t res = vvm_selfadj_normal.feval();
+    EXPECT_DOUBLE_EQ(res, util::neg_inf<value_t>);
+}
+
 TEST_F(normal_fixture, vvm_selfadj_beval)
 {
     bind(vvm_selfadj_normal);
@@ -405,5 +437,5 @@ TEST_F(normal_fixture, vvm_selfadj_beval)
                 tol);
 }
 
-} // namespace core
+} // namespace stat
 } // namespace ad

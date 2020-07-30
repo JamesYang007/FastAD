@@ -1,6 +1,7 @@
 #pragma once
 #include <cmath>
 #include <utility>
+#include <unsupported/Eigen/SpecialFunctions>       // needed for erf
 #include <fastad_bits/util/type_traits.hpp>
 #include <fastad_bits/reverse/core/unary.hpp>
 #include <fastad_bits/reverse/core/constant.hpp>
@@ -89,35 +90,29 @@ struct name \
 //             );
 // }
 #define ADNODE_UNARY_FUNC(name, struct_name) \
-template <class Derived> \
-inline auto name(const core::ExprBase<Derived>& node) \
+template <class Derived \
+        , class = std::enable_if_t< \
+            util::is_convertible_to_ad_v<Derived> && \
+            util::any_ad_v<Derived> >> \
+inline auto name(const Derived& node) \
 { \
-    return core::UnaryNode<math::struct_name,\
-        Derived>(node.self()); \
-} \
+    using expr_t = util::convert_to_ad_t<Derived>; \
+    expr_t expr = node; \
+    if constexpr (util::is_constant_v<expr_t>) { \
 \
-template <class Derived> \
-inline auto name(const core::ConstantBase<Derived>& node) \
-{ \
-    if constexpr (util::is_scl_v<Derived>) { \
-        return ad::constant( \
-                math::struct_name::fmap(node.self().feval()) \
-                ); \
-    } else if constexpr (util::is_vec_v<Derived>){ \
-        using value_t = std::decay_t<decltype(\
-            math::struct_name::fmap(node.self().feval().array())(0) \
-                )>; \
-        Eigen::Matrix<value_t, Eigen::Dynamic, 1> res = \
-                math::struct_name::fmap(node.self().feval().array()); \
-        return ad::constant(res); \
+        if constexpr (util::is_scl_v<expr_t>) { \
+            return ad::constant( \
+                    math::struct_name::fmap(expr.feval()) \
+                    ); \
+        } else if constexpr (util::is_vec_v<expr_t> || \
+                             util::is_mat_v<expr_t>) { \
+            auto res = math::struct_name::fmap(expr.feval().array()); \
+            return ad::constant(res); \
+        } \
+\
     } else { \
-        using value_t = std::decay_t<decltype(\
-            math::struct_name::fmap(node.self().feval().array())(0,0) \
-                )>; \
-        Eigen::Matrix<value_t, Eigen::Dynamic, Eigen::Dynamic> res = \
-                math::struct_name::fmap(node.self().feval().array()); \
-        return ad::constant(res); \
-    }\
+        return core::UnaryNode<math::struct_name, expr_t>(expr); \
+    } \
 }
 
 // Defines a binary struct with name "name".
@@ -202,84 +197,45 @@ struct name \
 
 #define ADNODE_BINARY_FUNC(name, struct_name) \
 template <class Derived1 \
-        , class Derived2> \
-inline auto name(const ExprBase<Derived1>& node1, \
-                 const ExprBase<Derived2>& node2) \
+        , class Derived2 \
+        , class = std::enable_if_t< \
+            util::is_convertible_to_ad_v<Derived1> && \
+            util::is_convertible_to_ad_v<Derived2> && \
+            util::any_ad_v<Derived1, Derived2> >> \
+inline auto name(const Derived1& node1, \
+                 const Derived2& node2) \
 { \
-    return BinaryNode<math::struct_name, \
-                      Derived1, \
-                      Derived2>(\
-            node1.self(), node2.self()); \
-}\
+    using expr1_t = util::convert_to_ad_t<Derived1>; \
+    using expr2_t = util::convert_to_ad_t<Derived2>; \
+    expr1_t expr1 = node1; \
+    expr2_t expr2 = node2; \
+    if constexpr (util::is_constant_v<expr1_t> && \
+                  util::is_constant_v<expr2_t>) { \
 \
-template <class Derived1, class Derived2> \
-inline auto name(const core::ConstantBase<Derived1>& node1, \
-                 const core::ConstantBase<Derived2>& node2) \
-{ \
-    if constexpr (util::is_scl_v<Derived1> && \
-                  util::is_scl_v<Derived2>) { \
-        return ad::constant(math::struct_name::fmap( \
-                    node1.self().feval(), node2.self().feval() \
-                    )); \
-    } else if constexpr (util::is_vec_v<Derived1> &&  \
-                         util::is_scl_v<Derived2>) {\
-        using value_t = std::decay_t<decltype( \
-            math::struct_name::fmap( \
-                    node1.self().feval().array(), node2.self().feval())(0) \
-                )>; \
-        Eigen::Matrix<value_t, Eigen::Dynamic, 1> res = \
-            math::struct_name::fmap( \
-                    node1.self().feval().array(), node2.self().feval()); \
-        return ad::constant(res); \
-    } else if constexpr (util::is_mat_v<Derived1> &&  \
-                         util::is_scl_v<Derived2>) {\
-        using value_t = std::decay_t<decltype( \
-            math::struct_name::fmap( \
-                    node1.self().feval().array(), node2.self().feval())(0,0) \
-                )>; \
-        Eigen::Matrix<value_t, Eigen::Dynamic, Eigen::Dynamic> res = \
-            math::struct_name::fmap( \
-                    node1.self().feval().array(), node2.self().feval()); \
-        return ad::constant(res); \
-    } else if constexpr (util::is_scl_v<Derived1> &&  \
-                         util::is_vec_v<Derived2>) {\
-        using value_t = std::decay_t<decltype( \
-            math::struct_name::fmap( \
-                    node1.self().feval(), node2.self().feval().array())(0) \
-                )>; \
-        Eigen::Matrix<value_t, Eigen::Dynamic, 1> res = \
-            math::struct_name::fmap( \
-                    node1.self().feval(), node2.self().feval().array()); \
-        return ad::constant(res); \
-    } else if constexpr (util::is_scl_v<Derived1> &&  \
-                         util::is_mat_v<Derived2>) {\
-        using value_t = std::decay_t<decltype( \
-            math::struct_name::fmap( \
-                    node1.self().feval(), node2.self().feval().array())(0,0) \
-                )>; \
-        Eigen::Matrix<value_t, Eigen::Dynamic, Eigen::Dynamic> res = \
-            math::struct_name::fmap( \
-                    node1.self().feval(), node2.self().feval().array()); \
-        return ad::constant(res); \
-    } else if constexpr (util::is_vec_v<Derived1>){    \
-        using value_t = std::decay_t<decltype( \
-            math::struct_name::fmap( \
-                    node1.self().feval().array(), node2.self().feval().array())(0) \
-                )>; \
-        Eigen::Matrix<value_t, Eigen::Dynamic, 1> res = \
-            math::struct_name::fmap( \
-                    node1.self().feval().array(), node2.self().feval().array()); \
-        return ad::constant(res); \
+        if constexpr (util::is_scl_v<expr1_t> && \
+                      util::is_scl_v<expr2_t>) { \
+            return ad::constant(math::struct_name::fmap( \
+                        expr1.feval(), expr2.feval() \
+                        )); \
+        } else if constexpr (util::is_scl_v<expr2_t>) {\
+            auto res = math::struct_name::fmap( \
+                        expr1.feval().array(), expr2.feval()); \
+            return ad::constant(res); \
+        } else if constexpr (util::is_scl_v<expr1_t>) {\
+            auto res = math::struct_name::fmap( \
+                        expr1.feval(), expr2.feval().array()); \
+            return ad::constant(res); \
+        } else { \
+            auto res = math::struct_name::fmap( \
+                        expr1.feval().array(), expr2.feval().array()); \
+            return ad::constant(res); \
+        }\
+\
     } else { \
-        using value_t = std::decay_t<decltype( \
-            math::struct_name::fmap( \
-                    node1.self().feval().array(), node2.self().feval().array())(0,0) \
-                )>; \
-        Eigen::Matrix<value_t, Eigen::Dynamic, Eigen::Dynamic> res = \
-            math::struct_name::fmap( \
-                    node1.self().feval().array(), node2.self().feval().array()); \
-        return ad::constant(res); \
-    }\
+        return BinaryNode<math::struct_name, \
+                          expr1_t, \
+                          expr2_t>(expr1, expr2); \
+    } \
 }
 
 namespace ad {
@@ -332,10 +288,20 @@ UNARY_STRUCT(Log,
              USING_STD_AD_EIGEN(log) 
              return log(x);, 
              return T(1.) / x;)
+
 // Identity struct
 UNARY_STRUCT(Id, 
              return x;, 
              static_cast<void>(x); return T(1.);)
+
+// Erf struct
+UNARY_STRUCT(Erf,
+             USING_STD_AD_EIGEN(erf)
+             return erf(x);,
+             static constexpr double two_over_sqrt_pi =
+                1.1283791670955126;
+             USING_STD_AD_EIGEN(exp)
+             return two_over_sqrt_pi * exp(-x * x);)
 
 // Binary struct definitions
 
@@ -405,12 +371,12 @@ BINARY_STRUCT(NotEqual,
 // Logical AND
 // Note: only well-defined when inputs are of boolean context
 BINARY_STRUCT(LogicalAnd, 
-        if constexpr (util::is_eigen_matrix_v<T> &&
-                      !util::is_eigen_matrix_v<U>) return (x.min(y));
-        else if constexpr (!util::is_eigen_matrix_v<T> &&
-                           util::is_eigen_matrix_v<U>) return (y.min(x));
-        else if constexpr (util::is_eigen_matrix_v<T> &&
-                           util::is_eigen_matrix_v<U>) return (x.min(y));
+        if constexpr (util::is_eigen_v<T> &&
+                      !util::is_eigen_v<U>) return (x.min(y));
+        else if constexpr (!util::is_eigen_v<T> &&
+                           util::is_eigen_v<U>) return (y.min(x));
+        else if constexpr (util::is_eigen_v<T> &&
+                           util::is_eigen_v<U>) return (x.min(y));
         else return x && y;,
         static_cast<void>(x); static_cast<void>(y); return 0;,
         static_cast<void>(x); static_cast<void>(y); return 0;)
@@ -418,12 +384,12 @@ BINARY_STRUCT(LogicalAnd,
 // Logical OR
 // Note: only well-defined when inputs are of boolean context
 BINARY_STRUCT(LogicalOr, 
-        if constexpr (util::is_eigen_matrix_v<T> &&
-                      !util::is_eigen_matrix_v<U>) return (x.max(y));
-        else if constexpr (!util::is_eigen_matrix_v<T> &&
-                           util::is_eigen_matrix_v<U>) return (y.max(x));
-        else if constexpr (util::is_eigen_matrix_v<T> &&
-                           util::is_eigen_matrix_v<U>) return (x.max(y));
+        if constexpr (util::is_eigen_v<T> &&
+                      !util::is_eigen_v<U>) return (x.max(y));
+        else if constexpr (!util::is_eigen_v<T> &&
+                           util::is_eigen_v<U>) return (y.max(x));
+        else if constexpr (util::is_eigen_v<T> &&
+                           util::is_eigen_v<U>) return (x.max(y));
         else return x || y;,
         static_cast<void>(x); static_cast<void>(y); return 0;,
         static_cast<void>(x); static_cast<void>(y); return 0;)
@@ -451,6 +417,8 @@ ADNODE_UNARY_FUNC(exp, Exp)
 ADNODE_UNARY_FUNC(log, Log)
 // ad::id(ADNode)
 ADNODE_UNARY_FUNC(id, Id)
+// ad::erf(ADNode)
+ADNODE_UNARY_FUNC(erf, Erf)
 
 //================================================================================
 // NOTE: ALL OPERATOR OVERLOADS MUST BE IN namespace core

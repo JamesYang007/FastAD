@@ -85,7 +85,7 @@ public:
      */
     const var_t& feval()
     {
-        return this->get() = expr_.feval();
+        return this->get() = var_view_.get() = expr_.feval();
     }
 
     /** 

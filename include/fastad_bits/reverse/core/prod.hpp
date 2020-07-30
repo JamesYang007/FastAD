@@ -265,20 +265,25 @@ inline auto prod(Iter begin, Iter end, Lmda f)
     }
 }
 
-template <class Derived>
-inline auto prod(const core::ExprBase<Derived>& expr)
+template <class Derived
+        , class = std::enable_if_t<
+            util::is_convertible_to_ad_v<Derived> &&
+            util::any_ad_v<Derived> > >
+inline auto prod(const Derived& x)
 {
-    using expr_t = Derived;
+    using expr_t = util::convert_to_ad_t<Derived>;
+
+    expr_t expr = x;
 
     // optimized when expr is constant
     if constexpr (util::is_constant_v<expr_t>) {
-        if constexpr (util::is_scl_v<expr_t>) return expr.self();
+        if constexpr (util::is_scl_v<expr_t>) return expr;
         else {
-            auto&& res = expr.self().feval();
+            auto&& res = expr.feval();
             return ad::constant(res.prod());
         }
     } else {
-        return core::ProdElemNode<Derived>(expr.self());
+        return core::ProdElemNode<expr_t>(expr);
     }
 }
 

@@ -26,18 +26,6 @@ struct ExprBase
 
 namespace util {
 
-template <class T>
-struct expr_traits
-{
-    using value_t = typename T::value_t;
-    using shape_t = typename T::shape_t;
-    using var_t = typename T::var_t;
-};
-
-template <class T>
-inline constexpr bool is_expr_v =
-    std::is_base_of_v<core::ExprBase<T>, T>;
-
 /**
  * Useful enum to indicate how to handle back-evaluation
  */

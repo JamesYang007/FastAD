@@ -236,7 +236,10 @@ TEST_F(node_integration_fixture, leaf_unary_binary_eq_glue)
 }
 
 TEST_F(node_integration_fixture, sumnode) {
-    Var<double> vec[3] = { 0.203104, 1.4231, -1.231 };
+    Var<double> vec[3];
+    vec[0].get() = 0.203104;
+    vec[1].get() = 1.4231;
+    vec[2].get() = -1.231;
     auto expr = ad::sum(vec, vec + 3,
         [](Var<double> const& v) {return ad::cos(ad::sin(v)*v); });
     bind(expr);
@@ -277,10 +280,14 @@ TEST_F(node_integration_fixture, sumnode) {
 }
 
 TEST_F(node_integration_fixture, foreach) {
-    std::vector<ad::Var<double>> vec({ 100., 20., -10. });
+    std::vector<ad::Var<double>> vec(3);
+    vec[0].get() = 100.; 
+    vec[1].get() = 20.;
+    vec[2].get() = -10.;
     vec.emplace_back(1e-3);
     std::vector<ad::Var<double>> prod(4);
-    static_cast<ad::VarView<double>&>(prod[0]) = vec[0];
+    prod[0].bind(vec[0].data());
+    prod[0].bind_adj(vec[0].data_adj());
     auto it_prev = prod.begin();
     auto vec_it = vec.begin();
     auto expr = ad::for_each(std::next(prod.begin()), 

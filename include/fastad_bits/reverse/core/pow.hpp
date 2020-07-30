@@ -165,25 +165,31 @@ private:
  * If expression evaluates to 0 during back-evaluation,
  * and exp is less than 0, the seed will pass -infinity.
  */
-template <int64_t exp, class Derived>
-inline constexpr auto pow(const core::ExprBase<Derived>& expr)
+template <int64_t exp
+        , class Derived
+        , class = std::enable_if_t<
+            util::is_convertible_to_ad_v<Derived> &&
+            util::any_ad_v<Derived> > >
+inline constexpr auto pow(const Derived& x)
 {
-    using expr_t = Derived;
+    using expr_t = util::convert_to_ad_t<Derived>;
     using value_t = typename util::expr_traits<expr_t>::value_t;
     using shape_t = typename util::shape_traits<expr_t>::shape_t;
     using var_t = core::details::constant_var_t<value_t, shape_t>;
+    
+    expr_t expr = x;
 
-    if constexpr (util::is_constant_v<Derived>) {
-        if constexpr (util::is_scl_v<Derived>) {
+    if constexpr (util::is_constant_v<expr_t>) {
+        if constexpr (util::is_scl_v<expr_t>) {
             return ad::constant(
-                    core::PowFunc<exp>::evaluate(expr.self().feval())
+                    core::PowFunc<exp>::evaluate(expr.feval())
                     ); 
         } else {
-            var_t out = expr.self().feval().array().pow(exp);
+            var_t out = expr.feval().array().pow(exp);
             return ad::constant(out); 
         }
     } else {
-        return core::PowNode<exp, Derived>(expr.self());
+        return core::PowNode<exp, expr_t>(expr);
     }
 }
 

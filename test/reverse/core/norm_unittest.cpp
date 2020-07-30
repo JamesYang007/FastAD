@@ -11,14 +11,18 @@ struct norm_fixture : base_fixture
 protected:
     using unary_t = MockUnary;
     using vec_unary_t = UnaryNode<unary_t, vec_expr_view_t>;
-    using norm_t = VecNormNode<vec_unary_t>;
+    using mat_unary_t = UnaryNode<unary_t, mat_expr_view_t>;
+    using norm_t = NormNode<vec_unary_t>;
+    using mat_norm_t = NormNode<mat_unary_t>;
 
     value_t seed = 9.2313;
     norm_t vec_norm;
+    mat_norm_t mat_norm;
 
     norm_fixture()
         : base_fixture()
         , vec_norm{vec_expr}
+        , mat_norm{mat_expr}
     {
         this->bind(vec_norm);
     }
@@ -45,9 +49,36 @@ TEST_F(norm_fixture, vec_expr_beval)
     }
 }
 
+TEST_F(norm_fixture, mat_expr_feval)
+{
+    this->bind(mat_norm);
+    value_t res = mat_norm.feval();
+    value_t actual = 0;
+    for (size_t i = 0; i < mat_expr.rows(); ++i) {
+        for (size_t j = 0; j < mat_expr.cols(); ++j) {
+            value_t val = unary_t::fmap(mat_expr.get(i,j));
+            actual += val * val;
+        }
+    }
+    EXPECT_DOUBLE_EQ(res, actual);
+}
+
+TEST_F(norm_fixture, mat_expr_beval)
+{
+    this->bind(mat_norm);
+    mat_norm.feval();
+    mat_norm.beval(seed, 0,0, util::beval_policy::single);    // last two ignored
+    for (size_t i = 0; i < mat_expr.rows(); ++i) {
+        for (size_t j = 0; j < mat_expr.cols(); ++j) {
+            EXPECT_DOUBLE_EQ(mat_expr.get_adj(i,j), 
+                    seed * 2. * 2. * unary_t::fmap(mat_expr.get(i,j)));
+        }
+    }
+}
+
 TEST_F(norm_fixture, vec_expr_constant)
 {
-    auto normnode = ad::norm(ad::constant(Eigen::VectorXd(vec_expr.get())));
+    auto normnode = ad::norm(ad::constant(vec_expr.get()));
     static_assert(std::is_same_v<
             std::decay_t<decltype(normnode)>,
             Constant<double, ad::scl> >);

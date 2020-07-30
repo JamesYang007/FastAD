@@ -2,6 +2,7 @@
 #include <fastad_bits/reverse/core/expr_base.hpp>
 #include <fastad_bits/reverse/core/value_view.hpp>
 #include <fastad_bits/util/shape_traits.hpp>
+#include <fastad_bits/util/type_traits.hpp>
 
 namespace ad {
 namespace core {
@@ -119,7 +120,8 @@ public:
     using shape_t = ShapeType;
     using var_t = details::constant_var_t<value_t, shape_t>;
 
-    Constant(const var_t& c)
+    template <class T>
+    Constant(const T& c)
         :c_(c)
     {}
 
@@ -195,17 +197,19 @@ inline auto constant_view(const ValueType* x,
     return core::ConstantView<ValueType, ShapeType>(x, rows, cols);
 }
 
-template <class ValueType>
+template <class ValueType
+        , class = std::enable_if_t<std::is_arithmetic_v<ValueType>> >
 inline auto constant(ValueType x)
 {
-    static_assert(std::is_arithmetic_v<ValueType>);
     return core::Constant<ValueType, ad::scl>(x);
 }
 
-template <class ValueType>
-inline auto constant(const Eigen::Matrix<ValueType, Eigen::Dynamic, 1>& x)
+template <class Derived
+        , class = std::enable_if_t<util::is_eigen_vector_v<Derived>> >
+inline auto constant(const Eigen::EigenBase<Derived>& x)
 {
-    return core::Constant<ValueType, ad::vec>(x);
+    using value_t = typename Derived::Scalar;
+    return core::Constant<value_t, ad::vec>(x);
 }
 
 /** 
@@ -213,14 +217,13 @@ inline auto constant(const Eigen::Matrix<ValueType, Eigen::Dynamic, 1>& x)
  * wishes to treat the matrix as a self-adjoint matrix, they can 
  * specify the shape type to be ad::selfadjmat.
  */
-template <class ShapeType = ad::mat, class ValueType>
-inline auto constant(const Eigen::Matrix<
-                                ValueType, 
-                                Eigen::Dynamic, 
-                                Eigen::Dynamic>& x)
+template <class ShapeType = ad::mat
+        , class Derived
+        , class = std::enable_if_t<util::is_eigen_matrix_v<Derived>> >
+inline auto constant(const Eigen::EigenBase<Derived>& x)
 {
-    return core::Constant<ValueType, ShapeType>(x);
+    using value_t = typename Derived::Scalar;
+    return core::Constant<value_t, ShapeType>(x);
 }
-
 
 } // namespace ad

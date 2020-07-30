@@ -76,6 +76,14 @@ TEST_F(pow_fixture, scl_sq_beval)
                      seed * 8.*scl_expr.get());
 }
 
+TEST_F(pow_fixture, scl_sq_x_zero_beval)
+{
+    scl_expr.get() = 0;
+    scl_sq.feval();
+    scl_sq.beval(seed, 0,0, util::beval_policy::single);
+    EXPECT_DOUBLE_EQ(scl_expr.get_adj(0,0), 0);
+}
+
 TEST_F(pow_fixture, scl_inv_feval)
 {
     value_t res = scl_inv.feval();

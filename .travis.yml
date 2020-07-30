@@ -31,6 +31,7 @@ jobs:
                   sources: ['ubuntu-toolchain-r-test']
                   packages: ['g++-7', 'cmake', 'ninja-build']
           before_install:
+              - sudo -H pip install --upgrade requests[security]
               - pip install --user cpp-coveralls
           after_success:
               - coveralls --root ../../ --build-root ./ --include include --gcov 'gcov-7' --gcov-options '\-lp'
