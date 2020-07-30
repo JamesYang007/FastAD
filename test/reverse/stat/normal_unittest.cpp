@@ -2,7 +2,7 @@
 #include <fastad_bits/reverse/stat/normal.hpp>
 
 namespace ad {
-namespace core {
+namespace stat {
 
 struct normal_fixture : base_fixture
 {
@@ -405,5 +405,5 @@ TEST_F(normal_fixture, vvm_selfadj_beval)
                 tol);
 }
 
-} // namespace core
+} // namespace stat
 } // namespace ad

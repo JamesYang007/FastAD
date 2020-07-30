@@ -6,17 +6,16 @@
 #include <fastad_bits/reverse/core/constant.hpp>
 #include <fastad_bits/util/type_traits.hpp>
 #include <fastad_bits/util/numeric.hpp>
-#include <Eigen/Dense>
 
 namespace ad {
-namespace core {
+namespace stat {
 namespace details {
 
 template <class XExprType
         , class MinExprType
         , class MaxExprType>
 struct UniformBase:
-    ValueView<util::common_value_t<XExprType, 
+    core::ValueView<util::common_value_t<XExprType, 
                                    MinExprType, 
                                    MaxExprType>, ad::scl>
 {
@@ -25,7 +24,7 @@ struct UniformBase:
     using max_t = MaxExprType;
     using common_value_t = util::common_value_t<
         x_t, min_t, max_t>;
-    using value_view_t = ValueView<common_value_t, ad::scl>;
+    using value_view_t = core::ValueView<common_value_t, ad::scl>;
     using typename value_view_t::value_t;
     using typename value_view_t::shape_t;
     using typename value_view_t::var_t;
@@ -108,7 +107,7 @@ struct UniformAdjLogPDFNode<XExprType,
                             MaxExprType,
                             std::tuple<scl, scl, scl> >:
     details::UniformBase<XExprType, MinExprType, MaxExprType>,
-    ExprBase<UniformAdjLogPDFNode<XExprType, MinExprType, MaxExprType>>
+    core::ExprBase<UniformAdjLogPDFNode<XExprType, MinExprType, MaxExprType>>
 {
 private:
     using base_t = details::UniformBase<
@@ -188,7 +187,7 @@ struct UniformAdjLogPDFNode<XExprType,
                             MaxExprType,
                             std::tuple<vec, scl, scl> >:
     details::UniformBase<XExprType, MinExprType, MaxExprType>,
-    ExprBase<UniformAdjLogPDFNode<XExprType, MinExprType, MaxExprType>>
+    core::ExprBase<UniformAdjLogPDFNode<XExprType, MinExprType, MaxExprType>>
 {
 private:
     using base_t = details::UniformBase<
@@ -285,7 +284,7 @@ struct UniformAdjLogPDFNode<XExprType,
                             MaxExprType,
                             std::tuple<vec, scl, vec> >:
     details::UniformBase<XExprType, MinExprType, MaxExprType>,
-    ExprBase<UniformAdjLogPDFNode<XExprType, MinExprType, MaxExprType>>
+    core::ExprBase<UniformAdjLogPDFNode<XExprType, MinExprType, MaxExprType>>
 {
 private:
     using base_t = details::UniformBase<
@@ -385,7 +384,7 @@ struct UniformAdjLogPDFNode<XExprType,
                             MaxExprType,
                             std::tuple<vec, vec, scl> >:
     details::UniformBase<XExprType, MinExprType, MaxExprType>,
-    ExprBase<UniformAdjLogPDFNode<XExprType, MinExprType, MaxExprType>>
+    core::ExprBase<UniformAdjLogPDFNode<XExprType, MinExprType, MaxExprType>>
 {
 private:
     using base_t = details::UniformBase<
@@ -485,7 +484,7 @@ struct UniformAdjLogPDFNode<XExprType,
                             MaxExprType,
                             std::tuple<vec, vec, vec> >:
     details::UniformBase<XExprType, MinExprType, MaxExprType>,
-    ExprBase<UniformAdjLogPDFNode<XExprType, MinExprType, MaxExprType>>
+    core::ExprBase<UniformAdjLogPDFNode<XExprType, MinExprType, MaxExprType>>
 {
 private:
     using base_t = details::UniformBase<
@@ -568,7 +567,7 @@ private:
     bool x_bounded_above_;
 };
 
-} // namespace core
+} // namespace stat
 
 template <class XType
         , class MinType
@@ -588,7 +587,7 @@ inline auto uniform_adj_log_pdf(const XType& x,
     x_expr_t x_expr = x;
     min_expr_t min_expr = min;
     max_expr_t max_expr = max;
-    return core::UniformAdjLogPDFNode<
+    return stat::UniformAdjLogPDFNode<
         x_expr_t, min_expr_t, max_expr_t>(x_expr, min_expr, max_expr);
 }
 

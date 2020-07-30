@@ -2,7 +2,7 @@
 #include <fastad_bits/reverse/stat/uniform.hpp>
 
 namespace ad {
-namespace core {
+namespace stat {
 
 struct uniform_fixture : base_fixture
 {
@@ -191,5 +191,5 @@ TEST_F(uniform_fixture, vvv_beval)
     }
 }
 
-} // namespace core
+} // namespace stat
 } // namespace ad

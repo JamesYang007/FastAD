@@ -105,6 +105,7 @@ add_executable(reverse_stat_unittest
     ${CMAKE_CURRENT_SOURCE_DIR}/reverse/stat/normal_unittest.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/reverse/stat/uniform_unittest.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/reverse/stat/bernoulli_unittest.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/reverse/stat/wishart_unittest.cpp
     )
 
 if (NOT CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")

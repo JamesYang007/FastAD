@@ -2,7 +2,7 @@
 #include <fastad_bits/reverse/stat/bernoulli.hpp>
 
 namespace ad {
-namespace core {
+namespace stat {
 
 struct bernoulli_fixture : base_fixture
 {
@@ -275,5 +275,5 @@ TEST_F(bernoulli_fixture, vv_beval_x_out_of_range)
     EXPECT_DOUBLE_EQ(vec_p.get_adj(2,0), 0);
 }
 
-} // namespace core
+} // namespace stat
 } // namespace ad

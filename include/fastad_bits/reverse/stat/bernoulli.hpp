@@ -6,22 +6,21 @@
 #include <fastad_bits/reverse/core/constant.hpp>
 #include <fastad_bits/util/type_traits.hpp>
 #include <fastad_bits/util/numeric.hpp>
-#include <Eigen/Dense>
 
 namespace ad {
-namespace core {
+namespace stat {
 namespace details {
 
 template <class XExprType
         , class PExprType>
 struct BernoulliBase:
-    ValueView<util::common_value_t<XExprType, 
+    core::ValueView<util::common_value_t<XExprType, 
                                    PExprType>, ad::scl>
 {
     using x_t = XExprType;
     using p_t = PExprType;
     using p_value_t = typename util::expr_traits<p_t>::value_t;
-    using value_view_t = ValueView<p_value_t, ad::scl>;
+    using value_view_t = core::ValueView<p_value_t, ad::scl>;
     using typename value_view_t::value_t;
     using typename value_view_t::shape_t;
     using typename value_view_t::var_t;
@@ -97,7 +96,7 @@ struct BernoulliAdjLogPDFNode<XExprType,
                               PExprType,
                               std::tuple<scl, scl> >:
     details::BernoulliBase<XExprType, PExprType>,
-    ExprBase<BernoulliAdjLogPDFNode<XExprType, PExprType>>
+    core::ExprBase<BernoulliAdjLogPDFNode<XExprType, PExprType>>
 {
 private:
     using base_t = details::BernoulliBase<
@@ -187,7 +186,7 @@ struct BernoulliAdjLogPDFNode<XExprType,
                               PExprType,
                               std::tuple<vec, scl> >:
     details::BernoulliBase<XExprType, PExprType>,
-    ExprBase<BernoulliAdjLogPDFNode<XExprType, PExprType>>
+    core::ExprBase<BernoulliAdjLogPDFNode<XExprType, PExprType>>
 {
 private:
     using base_t = details::BernoulliBase<
@@ -292,7 +291,7 @@ struct BernoulliAdjLogPDFNode<XExprType,
                               PExprType,
                               std::tuple<vec, vec> >:
     details::BernoulliBase<XExprType, PExprType>,
-    ExprBase<BernoulliAdjLogPDFNode<XExprType, PExprType>>
+    core::ExprBase<BernoulliAdjLogPDFNode<XExprType, PExprType>>
 {
 private:
     using base_t = details::BernoulliBase<
@@ -387,7 +386,7 @@ private:
     bool is_x_zero_one_;
 };
 
-} // namespace core
+} // namespace stat
 
 template <class XType
         , class PType
@@ -402,7 +401,7 @@ inline auto bernoulli_adj_log_pdf(const XType& x,
     using p_expr_t = util::convert_to_ad_t<PType>;
     x_expr_t x_expr = x;
     p_expr_t p_expr = p;
-    return core::BernoulliAdjLogPDFNode<
+    return stat::BernoulliAdjLogPDFNode<
         x_expr_t, p_expr_t>(x_expr, p_expr);
 }
 

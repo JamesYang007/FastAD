@@ -9,7 +9,69 @@
 #include <Eigen/Dense>
 
 namespace ad {
-namespace core {
+namespace stat {
+namespace details {
+
+template <class XExprType
+        , class MeanExprType
+        , class SigmaExprType>
+struct NormalBase:
+    core::ValueView<util::common_value_t<XExprType, 
+                                         MeanExprType, 
+                                         SigmaExprType>, ad::scl>
+{
+    using x_t = XExprType;
+    using mean_t = MeanExprType;
+    using sigma_t = SigmaExprType;
+    using common_value_t = util::common_value_t<
+        x_t, mean_t, sigma_t>;
+    using value_view_t = core::ValueView<common_value_t, ad::scl>;
+    using typename value_view_t::value_t;
+    using typename value_view_t::shape_t;
+    using typename value_view_t::var_t;
+    using value_view_t::bind;
+
+    NormalBase(const x_t& x,
+               const mean_t& mean,
+               const sigma_t& sigma)
+        : value_view_t(nullptr, 1, 1)
+        , x_{x}
+        , mean_{mean}
+        , sigma_{sigma}
+    {}
+
+    value_t* bind(value_t* begin) 
+    {
+        value_t* next = begin;
+        if constexpr (!util::is_var_view_v<x_t>) {
+            next = x_.bind(next);
+        }
+        if constexpr (!util::is_var_view_v<mean_t>) {
+            next = mean_.bind(next);
+        }
+        if constexpr (!util::is_var_view_v<sigma_t>) {
+            next = sigma_.bind(next);
+        }
+        return value_view_t::bind(next);
+    }
+
+    size_t bind_size() const 
+    { 
+        return single_bind_size() + 
+                x_.bind_size() +
+                mean_.bind_size() +
+                sigma_.bind_size();
+    }
+
+    constexpr size_t single_bind_size() const { return this->size(); }
+
+protected:
+    x_t x_;
+    mean_t mean_;
+    sigma_t sigma_;
+};
+
+} // namespace details
 
 /**
  * NormalAdjLogPDFNode represents the normal log pdf 
@@ -48,32 +110,30 @@ template <class XExprType
         , class SigmaExprType>
 struct NormalAdjLogPDFNode<XExprType, MeanExprType, SigmaExprType,
                            std::tuple<scl, scl, scl> >:
-    ValueView<util::common_value_t<XExprType, 
-                                   MeanExprType, 
-                                   SigmaExprType>, ad::scl>,
-    ExprBase<NormalAdjLogPDFNode<XExprType, MeanExprType, SigmaExprType>>
+    details::NormalBase<XExprType, MeanExprType, SigmaExprType>,
+    core::ExprBase<NormalAdjLogPDFNode<XExprType, MeanExprType, SigmaExprType>>
 {
 private:
-    using x_t = XExprType;
-    using mean_t = MeanExprType;
-    using sigma_t = SigmaExprType;
-    using common_value_t = util::common_value_t<
-        x_t, mean_t, sigma_t>;
-
+    using base_t = details::NormalBase<
+        XExprType, MeanExprType, SigmaExprType>;
+    
 public:
-    using value_view_t = ValueView<common_value_t, ad::scl>;
-    using typename value_view_t::value_t;
-    using typename value_view_t::shape_t;
-    using typename value_view_t::var_t;
-    using value_view_t::bind;
+    using typename base_t::x_t;
+    using typename base_t::mean_t;
+    using typename base_t::sigma_t;
+    using typename base_t::value_t;
+    using typename base_t::var_t;
+    using base_t::x_;
+    using base_t::mean_;
+    using base_t::sigma_;
+    using base_t::bind;
+    using base_t::bind_size;
+    using base_t::single_bind_size;
 
     NormalAdjLogPDFNode(const x_t& x,
                         const mean_t& mean,
                         const sigma_t& sigma)
-        : value_view_t(nullptr, 1, 1)
-        , x_{x}
-        , mean_{mean}
-        , sigma_{sigma}
+        : base_t(x, mean, sigma)
         , log_sigma_{0}
     {
         if constexpr (util::is_constant_v<sigma_t>) {
@@ -111,39 +171,11 @@ public:
         x_.beval(seed * (-z * inv_s), 0, 0, pol);
     }
 
-    value_t* bind(value_t* begin) 
-    {
-        value_t* next = begin;
-        if constexpr (!util::is_var_view_v<x_t>) {
-            next = x_.bind(next);
-        }
-        if constexpr (!util::is_var_view_v<mean_t>) {
-            next = mean_.bind(next);
-        }
-        if constexpr (!util::is_var_view_v<sigma_t>) {
-            next = sigma_.bind(next);
-        }
-        return value_view_t::bind(next);
-    }
-
-    size_t bind_size() const 
-    { 
-        return single_bind_size() + 
-                x_.bind_size() +
-                mean_.bind_size() +
-                sigma_.bind_size();
-    }
-
-    constexpr size_t single_bind_size() const { return this->size(); }
-
 private:
     void update_cache() {
         log_sigma_ = std::log(sigma_.feval());
     }
 
-    x_t x_;
-    mean_t mean_;
-    sigma_t sigma_;
     value_t log_sigma_;
 };
 
@@ -153,32 +185,30 @@ template <class XExprType
         , class SigmaExprType>
 struct NormalAdjLogPDFNode<XExprType, MeanExprType, SigmaExprType,
                            std::tuple<vec, scl, scl> >:
-    ValueView<util::common_value_t<XExprType, 
-                                   MeanExprType, 
-                                   SigmaExprType>, ad::scl>,
-    ExprBase<NormalAdjLogPDFNode<XExprType, MeanExprType, SigmaExprType>>
+    details::NormalBase<XExprType, MeanExprType, SigmaExprType>,
+    core::ExprBase<NormalAdjLogPDFNode<XExprType, MeanExprType, SigmaExprType>>
 {
 private:
-    using x_t = XExprType;
-    using mean_t = MeanExprType;
-    using sigma_t = SigmaExprType;
-    using common_value_t = util::common_value_t<
-        x_t, mean_t, sigma_t>;
-
+    using base_t = details::NormalBase<
+        XExprType, MeanExprType, SigmaExprType>;
+    
 public:
-    using value_view_t = ValueView<common_value_t, ad::scl>;
-    using typename value_view_t::value_t;
-    using typename value_view_t::shape_t;
-    using typename value_view_t::var_t;
-    using value_view_t::bind;
+    using typename base_t::x_t;
+    using typename base_t::mean_t;
+    using typename base_t::sigma_t;
+    using typename base_t::value_t;
+    using typename base_t::var_t;
+    using base_t::x_;
+    using base_t::mean_;
+    using base_t::sigma_;
+    using base_t::bind;
+    using base_t::bind_size;
+    using base_t::single_bind_size;
 
     NormalAdjLogPDFNode(const x_t& x,
                         const mean_t& mean,
                         const sigma_t& sigma)
-        : value_view_t(nullptr, 1, 1)
-        , x_{x}
-        , mean_{mean}
-        , sigma_{sigma}
+        : base_t(x, mean, sigma)
         , log_sigma_{0}
         , z_sq{0}
         , x_mean_{0}
@@ -260,39 +290,10 @@ public:
         }
     }
 
-    value_t* bind(value_t* begin) 
-    {
-        value_t* next = begin;
-        if constexpr (!util::is_var_view_v<x_t>) {
-            next = x_.bind(next);
-        }
-        if constexpr (!util::is_var_view_v<mean_t>) {
-            next = mean_.bind(next);
-        }
-        if constexpr (!util::is_var_view_v<sigma_t>) {
-            next = sigma_.bind(next);
-        }
-        return value_view_t::bind(next);
-    }
-
-    size_t bind_size() const 
-    { 
-        return single_bind_size() + 
-                x_.bind_size() +
-                mean_.bind_size() +
-                sigma_.bind_size();
-    }
-
-    constexpr size_t single_bind_size() const { return this->size(); }
-
 private:
     void update_cache() {
         log_sigma_ = std::log(sigma_.get());
     }
-
-    x_t x_;
-    mean_t mean_;
-    sigma_t sigma_;
 
     value_t log_sigma_;
 
@@ -310,32 +311,30 @@ template <class XExprType
         , class SigmaExprType>
 struct NormalAdjLogPDFNode<XExprType, MeanExprType, SigmaExprType,
                            std::tuple<vec, vec, scl> >:
-    ValueView<util::common_value_t<XExprType, 
-                                   MeanExprType, 
-                                   SigmaExprType>, ad::scl>,
-    ExprBase<NormalAdjLogPDFNode<XExprType, MeanExprType, SigmaExprType>>
+    details::NormalBase<XExprType, MeanExprType, SigmaExprType>,
+    core::ExprBase<NormalAdjLogPDFNode<XExprType, MeanExprType, SigmaExprType>>
 {
 private:
-    using x_t = XExprType;
-    using mean_t = MeanExprType;
-    using sigma_t = SigmaExprType;
-    using common_value_t = util::common_value_t<
-        x_t, mean_t, sigma_t>;
-
+    using base_t = details::NormalBase<
+        XExprType, MeanExprType, SigmaExprType>;
+    
 public:
-    using value_view_t = ValueView<common_value_t, ad::scl>;
-    using typename value_view_t::value_t;
-    using typename value_view_t::shape_t;
-    using typename value_view_t::var_t;
-    using value_view_t::bind;
+    using typename base_t::x_t;
+    using typename base_t::mean_t;
+    using typename base_t::sigma_t;
+    using typename base_t::value_t;
+    using typename base_t::var_t;
+    using base_t::x_;
+    using base_t::mean_;
+    using base_t::sigma_;
+    using base_t::bind;
+    using base_t::bind_size;
+    using base_t::single_bind_size;
 
     NormalAdjLogPDFNode(const x_t& x,
                         const mean_t& mean,
                         const sigma_t& sigma)
-        : value_view_t(nullptr, 1, 1)
-        , x_{x}
-        , mean_{mean}
-        , sigma_{sigma}
+        : base_t(x, mean, sigma)
         , log_sigma_{0}
         , z_sq{0}
     {
@@ -385,39 +384,10 @@ public:
 
     }
 
-    value_t* bind(value_t* begin) 
-    {
-        value_t* next = begin;
-        if constexpr (!util::is_var_view_v<x_t>) {
-            next = x_.bind(next);
-        }
-        if constexpr (!util::is_var_view_v<mean_t>) {
-            next = mean_.bind(next);
-        }
-        if constexpr (!util::is_var_view_v<sigma_t>) {
-            next = sigma_.bind(next);
-        }
-        return value_view_t::bind(next);
-    }
-
-    size_t bind_size() const 
-    { 
-        return single_bind_size() + 
-                x_.bind_size() +
-                mean_.bind_size() +
-                sigma_.bind_size();
-    }
-
-    constexpr size_t single_bind_size() const { return this->size(); }
-
 private:
     void update_cache() {
         log_sigma_ = std::log(sigma_.get());
     }
-
-    x_t x_;
-    mean_t mean_;
-    sigma_t sigma_;
 
     value_t log_sigma_;
     value_t z_sq;
@@ -429,32 +399,30 @@ template <class XExprType
         , class SigmaExprType>
 struct NormalAdjLogPDFNode<XExprType, MeanExprType, SigmaExprType,
                            std::tuple<vec, scl, vec> >:
-    ValueView<util::common_value_t<XExprType, 
-                                   MeanExprType, 
-                                   SigmaExprType>, ad::scl>,
-    ExprBase<NormalAdjLogPDFNode<XExprType, MeanExprType, SigmaExprType>>
+    details::NormalBase<XExprType, MeanExprType, SigmaExprType>,
+    core::ExprBase<NormalAdjLogPDFNode<XExprType, MeanExprType, SigmaExprType>>
 {
 private:
-    using x_t = XExprType;
-    using mean_t = MeanExprType;
-    using sigma_t = SigmaExprType;
-    using common_value_t = util::common_value_t<
-        x_t, mean_t, sigma_t>;
-
+    using base_t = details::NormalBase<
+        XExprType, MeanExprType, SigmaExprType>;
+    
 public:
-    using value_view_t = ValueView<common_value_t, ad::scl>;
-    using typename value_view_t::value_t;
-    using typename value_view_t::shape_t;
-    using typename value_view_t::var_t;
-    using value_view_t::bind;
+    using typename base_t::x_t;
+    using typename base_t::mean_t;
+    using typename base_t::sigma_t;
+    using typename base_t::value_t;
+    using typename base_t::var_t;
+    using base_t::x_;
+    using base_t::mean_;
+    using base_t::sigma_;
+    using base_t::bind;
+    using base_t::bind_size;
+    using base_t::single_bind_size;
 
     NormalAdjLogPDFNode(const x_t& x,
                         const mean_t& mean,
                         const sigma_t& sigma)
-        : value_view_t(nullptr, 1, 1)
-        , x_{x}
-        , mean_{mean}
-        , sigma_{sigma}
+        : base_t(x, mean, sigma)
         , log_sigma_{0}
         , is_pos_def_{false}
         , sq_term_{0}
@@ -535,40 +503,11 @@ public:
         }
     }
 
-    value_t* bind(value_t* begin) 
-    {
-        value_t* next = begin;
-        if constexpr (!util::is_var_view_v<x_t>) {
-            next = x_.bind(next);
-        }
-        if constexpr (!util::is_var_view_v<mean_t>) {
-            next = mean_.bind(next);
-        }
-        if constexpr (!util::is_var_view_v<sigma_t>) {
-            next = sigma_.bind(next);
-        }
-        return value_view_t::bind(next);
-    }
-
-    size_t bind_size() const 
-    { 
-        return single_bind_size() + 
-                x_.bind_size() +
-                mean_.bind_size() +
-                sigma_.bind_size();
-    }
-
-    constexpr size_t single_bind_size() const { return this->size(); }
-
 private:
     void update_cache() {
         log_sigma_ = sigma_.get().array().log().sum();
         is_pos_def_ = !(sigma_.get().array() <= 0).any();
     }
-
-    x_t x_;
-    mean_t mean_;
-    sigma_t sigma_;
 
     value_t log_sigma_;
     size_t is_pos_def_;
@@ -585,32 +524,30 @@ template <class XExprType
         , class SigmaExprType>
 struct NormalAdjLogPDFNode<XExprType, MeanExprType, SigmaExprType,
                            std::tuple<vec, vec, vec> >:
-    ValueView<util::common_value_t<XExprType, 
-                                   MeanExprType, 
-                                   SigmaExprType>, ad::scl>,
-    ExprBase<NormalAdjLogPDFNode<XExprType, MeanExprType, SigmaExprType>>
+    details::NormalBase<XExprType, MeanExprType, SigmaExprType>,
+    core::ExprBase<NormalAdjLogPDFNode<XExprType, MeanExprType, SigmaExprType>>
 {
 private:
-    using x_t = XExprType;
-    using mean_t = MeanExprType;
-    using sigma_t = SigmaExprType;
-    using common_value_t = util::common_value_t<
-        x_t, mean_t, sigma_t>;
-
+    using base_t = details::NormalBase<
+        XExprType, MeanExprType, SigmaExprType>;
+    
 public:
-    using value_view_t = ValueView<common_value_t, ad::scl>;
-    using typename value_view_t::value_t;
-    using typename value_view_t::shape_t;
-    using typename value_view_t::var_t;
-    using value_view_t::bind;
+    using typename base_t::x_t;
+    using typename base_t::mean_t;
+    using typename base_t::sigma_t;
+    using typename base_t::value_t;
+    using typename base_t::var_t;
+    using base_t::x_;
+    using base_t::mean_;
+    using base_t::sigma_;
+    using base_t::bind;
+    using base_t::bind_size;
+    using base_t::single_bind_size;
 
     NormalAdjLogPDFNode(const x_t& x,
                         const mean_t& mean,
                         const sigma_t& sigma)
-        : value_view_t(nullptr, 1, 1)
-        , x_{x}
-        , mean_{mean}
-        , sigma_{sigma}
+        : base_t(x, mean, sigma)
         , log_sigma_{0}
         , is_pos_def_{false}
     {
@@ -668,41 +605,12 @@ public:
 
     }
 
-    value_t* bind(value_t* begin) 
-    {
-        value_t* next = begin;
-        if constexpr (!util::is_var_view_v<x_t>) {
-            next = x_.bind(next);
-        }
-        if constexpr (!util::is_var_view_v<mean_t>) {
-            next = mean_.bind(next);
-        }
-        if constexpr (!util::is_var_view_v<sigma_t>) {
-            next = sigma_.bind(next);
-        }
-        return value_view_t::bind(next);
-    }
-
-    size_t bind_size() const 
-    { 
-        return single_bind_size() + 
-                x_.bind_size() +
-                mean_.bind_size() +
-                sigma_.bind_size();
-    }
-
-    constexpr size_t single_bind_size() const { return this->size(); }
-
 private:
     void update_cache()
     {
         log_sigma_ = sigma_.get().array().log().sum();
         is_pos_def_ = !(sigma_.get().array() <= 0).any();
     }
-
-    x_t x_;
-    mean_t mean_;
-    sigma_t sigma_;
 
     value_t log_sigma_;
     size_t is_pos_def_;
@@ -716,32 +624,30 @@ struct NormalAdjLogPDFNode<XExprType, MeanExprType, SigmaExprType,
                            std::tuple<vec, scl, 
                                 std::enable_if_t<util::is_mat_v<SigmaExprType>,
                                     typename util::shape_traits<SigmaExprType>::shape_t>> >:
-    ValueView<util::common_value_t<XExprType, 
-                                   MeanExprType, 
-                                   SigmaExprType>, ad::scl>,
-    ExprBase<NormalAdjLogPDFNode<XExprType, MeanExprType, SigmaExprType>>
+    details::NormalBase<XExprType, MeanExprType, SigmaExprType>,
+    core::ExprBase<NormalAdjLogPDFNode<XExprType, MeanExprType, SigmaExprType>>
 {
 private:
-    using x_t = XExprType;
-    using mean_t = MeanExprType;
-    using sigma_t = SigmaExprType;
-    using common_value_t = util::common_value_t<
-        x_t, mean_t, sigma_t>;
-
+    using base_t = details::NormalBase<
+        XExprType, MeanExprType, SigmaExprType>;
+    
 public:
-    using value_view_t = ValueView<common_value_t, ad::scl>;
-    using typename value_view_t::value_t;
-    using typename value_view_t::shape_t;
-    using typename value_view_t::var_t;
-    using value_view_t::bind;
+    using typename base_t::x_t;
+    using typename base_t::mean_t;
+    using typename base_t::sigma_t;
+    using typename base_t::value_t;
+    using typename base_t::var_t;
+    using base_t::x_;
+    using base_t::mean_;
+    using base_t::sigma_;
+    using base_t::bind;
+    using base_t::bind_size;
+    using base_t::single_bind_size;
 
     NormalAdjLogPDFNode(const x_t& x,
                         const mean_t& mean,
                         const sigma_t& sigma)
-        : value_view_t(nullptr, 1, 1)
-        , x_{x}
-        , mean_{mean}
-        , sigma_{sigma}
+        : base_t(x, mean, sigma)
         , llt_(sigma.rows())
         , log_det_{0}
         , is_pos_def_{false}
@@ -798,31 +704,6 @@ public:
 
     }
 
-    value_t* bind(value_t* begin) 
-    {
-        value_t* next = begin;
-        if constexpr (!util::is_var_view_v<x_t>) {
-            next = x_.bind(next);
-        }
-        if constexpr (!util::is_var_view_v<mean_t>) {
-            next = mean_.bind(next);
-        }
-        if constexpr (!util::is_var_view_v<sigma_t>) {
-            next = sigma_.bind(next);
-        }
-        return value_view_t::bind(next);
-    }
-
-    size_t bind_size() const 
-    { 
-        return single_bind_size() + 
-                x_.bind_size() +
-                mean_.bind_size() +
-                sigma_.bind_size();
-    }
-
-    constexpr size_t single_bind_size() const { return this->size(); }
-
 private:
     void update_cache() {
         llt_.compute(sigma_.get());
@@ -832,10 +713,6 @@ private:
             inv_ = llt_.solve(mat_t::Identity(sigma_.rows(), sigma_.cols()));
         }
     }
-
-    x_t x_;
-    mean_t mean_;
-    sigma_t sigma_;
 
     using mat_t = Eigen::Matrix<value_t, Eigen::Dynamic, Eigen::Dynamic>;
     using vec_t = Eigen::Matrix<value_t, Eigen::Dynamic, 1>;
@@ -855,32 +732,30 @@ struct NormalAdjLogPDFNode<XExprType, MeanExprType, SigmaExprType,
                            std::tuple<vec, vec, 
                                 std::enable_if_t<util::is_mat_v<SigmaExprType>,
                                     typename util::shape_traits<SigmaExprType>::shape_t>> >:
-    ValueView<util::common_value_t<XExprType, 
-                                   MeanExprType, 
-                                   SigmaExprType>, ad::scl>,
-    ExprBase<NormalAdjLogPDFNode<XExprType, MeanExprType, SigmaExprType>>
+    details::NormalBase<XExprType, MeanExprType, SigmaExprType>,
+    core::ExprBase<NormalAdjLogPDFNode<XExprType, MeanExprType, SigmaExprType>>
 {
 private:
-    using x_t = XExprType;
-    using mean_t = MeanExprType;
-    using sigma_t = SigmaExprType;
-    using common_value_t = util::common_value_t<
-        x_t, mean_t, sigma_t>;
-
+    using base_t = details::NormalBase<
+        XExprType, MeanExprType, SigmaExprType>;
+    
 public:
-    using value_view_t = ValueView<common_value_t, ad::scl>;
-    using typename value_view_t::value_t;
-    using typename value_view_t::shape_t;
-    using typename value_view_t::var_t;
-    using value_view_t::bind;
+    using typename base_t::x_t;
+    using typename base_t::mean_t;
+    using typename base_t::sigma_t;
+    using typename base_t::value_t;
+    using typename base_t::var_t;
+    using base_t::x_;
+    using base_t::mean_;
+    using base_t::sigma_;
+    using base_t::bind;
+    using base_t::bind_size;
+    using base_t::single_bind_size;
 
     NormalAdjLogPDFNode(const x_t& x,
                         const mean_t& mean,
                         const sigma_t& sigma)
-        : value_view_t(nullptr, 1, 1)
-        , x_{x}
-        , mean_{mean}
-        , sigma_{sigma}
+        : base_t(x, mean, sigma)
         , llt_(sigma.rows())
         , log_det_{0}
         , is_pos_def_{false}
@@ -940,31 +815,6 @@ public:
 
     }
 
-    value_t* bind(value_t* begin) 
-    {
-        value_t* next = begin;
-        if constexpr (!util::is_var_view_v<x_t>) {
-            next = x_.bind(next);
-        }
-        if constexpr (!util::is_var_view_v<mean_t>) {
-            next = mean_.bind(next);
-        }
-        if constexpr (!util::is_var_view_v<sigma_t>) {
-            next = sigma_.bind(next);
-        }
-        return value_view_t::bind(next);
-    }
-
-    size_t bind_size() const 
-    { 
-        return single_bind_size() + 
-                x_.bind_size() +
-                mean_.bind_size() +
-                sigma_.bind_size();
-    }
-
-    constexpr size_t single_bind_size() const { return this->size(); }
-
 private:
     void update_cache() {
         llt_.compute(sigma_.get());
@@ -974,10 +824,6 @@ private:
             inv_ = llt_.solve(mat_t::Identity(sigma_.rows(), sigma_.cols()));
         }
     }
-
-    x_t x_;
-    mean_t mean_;
-    sigma_t sigma_;
 
     using mat_t = Eigen::Matrix<value_t, Eigen::Dynamic, Eigen::Dynamic>;
     using vec_t = Eigen::Matrix<value_t, Eigen::Dynamic, 1>;
@@ -989,7 +835,7 @@ private:
     vec_t z_;
 };
 
-} // namespace core
+} // namespace stat
 
 template <class XType
         , class MeanType
@@ -1009,7 +855,7 @@ inline auto normal_adj_log_pdf(const XType& x,
     x_expr_t x_expr = x;
     mean_expr_t mean_expr = mean;
     sigma_expr_t sigma_expr = sigma;
-    return core::NormalAdjLogPDFNode<
+    return stat::NormalAdjLogPDFNode<
         x_expr_t, mean_expr_t, sigma_expr_t>(x_expr, mean_expr, sigma_expr);
 }
 
