@@ -84,6 +84,14 @@ TEST_F(uniform_fixture, sss_feval)
     EXPECT_DOUBLE_EQ(res, -1.3256416139079406);
 }
 
+TEST_F(uniform_fixture, sss_feval_out_of_range)
+{
+    scl_x.get() = -100;
+    bind(sss_uniform);
+    value_t res = sss_uniform.feval();
+    EXPECT_DOUBLE_EQ(res, util::neg_inf<value_t>);
+}
+
 TEST_F(uniform_fixture, sss_beval)
 {
     bind(sss_uniform);
@@ -100,6 +108,14 @@ TEST_F(uniform_fixture, vss_feval)
     bind(vss_uniform);
     value_t res = vss_uniform.feval();
     EXPECT_DOUBLE_EQ(res, -3.9769248417238217);
+}
+
+TEST_F(uniform_fixture, vss_feval_out_of_range)
+{
+    vec_x.get(0,0) = -10000;
+    bind(vss_uniform);
+    value_t res = vss_uniform.feval();
+    EXPECT_DOUBLE_EQ(res, util::neg_inf<value_t>);
 }
 
 TEST_F(uniform_fixture, vss_beval)
@@ -119,6 +135,15 @@ TEST_F(uniform_fixture, vsv_feval)
     vsv_uniform.feval();
     value_t res = vsv_uniform.feval();
     EXPECT_DOUBLE_EQ(res, -4.3915297872269807);
+}
+
+TEST_F(uniform_fixture, vsv_feval_out_of_range)
+{
+    vec_x.get(0,0) = -100000;
+    bind(vsv_uniform);
+    vsv_uniform.feval();
+    value_t res = vsv_uniform.feval();
+    EXPECT_DOUBLE_EQ(res, util::neg_inf<value_t>);
 }
 
 TEST_F(uniform_fixture, vsv_beval)
@@ -146,6 +171,15 @@ TEST_F(uniform_fixture, vvs_feval)
     EXPECT_DOUBLE_EQ(res, -1.3266062626903801);
 }
 
+TEST_F(uniform_fixture, vvs_feval_out_of_range)
+{
+    vec_x.get(0,0) = -10000;
+    bind(vvs_uniform);
+    vvs_uniform.feval();
+    value_t res = vvs_uniform.feval();
+    EXPECT_DOUBLE_EQ(res, util::neg_inf<value_t>);
+}
+
 TEST_F(uniform_fixture, vvs_beval)
 {
     bind(vvs_uniform);
@@ -170,6 +204,15 @@ TEST_F(uniform_fixture, vvv_feval)
     vvv_uniform.feval();
     value_t res = vvv_uniform.feval();
     EXPECT_DOUBLE_EQ(res, -1.2444888363909485);
+}
+
+TEST_F(uniform_fixture, vvv_feval_out_of_range)
+{
+    vec_x.get(0,0) = -10000;
+    bind(vvv_uniform);
+    vvv_uniform.feval();
+    value_t res = vvv_uniform.feval();
+    EXPECT_DOUBLE_EQ(res, util::neg_inf<value_t>);
 }
 
 TEST_F(uniform_fixture, vvv_beval)

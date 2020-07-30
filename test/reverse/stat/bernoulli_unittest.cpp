@@ -65,6 +65,14 @@ TEST_F(bernoulli_fixture, ss_feval)
     EXPECT_NEAR(res, -0.0001000050003334, tol);
 }
 
+TEST_F(bernoulli_fixture, ss_x_one_feval)
+{
+    scl_x.get() = 1;
+    bind(ss_bernoulli);
+    value_t res = ss_bernoulli.feval();
+    EXPECT_NEAR(res, std::log(scl_p.get()), tol);
+}
+
 TEST_F(bernoulli_fixture, ss_feval_p_below_range)
 {
     scl_p.get() = 0;
@@ -96,6 +104,17 @@ TEST_F(bernoulli_fixture, ss_beval)
     ss_bernoulli.beval(1, 0, 0, util::beval_policy::single);
     EXPECT_NEAR(scl_p.get_adj(), 
                 -1.00010001000100001711, 
+                tol);
+}
+
+TEST_F(bernoulli_fixture, ss_x_one_beval)
+{
+    scl_x.get() = 1;
+    bind(ss_bernoulli);
+    ss_bernoulli.feval();
+    ss_bernoulli.beval(1, 0, 0, util::beval_policy::single);
+    EXPECT_NEAR(scl_p.get_adj(), 
+                10000.00000000000000000000, 
                 tol);
 }
 

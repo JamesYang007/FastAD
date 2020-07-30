@@ -13,11 +13,18 @@ def logpmf(x, p):
 def ss_feval():
     return [logpmf(scl_x, scl_p)]
 
+def ss_x_one_feval():
+    return [logpmf(1, scl_p)]
+
 def ss_beval():
     if scl_x == 1:
         adj =  1./scl_p
     if scl_x == 0:
         adj = -1./(1-scl_p)
+    return [adj]
+
+def ss_x_one_beval():
+    adj =  1./scl_p
     return [adj]
 
 def vs_feval():
@@ -40,9 +47,7 @@ def vv_beval():
     return dp
 
 if __name__ == '__main__':
-    res = [logpmf(vec_x[np.arange(0, len(vec_x)) != 1],
-           vec_p[np.arange(0, len(vec_x)) != 1])]
-    #res = vv_beval()
+    res = ss_x_one_beval()
 
     for r in res:
         print('{0:.20f}'.format(r))

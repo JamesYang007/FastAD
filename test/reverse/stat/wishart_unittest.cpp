@@ -56,6 +56,14 @@ TEST_F(wishart_fixture, feval)
     EXPECT_DOUBLE_EQ(res, -12.55942947411780252764);
 }
 
+TEST_F(wishart_fixture, feval_invalid) 
+{
+    v.get().setZero();
+    bind(wishart);
+    value_t res = wishart.feval();
+    EXPECT_DOUBLE_EQ(res, util::neg_inf<value_t>);
+}
+
 TEST_F(wishart_fixture, beval) 
 {
     bind(wishart);

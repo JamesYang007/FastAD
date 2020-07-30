@@ -216,6 +216,14 @@ TEST_F(normal_fixture, vsv_feval)
     EXPECT_DOUBLE_EQ(res, -54448.5761343555350322);
 }
 
+TEST_F(normal_fixture, vsv_feval_not_pos_def)
+{
+    vec_sigma.get()(0) = -1;
+    bind(vsv_normal);
+    value_t res = vsv_normal.feval();
+    EXPECT_DOUBLE_EQ(res, util::neg_inf<value_t>);
+}
+
 TEST_F(normal_fixture, vsv_beval)
 {
     bind(vsv_normal);
@@ -265,6 +273,14 @@ TEST_F(normal_fixture, vvv_feval)
     bind(vvv_normal);
     value_t res = vvv_normal.feval();
     EXPECT_DOUBLE_EQ(res, -57796.8420570641465019);
+}
+
+TEST_F(normal_fixture, vvv_feval_not_pos_def)
+{
+    vec_sigma.get(0,0) = 0;
+    bind(vvv_normal);
+    value_t res = vvv_normal.feval();
+    EXPECT_DOUBLE_EQ(res, util::neg_inf<value_t>);
 }
 
 TEST_F(normal_fixture, vvv_beval)
@@ -336,6 +352,14 @@ TEST_F(normal_fixture, vsm_feval)
     EXPECT_DOUBLE_EQ(res, -8.8105250497069019);
 }
 
+TEST_F(normal_fixture, vsm_feval_not_pos_def)
+{
+    mat_sigma.get().setZero();
+    bind(vsm_normal);
+    value_t res = vsm_normal.feval();
+    EXPECT_DOUBLE_EQ(res, util::neg_inf<value_t>);
+}
+
 TEST_F(normal_fixture, vsm_beval)
 {
     bind(vsm_normal);
@@ -371,6 +395,14 @@ TEST_F(normal_fixture, vvm_selfadj_feval)
     bind(vvm_selfadj_normal);
     value_t res = vvm_selfadj_normal.feval();
     EXPECT_DOUBLE_EQ(res, -7.3649692930088602);
+}
+
+TEST_F(normal_fixture, vvm_selfadj_feval_not_pos_def)
+{
+    mat_selfadj_sigma.get().setZero();
+    bind(vvm_selfadj_normal);
+    value_t res = vvm_selfadj_normal.feval();
+    EXPECT_DOUBLE_EQ(res, util::neg_inf<value_t>);
 }
 
 TEST_F(normal_fixture, vvm_selfadj_beval)
