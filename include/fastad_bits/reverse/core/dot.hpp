@@ -6,10 +6,38 @@
 
 namespace ad {
 namespace core {
+namespace details {
+
+/*
+ * Returns the the dot-product shape given left and right shapes
+ */
+template <class T, class U, class=void>
+struct dot_shape;
+
+template <class T, class U>
+struct dot_shape<T, U, std::enable_if_t<
+                        util::is_mat_v<T> &&
+                        util::is_vec_v<U>> >
+{
+    using type = ad::vec;
+};
+
+template <class T, class U>
+struct dot_shape<T, U, std::enable_if_t<
+                        util::is_mat_v<T> &&
+                        util::is_mat_v<U>> >
+{
+    using type = ad::mat;
+};
+
+template <class T, class U>
+using dot_shape_t = typename dot_shape<T,U>::type;
+
+} // namespace details
 
 /**
- * MatVecDotNode represents a matrix multiplication with a (column) vector.
- * Indeed, the left expression must be a matrix shape, and the right be a vector.
+ * DotNode represents a matrix multiplication.
+ * Indeed, the left expression must be a matrix shape, and the right be a matrix or column vector.
  * No other shapes are permitted for this node.
  * At construction, the actual sizes of the two are checked -
  * specifically, the number of columns for matrix must equal the number of rows for vector.
@@ -17,74 +45,71 @@ namespace core {
  * We assert that the value type be the same for the two expressions.
  * The output shape is always a (column) vector.
  *
- * @tparam  MatExprType     type of matrix expression
- * @tparam  VecExprType     type of vector expression
+ * @tparam  LHSExprType     type of left expression
+ * @tparam  RHSExprType     type of right expression
  */
 
-template <class MatExprType
-        , class VecExprType>
-struct MatVecDotNode:
-    ValueView<typename util::expr_traits<MatExprType>::value_t,
-              ad::vec>,
-    ExprBase<MatVecDotNode<MatExprType, VecExprType>>
+template <class LHSExprType
+        , class RHSExprType>
+struct DotNode:
+    ValueView<typename util::expr_traits<LHSExprType>::value_t,
+              details::dot_shape_t<LHSExprType, RHSExprType>>,
+    ExprBase<DotNode<LHSExprType, RHSExprType>>
 {
 private:
-    using mat_expr_t = MatExprType;
-    using vec_expr_t = VecExprType;
-    using mat_value_t = typename 
-        util::expr_traits<mat_expr_t>::value_t;
+    using lhs_t = LHSExprType;
+    using rhs_t = RHSExprType;
+    using lhs_value_t = typename 
+        util::expr_traits<lhs_t>::value_t;
 
     // assert that both expressions have same value type
     static_assert(std::is_same_v<
-            typename util::expr_traits<mat_expr_t>::value_t,
-            typename util::expr_traits<vec_expr_t>::value_t>);
-
-    // assert correct shapes
-    static_assert(util::is_mat_v<mat_expr_t>);
-    static_assert(util::is_vec_v<vec_expr_t>);
+            typename util::expr_traits<lhs_t>::value_t,
+            typename util::expr_traits<rhs_t>::value_t>);
 
 public:
-    using value_view_t = ValueView<mat_value_t, ad::vec>;
+    using value_view_t = ValueView<lhs_value_t,
+          details::dot_shape_t<lhs_t, rhs_t> >;
     using typename value_view_t::value_t;
     using typename value_view_t::shape_t;
     using typename value_view_t::var_t;
     using value_view_t::bind;
 
-    MatVecDotNode(const mat_expr_t& mat_expr,
-                  const vec_expr_t& vec_expr)
-        : value_view_t(nullptr, mat_expr.rows(), 1)
-        , mat_expr_{mat_expr}
-        , vec_expr_{vec_expr}
+    DotNode(const lhs_t& lhs,
+            const rhs_t& rhs)
+        : value_view_t(nullptr, lhs.rows(), rhs.cols())
+        , lhs_{lhs}
+        , rhs_{rhs}
     {
-        assert(mat_expr.cols() == vec_expr.rows());
+        assert(lhs.cols() == rhs.rows());
     }
 
     const var_t& feval()
     {
-        auto&& mat_val = mat_expr_.feval();
-        auto&& vec_val = vec_expr_.feval();
-        return this->get() = mat_val * vec_val;
+        auto&& lhs_val = lhs_.feval();
+        auto&& rhs_val = rhs_.feval();
+        return this->get() = lhs_val * rhs_val;
     }
 
-    void beval(value_t seed, size_t i, size_t, util::beval_policy pol)
+    void beval(value_t seed, size_t i, size_t j, util::beval_policy pol)
     {
         if (seed == 0) return;
-        for (size_t j = 0; j < vec_expr_.size(); ++j) {
-            vec_expr_.beval(seed * mat_expr_.get(i,j), j, 0, pol);
+        for (size_t k = 0; k < rhs_.rows(); ++k) {
+            rhs_.beval(seed * lhs_.get(i,k), k, j, pol);
         }
-        for (size_t j = 0; j < vec_expr_.size(); ++j) {
-            mat_expr_.beval(seed * vec_expr_.get(j,0), i, j, pol);
+        for (size_t k = 0; k < lhs_.cols(); ++k) {
+            lhs_.beval(seed * rhs_.get(k,j), i, k, pol);
         }
     }
 
     value_t* bind(value_t* begin) 
     {
         value_t* next = begin;
-        if constexpr (!util::is_var_view_v<mat_expr_t>) {
-            next = mat_expr_.bind(next);
+        if constexpr (!util::is_var_view_v<lhs_t>) {
+            next = lhs_.bind(next);
         }
-        if constexpr (!util::is_var_view_v<vec_expr_t>) {
-            next = vec_expr_.bind(next);
+        if constexpr (!util::is_var_view_v<rhs_t>) {
+            next = rhs_.bind(next);
         }
         return value_view_t::bind(next);
     }
@@ -92,8 +117,8 @@ public:
     size_t bind_size() const 
     { 
         return single_bind_size() + 
-                mat_expr_.bind_size() + 
-                vec_expr_.bind_size();
+                lhs_.bind_size() + 
+                rhs_.bind_size();
     }
 
     size_t single_bind_size() const
@@ -103,42 +128,42 @@ public:
 
 
 private:
-    mat_expr_t mat_expr_;
-    vec_expr_t vec_expr_;
+    lhs_t lhs_;
+    rhs_t rhs_;
 };
 
 } // namespace core
 
-template <class MatType
-        , class VecType
+template <class T1
+        , class T2
         , class = std::enable_if_t<
-            util::is_mat_v<util::convert_to_ad_t<MatType>> &&
-            util::is_vec_v<util::convert_to_ad_t<VecType>> &&
-            util::any_ad_v<MatType, VecType>
+            !util::is_scl_v<util::convert_to_ad_t<T1>> &&
+            !util::is_scl_v<util::convert_to_ad_t<T2>> &&
+            util::any_ad_v<T1, T2>
         >
     >
-inline auto dot(const MatType& mat,
-                const VecType& vec)
+inline auto dot(const T1& x,
+                const T2& y)
 {
-    using mat_expr_t = util::convert_to_ad_t<MatType>;
-    using vec_expr_t = util::convert_to_ad_t<VecType>;
-    using mat_value_t = typename util::expr_traits<mat_expr_t>::value_t;
-    using vec_value_t = typename util::expr_traits<vec_expr_t>::value_t;
+    using expr1_t = util::convert_to_ad_t<T1>;
+    using expr2_t = util::convert_to_ad_t<T2>;
+    using expr1_value_t = typename util::expr_traits<expr1_t>::value_t;
+    using expr2_value_t = typename util::expr_traits<expr2_t>::value_t;
 
-    mat_expr_t mat_expr = mat;
-    vec_expr_t vec_expr = vec;
+    expr1_t expr1 = x;
+    expr2_t expr2 = y;
 
     // optimization for when both expressions are constant
-    if constexpr (util::is_constant_v<mat_expr_t> &&
-                  util::is_constant_v<vec_expr_t>) {
-        static_assert(std::is_same_v<mat_value_t, vec_value_t>);
-
-        using var_t = core::details::constant_var_t<vec_value_t, ad::vec>;
-        var_t out = mat_expr.feval() * vec_expr.feval();
+    if constexpr (util::is_constant_v<expr1_t> &&
+                  util::is_constant_v<expr2_t>) {
+        static_assert(std::is_same_v<expr1_value_t, expr2_value_t>);
+        using shape_t = core::details::dot_shape_t<expr1_t, expr2_t>;
+        using var_t = core::details::constant_var_t<expr2_value_t, shape_t>;
+        var_t out = expr1.feval() * expr2.feval();
         return ad::constant(out);
     } else {
-        return core::MatVecDotNode<mat_expr_t, vec_expr_t>(
-                mat_expr, vec_expr);
+        return core::DotNode<expr1_t, expr2_t>(
+                expr1, expr2);
     }
 }
 
