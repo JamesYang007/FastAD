@@ -19,6 +19,37 @@ template <class T>
 inline constexpr bool is_constant_v =
     std::is_base_of_v<core::ConstantBase<T>, T>;
 
+namespace details {
+
+template <class ValueType, class ShapeType>
+struct shape_to_raw_const_view;
+
+template <class ValueType>
+struct shape_to_raw_const_view<ValueType, ad::scl>
+{
+    using type = const ValueType;
+};
+
+template <class ValueType>
+struct shape_to_raw_const_view<ValueType, ad::vec>
+{
+    using type = Eigen::Map<
+        const Eigen::Matrix<ValueType, Eigen::Dynamic, 1>>;
+};
+
+template <class ValueType>
+struct shape_to_raw_const_view<ValueType, ad::mat>
+{
+    using type = Eigen::Map<
+        const Eigen::Matrix<ValueType, Eigen::Dynamic, Eigen::Dynamic>>;
+};
+
+} // namespace details
+
+template <class ValueType, class ShapeType>
+using shape_to_raw_const_view_t = typename
+    details::shape_to_raw_const_view<ValueType, ShapeType>::type;
+
 } // namespace util
 
 namespace core {
@@ -36,18 +67,16 @@ namespace core {
 template <class ValueType
         , class ShapeType>
 struct ConstantView:
-    ValueView<ValueType, ShapeType>,
     ConstantBase<ConstantView<ValueType, ShapeType>>
 {
-    using value_view_t = ValueView<ValueType, ShapeType>;
-    using typename value_view_t::value_t;
-    using typename value_view_t::shape_t;
-    using typename value_view_t::var_t;
+    using value_t = ValueType;
+    using shape_t = ShapeType;
+    using var_t = util::shape_to_raw_const_view_t<value_t, shape_t>;
 
-    ConstantView(value_t* begin,
+    ConstantView(const value_t* begin,
                  size_t rows,
                  size_t cols)
-        : value_view_t(begin, rows, cols)
+        : val_(begin, rows, cols)
     {}
 
     /** 
@@ -61,11 +90,25 @@ struct ConstantView:
      */
     void beval(value_t, size_t, size_t, util::beval_policy) const {}
 
-    /**
-     * No binding required for constants
-     */
     constexpr size_t bind_size() const { return 0; }
     constexpr size_t single_bind_size() const { return 0; }
+
+    const var_t& get() const { return val_; }
+    const value_t& get(size_t i, size_t) const { return val_(i); }
+
+    const value_t* bind(const value_t* begin)
+    { 
+        new (&val_) var_t(begin, this->size());
+        return begin + this->size(); 
+    }
+
+    size_t size() const { return val_.size(); }
+    size_t rows() const { return this->size(); }
+    constexpr size_t cols() const { return 1; }
+    const value_t* data() const { return val_.data(); }
+
+private:
+    var_t val_;
 };
 
 /**
@@ -177,20 +220,20 @@ private:
 // ad::constant(...) and ad::constant_view(...)
 
 template <class ValueType>
-inline auto constant_view(ValueType* x)
+inline auto constant_view(const ValueType* x)
 {
     return core::ConstantView<ValueType, ad::scl>(x,1,1);
 }
 
 template <class ValueType>
-inline auto constant_view(ValueType* x,
+inline auto constant_view(const ValueType* x,
                           size_t rows)
 {
     return core::ConstantView<ValueType, ad::vec>(x, rows, 1);
 }
 
 template <class ShapeType = ad::mat, class ValueType>
-inline auto constant_view(ValueType* x,
+inline auto constant_view(const ValueType* x,
                           size_t rows,
                           size_t cols)
 {
