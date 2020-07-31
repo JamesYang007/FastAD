@@ -96,7 +96,7 @@ struct ConstantView:
     const var_t& get() const { return val_; }
     const value_t& get(size_t i, size_t) const { return val_(i); }
 
-    const value_t* bind(const value_t* begin)
+    value_t* bind(value_t* begin)
     { 
         new (&val_) var_t(begin, this->size());
         return begin + this->size(); 
