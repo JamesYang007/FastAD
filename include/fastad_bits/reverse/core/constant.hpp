@@ -98,7 +98,7 @@ struct ConstantView:
 
     value_t* bind(value_t* begin)
     { 
-        new (&val_) var_t(begin, this->size());
+        new (&val_) var_t(begin, rows(), cols());
         return begin + this->size(); 
     }
 
