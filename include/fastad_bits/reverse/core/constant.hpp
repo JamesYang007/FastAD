@@ -179,14 +179,14 @@ private:
 template <class ValueType>
 inline auto constant_view(const ValueType* x)
 {
-    return core::ConstantView<ValueType, ad::scl>(x);
+    return core::ConstantView<ValueType, ad::scl>(x,1,1);
 }
 
 template <class ValueType>
 inline auto constant_view(const ValueType* x,
                           size_t rows)
 {
-    return core::ConstantView<ValueType, ad::vec>(x, rows);
+    return core::ConstantView<ValueType, ad::vec>(x, rows, 1);
 }
 
 template <class ShapeType = ad::mat, class ValueType>
