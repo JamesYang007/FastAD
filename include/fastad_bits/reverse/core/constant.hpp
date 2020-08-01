@@ -90,7 +90,8 @@ struct ConstantView:
     const var_t& get() const { return val_; }
     const value_t& get(size_t i, size_t j) const { return val_(i, j); }
 
-    value_t* bind(value_t* begin) const { return begin; }
+    template <class T>
+    constexpr T bind(T begin) const { return begin; }
 
     size_t size() const { return val_.size(); }
     size_t rows() const { return val_.rows(); }
@@ -174,7 +175,8 @@ public:
         }
     }
 
-    value_t* bind(value_t* begin) const { return begin; }
+    template <class T>
+    constexpr T bind(T begin) const { return begin; }
 
     const value_t* data() const { 
         if constexpr (util::is_scl_v<this_t>) {
