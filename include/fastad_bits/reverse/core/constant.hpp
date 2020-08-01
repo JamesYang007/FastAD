@@ -90,11 +90,7 @@ struct ConstantView:
     const var_t& get() const { return val_; }
     const value_t& get(size_t i, size_t j) const { return val_(i, j); }
 
-    value_t* bind(value_t* begin)
-    { 
-        new (&val_) var_t(begin, rows(), cols());
-        return begin + this->size(); 
-    }
+    value_t* bind(value_t* begin) const { return begin; }
 
     size_t size() const { return val_.size(); }
     size_t rows() const { return val_.rows(); }
