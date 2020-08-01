@@ -25,12 +25,6 @@ template <class ValueType, class ShapeType>
 struct shape_to_raw_const_view;
 
 template <class ValueType>
-struct shape_to_raw_const_view<ValueType, ad::scl>
-{
-    using type = const ValueType;
-};
-
-template <class ValueType>
 struct shape_to_raw_const_view<ValueType, ad::vec>
 {
     using type = Eigen::Map<
@@ -94,7 +88,7 @@ struct ConstantView:
     constexpr size_t single_bind_size() const { return 0; }
 
     const var_t& get() const { return val_; }
-    const value_t& get(size_t i, size_t) const { return val_(i); }
+    const value_t& get(size_t i, size_t j) const { return val_(i, j); }
 
     value_t* bind(value_t* begin)
     { 
@@ -103,8 +97,8 @@ struct ConstantView:
     }
 
     size_t size() const { return val_.size(); }
-    size_t rows() const { return this->size(); }
-    constexpr size_t cols() const { return 1; }
+    size_t rows() const { return val_.rows(); }
+    size_t cols() const { return val_.cols(); }
     const value_t* data() const { return val_.data(); }
 
 private:
@@ -218,12 +212,6 @@ private:
 
 // Helper function: 
 // ad::constant(...) and ad::constant_view(...)
-
-template <class ValueType>
-inline auto constant_view(const ValueType* x)
-{
-    return core::ConstantView<ValueType, ad::scl>(x,1,1);
-}
 
 template <class ValueType>
 inline auto constant_view(const ValueType* x,
