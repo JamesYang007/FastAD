@@ -88,7 +88,7 @@ struct ConstantView:
     constexpr size_t single_bind_size() const { return 0; }
 
     const var_t& get() const { return val_; }
-    const value_t& get(size_t i, size_t j) const { return val_(i, j); }
+    value_t get(size_t i, size_t j) const { return val_(i, j); }
 
     template <class T>
     constexpr T bind(T begin) const { return begin; }
