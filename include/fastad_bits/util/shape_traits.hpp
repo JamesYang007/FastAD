@@ -26,9 +26,9 @@ struct get_shape
 };
 
 template <class T>
-struct get_shape<T, std::void_t<typename shape_traits<T>::shape_t>>
+struct get_shape<T, std::void_t<typename T::shape_t>>
 {
-    using type = typename shape_traits<T>::shape_t;
+    using type = typename T::shape_t;
 };
 
 template <class T>
