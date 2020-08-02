@@ -54,7 +54,7 @@ static void BM_normal_adj_log_pdf(benchmark::State& state)
     }
 
     auto expr = normal_adj_log_pdf(x, mu, sigma);
-    std::vector<double> tmp(expr.bind_size());
+    Eigen::VectorXd tmp(expr.bind_size());
     expr.bind(tmp.data());
 
     for (auto _ : state) {
