@@ -17,6 +17,18 @@ inline auto evaluate(ExprType&& expr)
     return expr.feval();
 }
 
+template <class ExprType>
+inline auto evaluate(core::ExprBind<ExprType>& expr)
+{
+    return expr.get().feval();
+}
+
+template <class ExprType>
+inline auto evaluate(core::ExprBind<ExprType>&& expr)
+{
+    return expr.get().feval();
+}
+
 // Evaluates expression in the backward direction of reverse-mode AD.
 // @tparam ExprType expression type
 // @param expr  expression to backward evaluate
@@ -26,6 +38,22 @@ inline void evaluate_adj(ExprType&& expr,
                          size_t j = 0)
 {
     expr.beval(1, i, j, util::beval_policy::single);
+}
+
+template <class ExprType>
+inline void evaluate_adj(core::ExprBind<ExprType>& expr, 
+                         size_t i = 0, 
+                         size_t j = 0)
+{
+    expr.get().beval(1, i, j, util::beval_policy::single);
+}
+
+template <class ExprType>
+inline void evaluate_adj(core::ExprBind<ExprType>&& expr, 
+                         size_t i = 0, 
+                         size_t j = 0)
+{
+    expr.get().beval(1, i, j, util::beval_policy::single);
 }
 
 // Evaluates expression both in the forward and backward direction of reverse-mode AD.

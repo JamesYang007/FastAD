@@ -32,7 +32,7 @@ struct ExprBind
 
 private:
     expr_t expr_; 
-    std::vector<value_t> cache_;
+    Eigen::Matrix<value_t, Eigen::Dynamic, 1> cache_;
 };
 
 } // namespace core

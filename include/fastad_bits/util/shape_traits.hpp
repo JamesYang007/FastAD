@@ -17,25 +17,43 @@ struct shape_traits
     using shape_t = typename T::shape_t;
 };
 
+namespace details {
+
+template <class T, class = std::void_t<>>
+struct get_shape 
+{
+    using type = void;
+};
+
+template <class T>
+struct get_shape<T, std::void_t<typename T::shape_t>>
+{
+    using type = typename T::shape_t;
+};
+
+template <class T>
+using get_shape_t = typename get_shape<T>::type;
+
+} // namespace details
+
 template <class T>
 inline constexpr bool is_scl_v =
-    std::is_same_v<typename shape_traits<T>::shape_t,
+    std::is_same_v<details::get_shape_t<T>,
                    scl>;
 
 template <class T>
 inline constexpr bool is_vec_v =
-    std::is_same_v<typename shape_traits<T>::shape_t,
+    std::is_same_v<details::get_shape_t<T>,
                    vec>;
 
 template <class T>
 inline constexpr bool is_selfadjmat_v =
-    std::is_same_v<typename shape_traits<T>::shape_t,
+    std::is_same_v<details::get_shape_t<T>,
                    selfadjmat>;
 
 template <class T>
 inline constexpr bool is_mat_v =
-    std::is_base_of_v<mat, typename shape_traits<T>::shape_t>;
-
+    std::is_base_of_v<mat, details::get_shape_t<T>>;
 
 /**
  * Defines a mapping from shape tags to corresponding
