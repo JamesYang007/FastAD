@@ -329,7 +329,7 @@ struct VarView<ValueType, selfadjmat>:
             value_t* adj_flat_begin,
             size_t n_rows)
         : value_view_t(val_begin, n_rows, n_rows)
-        , adj_(nullptr, n_rows, n_rows) // unused
+        , adj_(nullptr, 0, 0) // unused
         , val_flat_(val_flat_begin, (n_rows * (n_rows+1)) / 2)
         , adj_flat_(adj_flat_begin, (n_rows * (n_rows+1)) / 2)
     {}
@@ -346,12 +346,15 @@ struct VarView<ValueType, selfadjmat>:
 
     const var_t& feval() { 
         if (is_flat_set()) {
+            assert(this->rows() == this->cols());
             size_t k = 0;
+            size_t size = rows();
             // copy from flat vector into lower half matrix 
-            for (size_t j = 0; j < adj_.cols(); ++j) {
-                for (size_t i = j; i < adj_.rows(); ++i, ++k) {
-                    this->get()(i,j) = val_flat_(k);
-                }
+            for (size_t j = 0; j < cols(); ++j, --size) {
+                std::memcpy(&this->get(j,j),
+                            &val_flat_(k),
+                            size * sizeof(value_t));
+                k += size;
             }
         }
         return this->get() = 
