@@ -28,7 +28,7 @@ static void BM_normal_adj_log_pdf(benchmark::State& state)
     auto adj_next = x.bind_adj(adj.data());
     val_next = mu.bind(val_next);
     adj_next = mu.bind_adj(adj_next);
-    val_next = sigma.bind(val.data());
+    val_next = sigma.bind(val_next);
     adj_next = sigma.bind_adj(adj_next);
 
     x.get().Random();
