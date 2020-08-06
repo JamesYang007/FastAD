@@ -433,8 +433,8 @@ private:
 
     size_t flat_idx(size_t i, size_t j) const {
         return (i >= j) ? 
-            ((rows() * j) - (j * (j+1)) / 2) + i:
-            ((rows() * i) - (i * (i+1)) / 2) + j;
+            (rows() * j + i) - ((j * (j+1)) / 2):
+            flat_idx(j, i);
     }
 
     bool is_flat_set() const {

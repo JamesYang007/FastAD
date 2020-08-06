@@ -160,6 +160,8 @@ public:
 
     const var_t& feval()
     {
+        x_.feval();
+        v_.feval();
         auto&& n = n_.feval();
 
         if constexpr (!util::is_constant_v<v_t>) {
