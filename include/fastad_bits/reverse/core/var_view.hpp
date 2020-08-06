@@ -323,13 +323,23 @@ struct VarView<ValueType, selfadjmat>:
         , adj_flat_(nullptr, 0)
     {}
 
-    // constructor only available if guaranteed to be square
+    /**
+     * Special constructor for a square self-adjoint matrix.
+     * This is available if one needs to view a flattened value array
+     * and flattened adjoint array rather than a full matrix.
+     * However, a full (column-major) matrix data pointer must be provided.
+     *
+     * @param   val_begin       pointer to beginning of (column-major) matrix
+     * @param   val_flat_begin  pointer to flattened value vector 
+     * @param   adj_flat_begin  pointer to flattened adjoint vector
+     * @param   n_rows          number of rows (and columns)
+     */
     VarView(value_t* val_begin,
             value_t* val_flat_begin,
             value_t* adj_flat_begin,
             size_t n_rows)
         : value_view_t(val_begin, n_rows, n_rows)
-        , adj_(nullptr, 0, 0) // unused
+        , adj_(nullptr, n_rows, n_rows) // unused
         , val_flat_(val_flat_begin, (n_rows * (n_rows+1)) / 2)
         , adj_flat_(adj_flat_begin, (n_rows * (n_rows+1)) / 2)
     {}
