@@ -195,6 +195,9 @@ TEST_F(node_integration_fixture, leaf_opeq_many_nested)
     auto expr = (vec_expr *= scl_expr,
                  vec_expr += vec_expr - scl_expr,
                  scl_expr *= scl_expr - 2.,
+                 scl_expr /= 1.,
+                 vec_expr -= 2. * vec_expr,
+                 vec_expr *= -1.,
                  vec_expr -= scl_expr,
                  vec_expr /= scl_expr,
                  ad::sum(vec_expr));
