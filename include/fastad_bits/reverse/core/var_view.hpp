@@ -201,6 +201,26 @@ struct VarView<ValueType, vec>:
     constexpr size_t bind_size() const { return 0; }
     constexpr size_t single_bind_size() const { return 0; }
 
+    // subviews
+    auto operator()(size_t i, size_t=0) {
+        assert(i < size());
+        return VarView<value_t, ad::scl>(data() + i, data_adj() + i);
+    }
+    auto operator[](size_t i) {
+        return operator()(i);
+    }
+    auto head(size_t n) {
+        assert(n <= size());
+        return VarView<value_t, ad::vec>(data(), data_adj(), n);
+    }
+    auto tail(size_t n) {
+        assert(n <= size());
+        size_t offset = size() - n;
+        return VarView<value_t, ad::vec>(data() + offset, 
+                                         data_adj() + offset,
+                                         n);
+    }
+
 private:
     value_view_t adj_;
 };

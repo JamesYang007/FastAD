@@ -217,6 +217,33 @@ TEST_F(node_integration_fixture, leaf_opeq_many_nested)
     }
 }
 
+TEST_F(node_integration_fixture, leaf_opeq_head_tail)
+{
+    // note this is NOT same as AR model (you need a for loop for that)
+    auto head = vec_expr.head(vec_expr.size()-1);
+    auto tail = vec_expr.tail(vec_expr.size()-1);
+    auto expr = (tail += scl_expr * head,
+                 ad::sum(tail));
+    bind(expr);
+    Eigen::VectorXd head_orig = head.get();
+    Eigen::VectorXd tail_orig = tail.get();
+    double scl_orig = scl_expr.get();
+    double tail_sum = tail_orig.array().sum(); 
+    double head_sum = head_orig.array().sum();
+    double actual = tail_sum + scl_orig * head_sum;
+
+    EXPECT_DOUBLE_EQ(autodiff(expr), actual);
+
+    double scl_adj = head_sum;
+    EXPECT_DOUBLE_EQ(scl_expr.get_adj(), scl_adj);
+
+    EXPECT_DOUBLE_EQ(vec_expr.get_adj()(0), scl_orig);
+    for (size_t i = 1; i < vec_expr.size() - 1; ++i) {
+        EXPECT_DOUBLE_EQ(vec_expr.get_adj()(i), 1 + scl_orig);
+    }
+    EXPECT_DOUBLE_EQ(vec_expr.get_adj()(vec_expr.size()-1), 1.);
+}
+
 ////////////////////////////////////////////////////////////
 // LeafNode, UnaryNode, BinaryNode, EqNode, GlueNode Integration Test 
 ////////////////////////////////////////////////////////////
