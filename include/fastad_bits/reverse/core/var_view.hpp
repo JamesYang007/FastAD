@@ -13,6 +13,12 @@ namespace core {
 
 template <class VarViewType, class ExprType>
 struct EqNode;
+template <class Op, class VarViewType, class ExprType>
+struct OpEqNode;
+struct AddEq;
+struct SubEq;
+struct MulEq;
+struct DivEq;
 
 } // namespace core
 
@@ -95,6 +101,7 @@ struct VarView<ValueType, scl>:
      * @return  const reference to underlying adjoint.
      */
     const var_t& get_adj() const { return adj_.get(); }
+    value_t& get_adj(size_t, size_t) { return adj_.get(); }
     const value_t& get_adj(size_t, size_t) const { return adj_.get(); }
 
     /**
@@ -174,6 +181,7 @@ struct VarView<ValueType, vec>:
     const var_t& feval() const { return this->get(); }
     void beval(value_t seed, size_t i, size_t, util::beval_policy) { adj_.get()(i) += seed; }
     const var_t& get_adj() const { return adj_.get(); }
+    value_t& get_adj(size_t i, size_t) { return adj_.get()(i); }
     const value_t& get_adj(size_t i, size_t) const { return adj_.get()(i); }
     value_t* bind_adj(value_t* begin) { return adj_.bind(begin); }
     value_t* data_adj() { return adj_.data(); }
@@ -237,6 +245,7 @@ struct VarView<ValueType, mat>:
     const var_t& feval() const { return this->get(); }
     void beval(value_t seed, size_t i, size_t j, util::beval_policy) { adj_.get()(i,j) += seed; }
     const var_t& get_adj() const { return adj_.get(); }
+    value_t& get_adj(size_t i, size_t j) { return adj_.get()(i,j); }
     const value_t& get_adj(size_t i, size_t j) const { return adj_.get()(i,j); }
     value_t* bind_adj(value_t* begin) { return adj_.bind(begin); }
     value_t* data_adj() { return adj_.data(); }
@@ -314,8 +323,8 @@ struct VarView<ValueType, selfadjmat>:
     }
 
     const var_t& get_adj() const { return adj_.get(); }
-    const value_t& get_adj(size_t i, size_t j) const 
-    { return adj_.get()(i,j); }
+    value_t& get_adj(size_t i, size_t j) { return adj_.get()(i,j); }
+    const value_t& get_adj(size_t i, size_t j) const { return adj_.get()(i,j); }
 
     value_t* bind_adj(value_t* begin) { return adj_.bind(begin); }
 
@@ -344,5 +353,28 @@ struct VarView<ValueType, selfadjmat>:
 private:
     value_view_t adj_;
 };
+
+/*
+ * Useful operator overloads
+ */
+#define ADNODE_OPEQ_FUNC(name, strct) \
+    template <class ValueType \
+            , class ShapeType \
+            , class Derived \
+            , class = std::enable_if_t< \
+                util::is_convertible_to_ad_v<Derived>> > \
+    inline auto name(const VarView<ValueType, ShapeType>& var, \
+                     const Derived& x)  \
+    { \
+        using var_view_t = VarView<ValueType, ShapeType>; \
+        using expr_t = util::convert_to_ad_t<Derived>; \
+        expr_t expr = x; \
+        return core::OpEqNode<core::strct, var_view_t, expr_t>(var, expr); \
+    } 
+
+ADNODE_OPEQ_FUNC(operator+=, AddEq)
+ADNODE_OPEQ_FUNC(operator-=, SubEq)
+ADNODE_OPEQ_FUNC(operator*=, MulEq)
+ADNODE_OPEQ_FUNC(operator/=, DivEq)
 
 } // namespace ad

@@ -144,5 +144,147 @@ TEST_F(eq_fixture, vec_nested_eq_beval)
     }
 }
 
+///////////////////////////////////////
+// OpEqNode Tests
+///////////////////////////////////////
+
+TEST_F(eq_fixture, opeq_scl_feval_alias)
+{
+    auto expr = (scl_expr *= scl_expr); 
+    val_buf.resize(expr.bind_size());
+    expr.bind(val_buf.data());
+    double orig = scl_expr.get();
+    double res = expr.feval();
+
+    EXPECT_DOUBLE_EQ(res, orig * orig);
+}
+
+TEST_F(eq_fixture, opeq_scl_beval_alias)
+{
+    auto expr = (scl_expr *= scl_expr); 
+    val_buf.resize(expr.bind_size());
+    expr.bind(val_buf.data());
+    double orig = scl_expr.get();
+    expr.feval();
+    expr.beval(seed, 0, 0, util::beval_policy::single);
+
+    EXPECT_DOUBLE_EQ(scl_expr.get_adj(), seed*2*orig);
+}
+
+TEST_F(eq_fixture, opeq_scl_feval_noalias)
+{
+    auto expr = (scl_expr /= scl_unary_t(scl_expr)); 
+    val_buf.resize(expr.bind_size());
+    expr.bind(val_buf.data());
+    double orig = scl_expr.get();
+    double res = expr.feval();
+
+    EXPECT_DOUBLE_EQ(res, orig / unary_t::fmap(orig));
+}
+
+TEST_F(eq_fixture, opeq_scl_beval_noalias)
+{
+    auto expr = (scl_expr /= scl_unary_t(scl_expr)); 
+    val_buf.resize(expr.bind_size());
+    expr.bind(val_buf.data());
+    expr.feval();
+    expr.beval(seed, 0, 0, util::beval_policy::single);
+
+    EXPECT_DOUBLE_EQ(scl_expr.get_adj(), 0.);
+}
+
+TEST_F(eq_fixture, opeq_vec_scl_feval_noalias)
+{
+    auto expr = (vec_expr *= scl_expr); 
+    val_buf.resize(expr.bind_size());
+    expr.bind(val_buf.data());
+    Eigen::VectorXd orig = vec_expr.get();
+    Eigen::VectorXd res = expr.feval();
+
+    for (int i = 0; i < res.size(); ++i) {
+        EXPECT_DOUBLE_EQ(res(i), orig(i) * scl_expr.get());
+    }
+}
+
+TEST_F(eq_fixture, opeq_vec_scl_beval_noalias)
+{
+    auto expr = (vec_expr *= scl_expr); 
+    val_buf.resize(expr.bind_size());
+    expr.bind(val_buf.data());
+    Eigen::VectorXd orig = vec_expr.get();
+    expr.feval();
+    expr.beval(seed, 1, 0, util::beval_policy::single);
+    expr.beval(seed, 2, 0, util::beval_policy::single);
+
+    for (size_t i = 0; i < vec_expr.size(); ++i) {
+        value_t actual = (i == 1 || i == 2) ? seed * scl_expr.get(): 0;
+        EXPECT_DOUBLE_EQ(vec_expr.get_adj(i,0), 
+                         actual);
+    }
+
+    EXPECT_DOUBLE_EQ(scl_expr.get_adj(), seed * (orig(1) + orig(2)));
+}
+
+TEST_F(eq_fixture, opeq_vec_vec_feval_alias)
+{
+    auto expr = (vec_expr *= vec_expr); 
+    val_buf.resize(expr.bind_size());
+    expr.bind(val_buf.data());
+    Eigen::VectorXd orig = vec_expr.get();
+    Eigen::VectorXd res = expr.feval();
+
+    for (int i = 0; i < res.size(); ++i) {
+        EXPECT_DOUBLE_EQ(res(i), orig(i) * orig(i));
+    }
+}
+
+TEST_F(eq_fixture, opeq_vec_vec_beval_alias)
+{
+    auto expr = (vec_expr *= vec_expr); 
+    val_buf.resize(expr.bind_size());
+    expr.bind(val_buf.data());
+    Eigen::VectorXd orig = vec_expr.get();
+    expr.feval();
+    expr.beval(seed, 1, 0, util::beval_policy::single);
+    expr.beval(seed, 2, 0, util::beval_policy::single);
+
+    for (size_t i = 0; i < vec_expr.size(); ++i) {
+        value_t actual = (i == 1 || i == 2) ? seed * 2 * orig(i): 0;
+        EXPECT_DOUBLE_EQ(vec_expr.get_adj(i,0), 
+                         actual);
+    }
+}
+
+TEST_F(eq_fixture, opeq_vec_vec_feval_noalias)
+{
+    auto expr = (vec_expr *= vec_unary_t(vec_expr)); 
+    val_buf.resize(expr.bind_size());
+    expr.bind(val_buf.data());
+    Eigen::VectorXd orig = vec_expr.get();
+    Eigen::VectorXd res = expr.feval();
+
+    for (int i = 0; i < res.size(); ++i) {
+        EXPECT_DOUBLE_EQ(res(i), orig(i) * unary_t::fmap(orig(i)));
+    }
+}
+
+TEST_F(eq_fixture, opeq_vec_vec_beval_noalias)
+{
+    auto expr = (vec_expr *= vec_unary_t(vec_expr)); 
+    val_buf.resize(expr.bind_size());
+    expr.bind(val_buf.data());
+    Eigen::VectorXd orig = vec_expr.get();
+    expr.feval();
+    expr.beval(seed, 1, 0, util::beval_policy::single);
+    expr.beval(seed, 2, 0, util::beval_policy::single);
+
+    for (size_t i = 0; i < vec_expr.size(); ++i) {
+        value_t actual = (i == 1 || i == 2) ? 
+            seed * (unary_t::fmap(orig(i)) + orig(i) * unary_t::bmap(orig(i))): 0;
+        EXPECT_DOUBLE_EQ(vec_expr.get_adj(i,0), 
+                         actual);
+    }
+}
+
 } // namespace core
 } // namespace ad

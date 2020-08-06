@@ -187,6 +187,37 @@ TEST_F(node_integration_fixture, leaf_unary_eq)
 }
 
 ////////////////////////////////////////////////////////////
+// LeafNode, OpEqNode Integration Test 
+////////////////////////////////////////////////////////////
+
+TEST_F(node_integration_fixture, leaf_opeq_many_nested)
+{
+    auto expr = (vec_expr *= scl_expr,
+                 vec_expr += vec_expr - scl_expr,
+                 scl_expr *= scl_expr - 2.,
+                 vec_expr -= scl_expr,
+                 vec_expr /= scl_expr,
+                 ad::sum(vec_expr));
+    bind(expr);
+    Eigen::VectorXd vec_orig = vec_expr.get();
+    double scl_orig = scl_expr.get();
+    double n = vec_orig.size();
+    double actual = 1./(scl_orig - 2.) * 
+        (2. * vec_orig.array().sum() - n) - n;
+
+    EXPECT_DOUBLE_EQ(autodiff(expr), actual);
+
+    double scl_adj = -1./std::pow(scl_orig - 2, 2) * 
+        (2. * vec_orig.array().sum() - n);
+    EXPECT_DOUBLE_EQ(scl_expr.get_adj(), scl_adj);
+
+    double vec_adj = 2./(scl_orig - 2.);
+    for (size_t i = 0; i < vec_expr.size(); ++i) {
+        EXPECT_DOUBLE_EQ(vec_expr.get_adj()(i), vec_adj);
+    }
+}
+
+////////////////////////////////////////////////////////////
 // LeafNode, UnaryNode, BinaryNode, EqNode, GlueNode Integration Test 
 ////////////////////////////////////////////////////////////
 
