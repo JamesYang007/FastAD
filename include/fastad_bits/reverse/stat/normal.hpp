@@ -173,7 +173,7 @@ public:
 
 private:
     void update_cache() {
-        log_sigma_ = std::log(sigma_.feval());
+        log_sigma_ = std::log(sigma_.get());
     }
 
     value_t log_sigma_;

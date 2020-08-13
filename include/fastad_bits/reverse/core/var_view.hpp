@@ -13,6 +13,12 @@ namespace core {
 
 template <class VarViewType, class ExprType>
 struct EqNode;
+template <class Op, class VarViewType, class ExprType>
+struct OpEqNode;
+struct AddEq;
+struct SubEq;
+struct MulEq;
+struct DivEq;
 
 } // namespace core
 
@@ -95,6 +101,7 @@ struct VarView<ValueType, scl>:
      * @return  const reference to underlying adjoint.
      */
     const var_t& get_adj() const { return adj_.get(); }
+    value_t& get_adj(size_t, size_t) { return adj_.get(); }
     const value_t& get_adj(size_t, size_t) const { return adj_.get(); }
 
     /**
@@ -174,6 +181,7 @@ struct VarView<ValueType, vec>:
     const var_t& feval() const { return this->get(); }
     void beval(value_t seed, size_t i, size_t, util::beval_policy) { adj_.get()(i) += seed; }
     const var_t& get_adj() const { return adj_.get(); }
+    value_t& get_adj(size_t i, size_t) { return adj_.get()(i); }
     const value_t& get_adj(size_t i, size_t) const { return adj_.get()(i); }
     value_t* bind_adj(value_t* begin) { return adj_.bind(begin); }
     value_t* data_adj() { return adj_.data(); }
@@ -192,6 +200,26 @@ struct VarView<ValueType, vec>:
     void reset_adj() { adj_.get().setZero(); }
     constexpr size_t bind_size() const { return 0; }
     constexpr size_t single_bind_size() const { return 0; }
+
+    // subviews
+    auto operator()(size_t i, size_t=0) {
+        assert(i < size());
+        return VarView<value_t, ad::scl>(data() + i, data_adj() + i);
+    }
+    auto operator[](size_t i) {
+        return operator()(i);
+    }
+    auto head(size_t n) {
+        assert(n <= size());
+        return VarView<value_t, ad::vec>(data(), data_adj(), n);
+    }
+    auto tail(size_t n) {
+        assert(n <= size());
+        size_t offset = size() - n;
+        return VarView<value_t, ad::vec>(data() + offset, 
+                                         data_adj() + offset,
+                                         n);
+    }
 
 private:
     value_view_t adj_;
@@ -237,6 +265,7 @@ struct VarView<ValueType, mat>:
     const var_t& feval() const { return this->get(); }
     void beval(value_t seed, size_t i, size_t j, util::beval_policy) { adj_.get()(i,j) += seed; }
     const var_t& get_adj() const { return adj_.get(); }
+    value_t& get_adj(size_t i, size_t j) { return adj_.get()(i,j); }
     const value_t& get_adj(size_t i, size_t j) const { return adj_.get()(i,j); }
     value_t* bind_adj(value_t* begin) { return adj_.bind(begin); }
     value_t* data_adj() { return adj_.data(); }
@@ -290,6 +319,29 @@ struct VarView<ValueType, selfadjmat>:
             size_t n_cols)
         : value_view_t(val_begin, n_rows, n_cols)
         , adj_(adj_begin, n_rows, n_cols)
+        , val_flat_(nullptr, 0)
+        , adj_flat_(nullptr, 0)
+    {}
+
+    /**
+     * Special constructor for a square self-adjoint matrix.
+     * This is available if one needs to view a flattened value array
+     * and flattened adjoint array rather than a full matrix.
+     * However, a full (column-major) matrix data pointer must be provided.
+     *
+     * @param   val_begin       pointer to beginning of (column-major) matrix
+     * @param   val_flat_begin  pointer to flattened value vector 
+     * @param   adj_flat_begin  pointer to flattened adjoint vector
+     * @param   n_rows          number of rows (and columns)
+     */
+    VarView(value_t* val_begin,
+            value_t* val_flat_begin,
+            value_t* adj_flat_begin,
+            size_t n_rows)
+        : value_view_t(val_begin, n_rows, n_rows)
+        , adj_(nullptr, n_rows, n_rows) // unused
+        , val_flat_(val_flat_begin, (n_rows * (n_rows+1)) / 2)
+        , adj_flat_(adj_flat_begin, (n_rows * (n_rows+1)) / 2)
     {}
 
     template <class Derived
@@ -303,24 +355,56 @@ struct VarView<ValueType, selfadjmat>:
     }
 
     const var_t& feval() { 
+        if (is_flat_set()) {
+            assert(this->rows() == this->cols());
+            size_t k = 0;
+            size_t size = rows();
+            // copy from flat vector into lower half matrix 
+            for (size_t j = 0; j < cols(); ++j, --size) {
+                std::memcpy(&this->get(j,j),
+                            &val_flat_(k),
+                            size * sizeof(value_t));
+                k += size;
+            }
+        }
         return this->get() = 
             this->get().template selfadjointView<Eigen::Lower>(); 
     }
 
     void beval(value_t seed, size_t i, size_t j, util::beval_policy) 
     { 
-        if (i >= j) adj_.get()(i,j) += seed; 
-        else adj_.get()(j,i) += seed;
+        if (is_flat_set()) {
+            adj_flat_(flat_idx(i,j)) += seed;
+        } else {
+            if (i >= j) adj_.get()(i,j) += seed; 
+            else adj_.get()(j,i) += seed;
+        }
     }
 
-    const var_t& get_adj() const { return adj_.get(); }
-    const value_t& get_adj(size_t i, size_t j) const 
-    { return adj_.get()(i,j); }
+    const var_t& get_adj() const { 
+        return (is_flat_set()) ? adj_flat_ : adj_.get(); 
+    }
 
-    value_t* bind_adj(value_t* begin) { return adj_.bind(begin); }
+    value_t& get_adj(size_t i, size_t j) { 
+        return (is_flat_set()) ? adj_flat_(flat_idx(i,j)) : adj_.get()(i,j); 
+    }
 
-    value_t* data_adj() { return adj_.data(); }
-    const value_t* data_adj() const { return adj_.data(); }
+    const value_t& get_adj(size_t i, size_t j) const { 
+        return (is_flat_set()) ? adj_flat_(flat_idx(i,j)) : adj_.get()(i,j); 
+    }
+
+    value_t* bind_adj(value_t* begin) { 
+        assert(!is_flat_set());
+        return adj_.bind(begin); 
+    }
+
+    value_t* data_adj() { 
+        return (is_flat_set()) ? adj_flat_.data() : adj_.data(); 
+    }
+
+    const value_t* data_adj() const { 
+        return (is_flat_set()) ? adj_flat_.data() : adj_.data(); 
+    }
 
     size_t size() const { 
         assert(value_view_t::size() == adj_.size());
@@ -337,12 +421,54 @@ struct VarView<ValueType, selfadjmat>:
         return value_view_t::cols();
     }
 
-    void reset_adj() { adj_.get().setZero(); }
+    void reset_adj() { 
+        if (is_flat_set()) adj_flat_.setZero();
+        else adj_.get().setZero(); 
+    }
+
     constexpr size_t bind_size() const { return 0; }
     constexpr size_t single_bind_size() const { return 0; }
 
 private:
+
+    size_t flat_idx(size_t i, size_t j) const {
+        return (i >= j) ? 
+            (rows() * j + i) - ((j * (j+1)) / 2):
+            flat_idx(j, i);
+    }
+
+    bool is_flat_set() const {
+        return val_flat_.data() != nullptr &&
+               adj_flat_.data() != nullptr;
+    }
+
+    using vec_view_t = util::shape_to_raw_view_t<value_t, ad::vec>;
     value_view_t adj_;
+    vec_view_t val_flat_;
+    vec_view_t adj_flat_;
 };
+
+/*
+ * Useful operator overloads
+ */
+#define ADNODE_OPEQ_FUNC(name, strct) \
+    template <class ValueType \
+            , class ShapeType \
+            , class Derived \
+            , class = std::enable_if_t< \
+                util::is_convertible_to_ad_v<Derived>> > \
+    inline auto name(const VarView<ValueType, ShapeType>& var, \
+                     const Derived& x)  \
+    { \
+        using var_view_t = VarView<ValueType, ShapeType>; \
+        using expr_t = util::convert_to_ad_t<Derived>; \
+        expr_t expr = x; \
+        return core::OpEqNode<core::strct, var_view_t, expr_t>(var, expr); \
+    } 
+
+ADNODE_OPEQ_FUNC(operator+=, AddEq)
+ADNODE_OPEQ_FUNC(operator-=, SubEq)
+ADNODE_OPEQ_FUNC(operator*=, MulEq)
+ADNODE_OPEQ_FUNC(operator/=, DivEq)
 
 } // namespace ad

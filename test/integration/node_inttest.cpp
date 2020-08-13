@@ -187,6 +187,67 @@ TEST_F(node_integration_fixture, leaf_unary_eq)
 }
 
 ////////////////////////////////////////////////////////////
+// LeafNode, OpEqNode Integration Test 
+////////////////////////////////////////////////////////////
+
+TEST_F(node_integration_fixture, leaf_opeq_many_nested)
+{
+    auto expr = (vec_expr *= scl_expr,
+                 vec_expr += vec_expr - scl_expr,
+                 scl_expr *= scl_expr - 2.,
+                 scl_expr /= 1.,
+                 vec_expr -= 2. * vec_expr,
+                 vec_expr *= -1.,
+                 vec_expr -= scl_expr,
+                 vec_expr /= scl_expr,
+                 ad::sum(vec_expr));
+    bind(expr);
+    Eigen::VectorXd vec_orig = vec_expr.get();
+    double scl_orig = scl_expr.get();
+    double n = vec_orig.size();
+    double actual = 1./(scl_orig - 2.) * 
+        (2. * vec_orig.array().sum() - n) - n;
+
+    EXPECT_DOUBLE_EQ(autodiff(expr), actual);
+
+    double scl_adj = -1./std::pow(scl_orig - 2, 2) * 
+        (2. * vec_orig.array().sum() - n);
+    EXPECT_DOUBLE_EQ(scl_expr.get_adj(), scl_adj);
+
+    double vec_adj = 2./(scl_orig - 2.);
+    for (size_t i = 0; i < vec_expr.size(); ++i) {
+        EXPECT_DOUBLE_EQ(vec_expr.get_adj()(i), vec_adj);
+    }
+}
+
+TEST_F(node_integration_fixture, leaf_opeq_head_tail)
+{
+    // note this is NOT same as AR model (you need a for loop for that)
+    auto head = vec_expr.head(vec_expr.size()-1);
+    auto tail = vec_expr.tail(vec_expr.size()-1);
+    auto expr = (tail += scl_expr * head,
+                 ad::sum(tail));
+    bind(expr);
+    Eigen::VectorXd head_orig = head.get();
+    Eigen::VectorXd tail_orig = tail.get();
+    double scl_orig = scl_expr.get();
+    double tail_sum = tail_orig.array().sum(); 
+    double head_sum = head_orig.array().sum();
+    double actual = tail_sum + scl_orig * head_sum;
+
+    EXPECT_DOUBLE_EQ(autodiff(expr), actual);
+
+    double scl_adj = head_sum;
+    EXPECT_DOUBLE_EQ(scl_expr.get_adj(), scl_adj);
+
+    EXPECT_DOUBLE_EQ(vec_expr.get_adj()(0), scl_orig);
+    for (size_t i = 1; i < vec_expr.size() - 1; ++i) {
+        EXPECT_DOUBLE_EQ(vec_expr.get_adj()(i), 1 + scl_orig);
+    }
+    EXPECT_DOUBLE_EQ(vec_expr.get_adj()(vec_expr.size()-1), 1.);
+}
+
+////////////////////////////////////////////////////////////
 // LeafNode, UnaryNode, BinaryNode, EqNode, GlueNode Integration Test 
 ////////////////////////////////////////////////////////////
 

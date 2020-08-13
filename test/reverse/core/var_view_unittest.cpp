@@ -289,4 +289,43 @@ TEST_F(var_view_fixture, selfadjmat_bind_adj)
     compare_vectors(res, actual);
 }
 
+TEST_F(var_view_fixture, selfadjmat_flat)
+{
+    size_t r = 5;
+    Eigen::VectorXd val((r * (r+1)) / 2);
+    for (int i = 0; i < val.size(); ++i) {
+        val(i) = i;
+    }
+    Eigen::VectorXd adj((r * (r+1)) / 2);
+    adj.setZero();
+    Eigen::MatrixXd mat(r, r);
+    selfadjmat_view_t m(mat.data(), val.data(), adj.data(), r);
+    Eigen::MatrixXd res = m.feval();
+
+    size_t k = 0;
+    for (int j = 0; j < res.cols(); ++j) {
+        for (int i = j; i < res.rows(); ++i, ++k) {
+            EXPECT_DOUBLE_EQ(res(i,j), res(j,i));
+            EXPECT_DOUBLE_EQ(res(i,j), val(k));
+        }
+    }
+
+    m.beval(1., 0, 0, util::beval_policy::single);
+    m.beval(2., 1, 0, util::beval_policy::single);
+    m.beval(3., 0, 1, util::beval_policy::single);
+
+    EXPECT_DOUBLE_EQ(m.get_adj(0,0), 1.);
+    EXPECT_DOUBLE_EQ(m.get_adj(1,0), 5.);
+    EXPECT_DOUBLE_EQ(m.get_adj(0,1), 5.);
+
+    for (size_t j = 0; j < m.cols(); ++j) {
+        for (size_t i = 0; i < m.rows(); ++i) {
+            if ((i == 0 && j == 0) ||
+                (i == 1 && j == 0) ||
+                (i == 0 && j == 1)) continue;
+            EXPECT_DOUBLE_EQ(m.get_adj(i,j), 0.);
+        }
+    }
+}
+
 } // namespace ad
