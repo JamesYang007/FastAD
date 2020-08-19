@@ -149,7 +149,8 @@ public:
         begin -= expr_.single_bind_size();
 
         // only bind root to var_view's values, not recursively down
-        expr_.value_view_t::bind(var_view_.data());
+        using expr_value_view_t = typename expr_t::value_view_t;
+        static_cast<expr_value_view_t&>(expr_).bind(var_view_.data());
 
         return begin;
     }
