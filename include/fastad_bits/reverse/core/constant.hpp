@@ -65,6 +65,7 @@ struct ConstantView:
 {
     using value_t = ValueType;
     using shape_t = ShapeType;
+    using value_view_t = ConstantView<value_t, shape_t>;
     using var_t = util::shape_to_raw_const_view_t<value_t, shape_t>;
 
     ConstantView(const value_t* begin,
@@ -153,6 +154,7 @@ public:
     using value_t = ValueType;
     using shape_t = ShapeType;
     using var_t = details::constant_var_t<value_t, shape_t>;
+    using value_view_t = Constant<value_t, shape_t>;
 
     template <class T>
     Constant(const T& c)

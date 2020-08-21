@@ -102,9 +102,10 @@ add_test(reverse_core_unittest reverse_core_unittest)
 ########################################################################
 
 add_executable(reverse_stat_unittest
+    ${CMAKE_CURRENT_SOURCE_DIR}/reverse/stat/bernoulli_unittest.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/reverse/stat/cauchy_unittest.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/reverse/stat/normal_unittest.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/reverse/stat/uniform_unittest.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/reverse/stat/bernoulli_unittest.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/reverse/stat/wishart_unittest.cpp
     )
 

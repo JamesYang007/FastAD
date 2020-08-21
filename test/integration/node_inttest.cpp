@@ -187,6 +187,19 @@ TEST_F(node_integration_fixture, leaf_unary_eq)
 }
 
 ////////////////////////////////////////////////////////////
+// LeafNode, ConstantNode Integration Test 
+////////////////////////////////////////////////////////////
+
+TEST_F(node_integration_fixture, leaf_constant)
+{
+    Var<double> x(0.);
+    auto expr = (x = 1.);
+    bind(expr);
+    EXPECT_DOUBLE_EQ(autodiff(expr), 1.);
+    EXPECT_DOUBLE_EQ(x.get_adj(0,0), 1.);
+}
+
+////////////////////////////////////////////////////////////
 // LeafNode, OpEqNode Integration Test 
 ////////////////////////////////////////////////////////////
 
