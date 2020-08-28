@@ -167,8 +167,9 @@ public:
         if constexpr (!util::is_constant_v<sigma_t>) {
             sigma_.beval(seed * (z*z - 1) * inv_s, 0, 0, pol);
         }
-        mean_.beval(seed * (z * inv_s), 0, 0, pol);
-        x_.beval(seed * (-z * inv_s), 0, 0, pol);
+        value_t adj = z * inv_s;
+        mean_.beval(seed * adj, 0, 0, pol);
+        x_.beval(seed * (-adj), 0, 0, pol);
     }
 
 private:
@@ -244,8 +245,8 @@ public:
                 -0.5 * inv_s_sq * (x_var_ + x_.rows() * centered * centered) 
                         - x_.rows() * log_sigma_;
         } else {
-            auto z = ((x.array() - m) / s).matrix();
-            z_sq = z.squaredNorm();
+            auto z = (x.array() - m).matrix();
+            z_sq = z.squaredNorm() / (s * s);
             return this->get() = -0.5 * z_sq - x_.rows() * log_sigma_; 
         }
     }
@@ -283,7 +284,7 @@ public:
 
             if constexpr (!util::is_constant_v<x_t>) {
                 for (size_t i = 0; i < x_.rows(); ++i) {
-                    x_.beval(seed * (-(x(i) - m) * inv_s_sq), i, 0, pol);
+                    x_.beval(seed * ((m - x(i)) * inv_s_sq), i, 0, pol);
                 }
             }
 
@@ -354,8 +355,8 @@ public:
             this->update_cache();
         }
 
-        auto z = ((x.array() - m.array()) / s).matrix();
-        z_sq = z.squaredNorm();
+        auto z = (x.array() - m.array()).matrix();
+        z_sq = z.squaredNorm() / (s * s);
         
         return this->get() = -0.5 * z_sq - x_.rows() * log_sigma_; 
     }
@@ -496,8 +497,8 @@ public:
             mean_.beval(seed * mean_adj, 0, 0, pol);
 
             for (size_t i = 0; i < x_.rows(); ++i) {
-                value_t inv_s = 1./s(i);
-                x_.beval(seed * (-(x(i) - m) * inv_s * inv_s), i, 0, pol);
+                value_t inv_s_sq = 1./(s(i) * s(i));
+                x_.beval(seed * (-(x(i) - m) * inv_s_sq), i, 0, pol);
             }
 
         }
