@@ -22,6 +22,17 @@ constexpr inline
 auto to_array(Eigen::MatrixBase<T>& x)
 { return x.array(); }
 
+template <class T, class XType>
+constexpr inline
+auto cast_to(const XType& x) 
+{
+    if constexpr (util::is_eigen_v<XType>) {
+        return x.template cast<T>();
+    } else {
+        return x;
+    }
+};
+
 template <class T>
 constexpr inline void ones(T& x) 
 {

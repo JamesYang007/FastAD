@@ -101,15 +101,7 @@ public:
     {
         auto&& lval = util::to_array(expr_lhs_.feval());
         auto&& rval = util::to_array(expr_rhs_.feval());
-        auto to_value_t = [](const auto& x) {
-            using x_t = std::decay_t<decltype(x)>;
-            if constexpr (util::is_eigen_v<x_t>) {
-                return x.template cast<value_t>();
-            } else {
-                return x;
-            }
-        };
-        util::to_array(this->get()) = to_value_t(Binary::fmap(lval, rval));
+        util::to_array(this->get()) = util::cast_to<value_t>(Binary::fmap(lval, rval));
         return this->get();
     }
 
