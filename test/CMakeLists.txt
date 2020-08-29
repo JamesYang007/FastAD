@@ -13,6 +13,7 @@ endif()
 
 add_executable(utility_unittest
     ${CMAKE_CURRENT_SOURCE_DIR}/util/type_traits_unittest.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/util/value_unittest.cpp
     )
 
 if (NOT CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
@@ -75,6 +76,7 @@ add_executable(reverse_core_unittest
     ${CMAKE_CURRENT_SOURCE_DIR}/reverse/core/prod_unittest.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/reverse/core/sum_unittest.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/reverse/core/unary_unittest.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/reverse/core/var_unittest.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/reverse/core/var_view_unittest.cpp
     )
 

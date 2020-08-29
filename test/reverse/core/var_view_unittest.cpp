@@ -164,6 +164,22 @@ TEST_F(var_view_fixture, vec_bind_adj)
     compare_vectors(res, actual);
 }
 
+TEST_F(var_view_fixture, vec_subscript)
+{
+    vector.bind({val_buf.data(), nullptr});
+    auto s = vector[1];
+    EXPECT_EQ(s.size(), 1ul);
+    EXPECT_EQ(s.data(), val_buf.data() + 1);
+}
+
+TEST_F(var_view_fixture, vec_call_operator)
+{
+    vector.bind({val_buf.data(), nullptr});
+    auto s = vector(2);
+    EXPECT_EQ(s.size(), 1ul);
+    EXPECT_EQ(s.data(), val_buf.data() + 2);
+}
+
 // TEST matrix
 
 TEST_F(var_view_fixture, mat_rows)

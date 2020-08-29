@@ -143,9 +143,6 @@ struct VarView<ValueType, vec>:
     using typename base_t::value_t;
     using base_t::operator=;
 
-    VarView(size_t rows) 
-        : VarView(nullptr, nullptr, rows) {}
-
     VarView(value_t* val,
             value_t* adj,
             size_t rows,
@@ -182,9 +179,6 @@ struct VarView<ValueType, mat>:
     using base_t = core::VarViewBase<VarView<ValueType, mat>>;
     using typename base_t::value_t;
     using base_t::operator=;
-
-    VarView(size_t rows, size_t cols) 
-        : VarView(nullptr, nullptr, rows, cols) {}
 
     VarView(value_t* val,
             value_t* adj,
