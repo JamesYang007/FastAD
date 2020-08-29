@@ -2,7 +2,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: buildpack-deps:trusty
+      - image: buildpack-deps:xenial
    
     steps:
       - checkout
@@ -10,13 +10,14 @@ jobs:
           name: Install sudo
           command: 'apt-get update && apt-get install -y sudo && rm -rf /var/lib/apt/lists/*'
       - run:
-          name: Install ubuntu-toolchain-r/test and g++-7
+          name: Install ubuntu-toolchain-r/test, g++-7, and cmake
           command: |
               sudo apt-get update
               sudo apt-get install -y software-properties-common
               sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
               sudo apt update
               sudo apt install g++-7 -y
+              sudo apt install cmake -y
       - run:
           name: Check g++ version
           command: |
@@ -25,20 +26,20 @@ jobs:
               sudo update-alternatives --config gcc
               gcc --version
               g++ --version
-      - run:
-          name: Install CMake
-          command: |
-              sudo apt-get update
-              version=3.9
-              build=2
-              mkdir ~/temp
-              cd ~/temp
-              wget https://cmake.org/files/v$version/cmake-$version.$build.tar.gz
-              tar -xzvf cmake-$version.$build.tar.gz
-              cd cmake-$version.$build/
-              ./bootstrap
-              make -j$(nproc)
-              sudo make install
+              #- run:
+              #    name: Install CMake
+              #    command: |
+              #        sudo apt-get update
+              #        version=3.9
+              #        build=2
+              #        mkdir ~/temp
+              #        cd ~/temp
+              #        wget https://cmake.org/files/v$version/cmake-$version.$build.tar.gz
+              #        tar -xzvf cmake-$version.$build.tar.gz
+              #        cd cmake-$version.$build/
+              #        ./bootstrap
+              #        make -j$(nproc)
+              #        sudo make install
       - run:
           name: Install Ninja
           command: |
