@@ -96,17 +96,16 @@ protected:
         scl_scl_scl_binary.bind_cache(ptr_pack);
     }
 
-    template <class Binary, class T1, class T2, class T3,
-              class T4, class T5, class T6, class T7>
-    void test_binary_vec(const Eigen::ArrayBase<T1>& sv_f,
-                         const Eigen::ArrayBase<T2>& vs_f,
-                         const Eigen::ArrayBase<T3>& vv_f,
+    template <class Binary, class T>
+    void test_binary_vec(const Eigen::ArrayBase<T>& sv_f,
+                         const Eigen::ArrayBase<T>& vs_f,
+                         const Eigen::ArrayBase<T>& vv_f,
                          value_t sv_ladj,
-                         const Eigen::ArrayBase<T4>& sv_radj,
-                         const Eigen::ArrayBase<T5>& vs_ladj,
+                         const Eigen::ArrayBase<T>& sv_radj,
+                         const Eigen::ArrayBase<T>& vs_ladj,
                          value_t vs_radj,
-                         const Eigen::ArrayBase<T6>& vv_ladj,
-                         const Eigen::ArrayBase<T7>& vv_radj)
+                         const Eigen::ArrayBase<T>& vv_ladj,
+                         const Eigen::ArrayBase<T>& vv_radj)
     {
         aVectorXd f;
         value_t scl_adj;
@@ -326,10 +325,14 @@ TEST_F(binary_fixture, Sub_vec)
     aVectorXd vv_f = (v - u);
     value_t sv_ladj = vseed.sum();
     aVectorXd sv_radj = -vseed;
+    aVectorXd vs_ladj = -sv_radj;
+    value_t vs_radj = -sv_ladj;
+    aVectorXd vv_ladj = -sv_radj;
+    aVectorXd vv_radj = sv_radj;
     test_binary_vec<Sub>(sv_f, vs_f, vv_f,
                          sv_ladj, sv_radj,
-                         -sv_radj, -sv_ladj,
-                         -sv_radj, sv_radj);
+                         vs_ladj, vs_radj,
+                         vv_ladj, vv_radj);
 }
 
 TEST_F(binary_fixture, Mul_scl) 
