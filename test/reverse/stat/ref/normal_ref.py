@@ -92,6 +92,6 @@ def vvm_beval():
     return np.concatenate([dx, dmu, (dsigma).flatten()])
 
 if __name__ == "__main__":
-    res = vsm_beval()
+    res = vvm_beval()
     for r in res:
         print('{0:.16f}'.format(r))

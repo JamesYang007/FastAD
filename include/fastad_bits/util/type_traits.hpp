@@ -18,6 +18,9 @@ namespace core {
 template <class T>
 struct ExprBase;
 
+template <class Derived>
+struct ConstantBase;
+
 template <class V, class S>
 struct Constant;
 
@@ -34,6 +37,7 @@ struct expr_traits
     using value_t = typename T::value_t;
     using shape_t = typename T::shape_t;
     using var_t = typename T::var_t;
+    using ptr_pack_t = typename T::ptr_pack_t;
 };
 
 /*
@@ -113,6 +117,49 @@ struct is_var<Var<ValueType, ShapeType>>:
 template <class T>
 inline constexpr bool is_var_v =
     details::is_var<T>::value;
+
+/*
+ * Check if type T is Constant
+ */
+template <class T>
+inline constexpr bool is_constant_v =
+    std::is_base_of_v<core::ConstantBase<T>, T>;
+
+/**
+ * Constant represents constants in a mathematical formula.
+ * It owns the constant values rather than viewing them elsewhere.
+ *
+ * @tparam  ValueType   underlying data type
+ */
+namespace details {
+
+template <class ValueType, class ShapeType>
+struct constant_var; 
+
+template <class ValueType>
+struct constant_var<ValueType, ad::scl>
+{
+    using type = ValueType;
+};
+
+template <class ValueType>
+struct constant_var<ValueType, ad::vec>
+{
+    using type = Eigen::Matrix<ValueType, Eigen::Dynamic, 1>;
+};
+
+template <class ValueType>
+struct constant_var<ValueType, ad::mat>
+{
+    using type = Eigen::Matrix<ValueType, Eigen::Dynamic, Eigen::Dynamic>;
+};
+
+} // namespace details
+
+template <class ValueType, class ShapeType>
+using constant_var_t = typename 
+    details::constant_var<ValueType, ShapeType>::type;
+
 
 /*
  * Get common value type among variadic types Ts...

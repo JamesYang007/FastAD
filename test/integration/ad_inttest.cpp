@@ -56,8 +56,7 @@ protected:
     ad_fixture()
     {
         for (size_t i = 0; i < v.size(); ++i) {
-            v[i].bind(val.data() + i);
-            v[i].bind_adj(adj.data() + i);
+            v[i].bind({val.data() + i, adj.data() + i});
         }
     }
 
@@ -98,8 +97,10 @@ protected:
                      AdjType& adj,
                      Func test_func)
     {
-        std::vector<double> tmp(expr.bind_size());
-        expr.bind(tmp.data());
+        auto size_pack = expr.bind_cache_size();
+        std::vector<double> val_buf(size_pack(0));
+        std::vector<double> adj_buf(size_pack(1));
+        expr.bind_cache({val_buf.data(), adj_buf.data()});
         autodiff(expr);
         switch(test_func) {
             case Func::f:
@@ -150,9 +151,7 @@ TEST_F(ad_fixture, function_vector_complex) {
         x.emplace_back(dist(gen));
     }
 
-    auto expr = PHI_lmda(x, w);
-    std::vector<double> tmp(expr.bind_size());
-    expr.bind(tmp.data());
+    auto expr = ad::bind(PHI_lmda(x, w));
     autodiff(expr);
 }
 

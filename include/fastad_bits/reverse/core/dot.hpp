@@ -1,8 +1,10 @@
 #pragma once
 #include <fastad_bits/reverse/core/expr_base.hpp>
-#include <fastad_bits/reverse/core/value_view.hpp>
+#include <fastad_bits/reverse/core/value_adj_view.hpp>
 #include <fastad_bits/reverse/core/constant.hpp>
 #include <fastad_bits/util/type_traits.hpp>
+#include <fastad_bits/util/value.hpp>
+#include <fastad_bits/util/size_pack.hpp>
 
 namespace ad {
 namespace core {
@@ -52,8 +54,8 @@ using dot_shape_t = typename dot_shape<T,U>::type;
 template <class LHSExprType
         , class RHSExprType>
 struct DotNode:
-    ValueView<typename util::expr_traits<LHSExprType>::value_t,
-              details::dot_shape_t<LHSExprType, RHSExprType>>,
+    ValueAdjView<typename util::expr_traits<LHSExprType>::value_t,
+                 details::dot_shape_t<LHSExprType, RHSExprType>>,
     ExprBase<DotNode<LHSExprType, RHSExprType>>
 {
 private:
@@ -68,16 +70,16 @@ private:
             typename util::expr_traits<rhs_t>::value_t>);
 
 public:
-    using value_view_t = ValueView<lhs_value_t,
+    using value_adj_view_t = ValueAdjView<lhs_value_t,
           details::dot_shape_t<lhs_t, rhs_t> >;
-    using typename value_view_t::value_t;
-    using typename value_view_t::shape_t;
-    using typename value_view_t::var_t;
-    using value_view_t::bind;
+    using typename value_adj_view_t::value_t;
+    using typename value_adj_view_t::shape_t;
+    using typename value_adj_view_t::var_t;
+    using typename value_adj_view_t::ptr_pack_t;
 
     DotNode(const lhs_t& lhs,
             const rhs_t& rhs)
-        : value_view_t(nullptr, lhs.rows(), rhs.cols())
+        : value_adj_view_t(nullptr, nullptr, lhs.rows(), rhs.cols())
         , lhs_{lhs}
         , rhs_{rhs}
     {
@@ -91,39 +93,33 @@ public:
         return this->get() = lhs_val * rhs_val;
     }
 
-    void beval(value_t seed, size_t i, size_t j, util::beval_policy pol)
+    template <class T>
+    void beval(const T& seed)
     {
-        if (seed == 0) return;
-        for (size_t k = 0; k < rhs_.rows(); ++k) {
-            rhs_.beval(seed * lhs_.get(i,k), k, j, pol);
-        }
-        for (size_t k = 0; k < lhs_.cols(); ++k) {
-            lhs_.beval(seed * rhs_.get(k,j), i, k, pol);
-        }
+        util::to_array(this->get_adj()) = seed;
+        auto a_ladj = util::to_array(this->get_adj() * rhs_.get().transpose());
+        auto a_radj = util::to_array(lhs_.get().transpose() * this->get_adj());
+        rhs_.beval(a_radj);
+        lhs_.beval(a_ladj);
     }
 
-    value_t* bind(value_t* begin) 
+    ptr_pack_t bind_cache(ptr_pack_t begin)
     {
-        value_t* next = begin;
-        if constexpr (!util::is_var_view_v<lhs_t>) {
-            next = lhs_.bind(next);
-        }
-        if constexpr (!util::is_var_view_v<rhs_t>) {
-            next = rhs_.bind(next);
-        }
-        return value_view_t::bind(next);
+        begin = lhs_.bind_cache(begin);
+        begin = rhs_.bind_cache(begin);
+        return value_adj_view_t::bind(begin);
     }
 
-    size_t bind_size() const 
+    util::SizePack bind_cache_size() const 
     { 
-        return single_bind_size() + 
-                lhs_.bind_size() + 
-                rhs_.bind_size();
+        return single_bind_cache_size() + 
+                lhs_.bind_cache_size() + 
+                rhs_.bind_cache_size();
     }
 
-    size_t single_bind_size() const
+    util::SizePack single_bind_cache_size() const
     {
-        return this->size();
+        return {this->size(), this->size()};
     }
 
 
@@ -158,12 +154,11 @@ inline auto dot(const T1& x,
                   util::is_constant_v<expr2_t>) {
         static_assert(std::is_same_v<expr1_value_t, expr2_value_t>);
         using shape_t = core::details::dot_shape_t<expr1_t, expr2_t>;
-        using var_t = core::details::constant_var_t<expr2_value_t, shape_t>;
+        using var_t = util::constant_var_t<expr2_value_t, shape_t>;
         var_t out = expr1.feval() * expr2.feval();
         return ad::constant(out);
     } else {
-        return core::DotNode<expr1_t, expr2_t>(
-                expr1, expr2);
+        return core::DotNode<expr1_t, expr2_t>(expr1, expr2);
     }
 }
 

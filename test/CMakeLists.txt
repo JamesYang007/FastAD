@@ -63,21 +63,19 @@ add_test(forward_core_unittest forward_core_unittest)
 ########################################################################
 
 add_executable(reverse_core_unittest
-    ${CMAKE_CURRENT_SOURCE_DIR}/reverse/core/var_view_unittest.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/reverse/core/math_unittest.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/reverse/core/unary_unittest.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/reverse/core/binary_unittest.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/reverse/core/eq_unittest.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/reverse/core/glue_unittest.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/reverse/core/sum_unittest.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/reverse/core/eval_unittest.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/reverse/core/prod_unittest.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/reverse/core/pow_unittest.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/reverse/core/if_else_unittest.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/reverse/core/bind_unittest.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/reverse/core/dot_unittest.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/reverse/core/eq_unittest.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/reverse/core/eval_unittest.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/reverse/core/glue_unittest.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/reverse/core/if_else_unittest.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/reverse/core/norm_unittest.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/reverse/core/sqrt_unittest.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/reverse/core/pow_unittest.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/reverse/core/prod_unittest.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/reverse/core/sum_unittest.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/reverse/core/unary_unittest.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/reverse/core/var_view_unittest.cpp
     )
 
 if (NOT CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")

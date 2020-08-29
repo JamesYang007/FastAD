@@ -38,8 +38,10 @@ void reverse_simple()
 		, w5 = exp(w4*w3)
 		);
 
-    std::vector<double> tmp(expr.bind_size());
-    expr.bind(tmp.data());
+    auto size_pack = expr.bind_cache_size();
+    std::vector<double> val_buf(size_pack(0));
+    std::vector<double> adj_buf(size_pack(1));
+    expr.bind_cache({val_buf.data(), adj_buf.data()});
 
 	autodiff(expr);
 
@@ -63,8 +65,11 @@ void reverse_vec()
 		, w[1] = w[0] + x[0] * x[1]
 		, w[2] = exp(w[1] * w[0])
 		);
-    std::vector<double> tmp(expr.bind_size());
-    expr.bind(tmp.data());
+
+    auto size_pack = expr.bind_cache_size();
+    std::vector<double> val_buf(size_pack(0));
+    std::vector<double> adj_buf(size_pack(1));
+    expr.bind_cache({val_buf.data(), adj_buf.data()});
 
 	autodiff(expr);
 

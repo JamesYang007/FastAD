@@ -23,16 +23,21 @@ struct ExprBind
 
     ExprBind(const expr_t& expr)
         : expr_{expr}
-        , cache_(expr.bind_size())
+        , val_cache_()
+        , adj_cache_()
     {
-        expr_.bind(cache_.data());
+        auto size_pack = expr_.bind_cache_size();
+        val_cache_.resize(size_pack(0));
+        adj_cache_.resize(size_pack(1));
+        expr_.bind_cache({val_cache_.data(), adj_cache_.data()});
     }
     
     expr_t& get() { return expr_; }
 
 private:
     expr_t expr_; 
-    Eigen::Matrix<value_t, Eigen::Dynamic, 1> cache_;
+    Eigen::Matrix<value_t, Eigen::Dynamic, 1> val_cache_;
+    Eigen::Matrix<value_t, Eigen::Dynamic, 1> adj_cache_;
 };
 
 } // namespace core

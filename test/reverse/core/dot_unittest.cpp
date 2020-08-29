@@ -24,7 +24,8 @@ protected:
     dot_unary_t dot_unary;
     dot_mat_unary_t dot_mat_unary;
 
-    value_t seed = 0.010332;
+    aVectorXd vseed;
+    Eigen::ArrayXXd mseed;
 
     dot_fixture()
         : base_fixture(3) // change vec_size to 3
@@ -32,7 +33,12 @@ protected:
         , dot_vars(mat_expr, vec_expr)
         , dot_unary({mat_expr}, {vec_expr})
         , dot_mat_unary({mat_expr}, {mat_expr_transpose})
+        , vseed(2)
+        , mseed(2, 2)
     {
+        vseed << 2.3, 1.32;
+        mseed << 2.34, -3.2, 3.4, 1.23455;
+
         // initialize vector since not default size
         vec_initialize();
 
@@ -40,14 +46,19 @@ protected:
         mat_initialize();
 
         // resize to whatever is the max memory needed
-        val_buf.resize(dot_vars.bind_size());
-        val_buf.resize(dot_unary.bind_size());
-        val_buf.resize(dot_mat_unary.bind_size());
+        val_buf.resize(dot_vars.bind_cache_size()(0));
+        val_buf.resize(dot_unary.bind_cache_size()(0));
+        val_buf.resize(dot_mat_unary.bind_cache_size()(0));
+
+        adj_buf.resize(dot_vars.bind_cache_size()(1));
+        adj_buf.resize(dot_unary.bind_cache_size()(1));
+        adj_buf.resize(dot_mat_unary.bind_cache_size()(1));
 
         // bind all expressions to buffer
-        dot_vars.bind(val_buf.data());
-        dot_unary.bind(val_buf.data());
-        dot_mat_unary.bind(val_buf.data());
+        ptr_pack_t ptr_pack(val_buf.data(), adj_buf.data());
+        dot_vars.bind_cache(ptr_pack);
+        dot_unary.bind_cache(ptr_pack);
+        dot_mat_unary.bind_cache(ptr_pack);
     }
 
     void vec_initialize() 
@@ -74,27 +85,17 @@ TEST_F(dot_fixture, dot_vars_feval)
 {
     Eigen::VectorXd actual = dot_vars.feval();
     Eigen::VectorXd expected = mat_expr.get() * vec_expr.get();
-    for (int i = 0; i < expected.size(); ++i) {
-        EXPECT_DOUBLE_EQ(actual(i), expected(i));
-    }
+    check_eq(actual, expected);
 }
 
 TEST_F(dot_fixture, dot_vars_beval)
 {
+    Eigen::MatrixXd ladj = vseed.matrix() * vec_expr.get().transpose();
+    Eigen::VectorXd radj = mat_expr.get().transpose() * vseed.matrix();
     dot_vars.feval();
-    dot_vars.beval(seed, 0, 0, util::beval_policy::single);
-
-    for (size_t j = 0; j < vec_expr.size(); ++j) {
-        EXPECT_DOUBLE_EQ(vec_expr.get_adj(j,0), seed*mat_expr.get(0,j));
-        EXPECT_DOUBLE_EQ(mat_expr.get_adj(0,j), seed*vec_expr.get(j,0));
-    }
-
-    // all other matrix adjoints should be 0
-    for (size_t i = 1; i < mat_rows; ++i) {
-        for (size_t j = 0; j < mat_cols; ++j) {
-            EXPECT_DOUBLE_EQ(mat_expr.get_adj(i,j), 0.);
-        }
-    }
+    dot_vars.beval(vseed);
+    check_eq(ladj, mat_expr.get_adj());
+    check_eq(radj, vec_expr.get_adj());
 }
 
 TEST_F(dot_fixture, dot_unary_feval)
@@ -103,30 +104,25 @@ TEST_F(dot_fixture, dot_unary_feval)
     Eigen::VectorXd expected = 
         unary_t::fmap(mat_expr.get().array()).matrix() * 
         unary_t::fmap(vec_expr.get().array()).matrix();
-    for (int i = 0; i < expected.size(); ++i) {
-        EXPECT_DOUBLE_EQ(actual(i), expected(i));
-    }
+    check_eq(actual, expected);
 }
 
 TEST_F(dot_fixture, dot_unary_beval)
 {
+    Eigen::MatrixXd umat = unary_t::fmap(mat_expr.get().array()).matrix();
+    Eigen::VectorXd uvec = unary_t::fmap(vec_expr.get().array()).matrix();
+    Eigen::MatrixXd ladj = unary_t::bmap(
+            vseed.matrix() * uvec.transpose(), 
+            mat_expr.get().array(), 
+            umat);
+    Eigen::VectorXd radj = unary_t::bmap(
+            umat.transpose() * vseed.matrix(),
+            vec_expr.get().array(),
+            uvec);
     dot_unary.feval();
-    dot_unary.beval(seed, 1, 0, util::beval_policy::single);
-
-    for (size_t j = 0; j < vec_expr.size(); ++j) {
-        EXPECT_DOUBLE_EQ(vec_expr.get_adj(j,0), 
-                seed * 2. * unary_t::fmap(mat_expr.get(1,j)));
-        EXPECT_DOUBLE_EQ(mat_expr.get_adj(1,j), 
-                seed * 2. * unary_t::fmap(vec_expr.get(j,0)));
-    }
-
-    // all other matrix adjoints should be 0
-    for (size_t i = 0; i < mat_rows; ++i) {
-        if (i == 1) continue;
-        for (size_t j = 0; j < mat_cols; ++j) {
-            EXPECT_DOUBLE_EQ(mat_expr.get_adj(i,j), 0.);
-        }
-    }
+    dot_unary.beval(vseed);
+    check_eq(ladj, mat_expr.get_adj());
+    check_eq(radj, vec_expr.get_adj());
 }
 
 TEST_F(dot_fixture, dot_mat_unary_feval)
@@ -135,38 +131,25 @@ TEST_F(dot_fixture, dot_mat_unary_feval)
     Eigen::MatrixXd expected = 
         unary_t::fmap(mat_expr.get().array()).matrix() * 
         unary_t::fmap(mat_expr_transpose.get().array()).matrix();
-    for (int i = 0; i < expected.rows(); ++i) {
-        for (int j = 0; j < expected.cols(); ++j) {
-            EXPECT_DOUBLE_EQ(actual(i,j), expected(i,j));
-        }
-    }
+    check_eq(actual, expected);
 }
 
 TEST_F(dot_fixture, dot_mat_unary_beval)
 {
+    Eigen::MatrixXd umat1 = unary_t::fmap(mat_expr.get().array()).matrix();
+    Eigen::MatrixXd umat2 = unary_t::fmap(mat_expr_transpose.get().array()).matrix();
+    Eigen::MatrixXd ladj = unary_t::bmap(
+            mseed.matrix() * umat2.transpose(), 
+            mat_expr.get().array(), 
+            umat1);
+    Eigen::MatrixXd radj = unary_t::bmap(
+            umat1.transpose() * mseed.matrix(),
+            mat_expr_transpose.get().array(),
+            umat2);
     dot_mat_unary.feval();
-    dot_mat_unary.beval(seed, 1, 0, util::beval_policy::single);
-
-    for (size_t k = 0; k < mat_expr.cols(); ++k) {
-        EXPECT_DOUBLE_EQ(mat_expr_transpose.get_adj(k,0), 
-                seed * 2. * unary_t::fmap(mat_expr.get(1,k)));
-        EXPECT_DOUBLE_EQ(mat_expr.get_adj(1,k), 
-                seed * 2. * unary_t::fmap(mat_expr_transpose.get(k,0)));
-    }
-
-    // all other matrix adjoints should be 0
-    for (size_t i = 0; i < mat_expr.rows(); ++i) {
-        if (i == 1) continue;
-        for (size_t j = 0; j < mat_expr.cols(); ++j) {
-            EXPECT_DOUBLE_EQ(mat_expr.get_adj(i,j), 0.);
-        }
-    }
-
-    for (size_t j = 1; j < mat_expr_transpose.cols(); ++j) {
-        for (size_t i = 0; i < mat_expr_transpose.rows(); ++i) {
-            EXPECT_DOUBLE_EQ(mat_expr_transpose.get_adj(i,j), 0.);
-        }
-    }
+    dot_mat_unary.beval(mseed);
+    check_eq(ladj, mat_expr.get_adj());
+    check_eq(radj, mat_expr_transpose.get_adj());
 }
 
 TEST_F(dot_fixture, dot_constant_var_feval)
@@ -178,9 +161,7 @@ TEST_F(dot_fixture, dot_constant_var_feval)
 
     Eigen::VectorXd actual = dot_constant_var.feval();
     Eigen::VectorXd expected = mat_expr.get() * vec_expr.get();
-    for (int i = 0; i < expected.size(); ++i) {
-        EXPECT_DOUBLE_EQ(actual(i), expected(i));
-    }
+    check_eq(actual, expected);
 }
 
 TEST_F(dot_fixture, dot_constant_var_beval)
@@ -191,11 +172,10 @@ TEST_F(dot_fixture, dot_constant_var_beval)
     this->bind(dot_constant_var);
 
     dot_constant_var.feval();
-    dot_constant_var.beval(seed, 0, 0, util::beval_policy::single);
-
-    for (size_t j = 0; j < vec_expr.size(); ++j) {
-        EXPECT_DOUBLE_EQ(vec_expr.get_adj(j,0), seed*mat_const.get(0,j));
-    }
+    dot_constant_var.beval(vseed);
+    
+    Eigen::VectorXd radj = mat_const.get().transpose() * vseed.matrix();
+    check_eq(radj, vec_expr.get_adj());
 }
 
 TEST_F(dot_fixture, dot_constant)

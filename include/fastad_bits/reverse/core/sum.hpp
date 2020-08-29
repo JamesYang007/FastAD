@@ -1,9 +1,11 @@
 #pragma once
 #include <iterator>
 #include <fastad_bits/reverse/core/expr_base.hpp>
-#include <fastad_bits/reverse/core/value_view.hpp>
+#include <fastad_bits/reverse/core/value_adj_view.hpp>
 #include <fastad_bits/reverse/core/constant.hpp>
+#include <fastad_bits/util/size_pack.hpp>
 #include <fastad_bits/util/type_traits.hpp>
+#include <fastad_bits/util/value.hpp>
 
 namespace ad {
 namespace core {
@@ -21,10 +23,10 @@ namespace core {
 
 template <class VecType>
 struct SumIterNode:
-    ValueView<typename util::expr_traits< 
-                typename VecType::value_type >::value_t,
-              typename util::shape_traits< 
-                typename VecType::value_type >::shape_t >,
+    ValueAdjView<typename util::expr_traits< 
+                    typename VecType::value_type >::value_t,
+                 typename util::shape_traits< 
+                    typename VecType::value_type >::shape_t >,
     ExprBase<SumIterNode<VecType>>
 {
 private:
@@ -33,14 +35,14 @@ private:
     using elem_shape_t = typename util::shape_traits<vec_elem_t>::shape_t;
     
 public:
-    using value_view_t = ValueView<elem_value_t, elem_shape_t>;
-    using typename value_view_t::value_t;
-    using typename value_view_t::shape_t;
-    using typename value_view_t::var_t;
-    using value_view_t::bind;
+    using value_adj_view_t = ValueAdjView<elem_value_t, elem_shape_t>;
+    using typename value_adj_view_t::value_t;
+    using typename value_adj_view_t::shape_t;
+    using typename value_adj_view_t::var_t;
+    using typename value_adj_view_t::ptr_pack_t;
 
     SumIterNode(const VecType& exprs)
-        : value_view_t(nullptr,
+        : value_adj_view_t(nullptr, nullptr,
                        (exprs.size() == 0) ? 0 : exprs[0].rows(),
                        (exprs.size() == 0) ? 0 : exprs[0].cols())
         , exprs_{exprs}
@@ -63,16 +65,22 @@ public:
 
     /** 
      * Backward evaluate from right to left by seeding the same seed.
+     * Simply reuse last expression's adjoint since it is guaranteed to be the same as seed.
+     * The point is that seed may be an Eigen expression and should be evaluated first.
+     * Then we reuse the evaluated values, rather than reusing the expression, 
+     * which will lead to multiple evaluations.
      *
-     * Note that GlueNode and alike guarantee to seed 0 when pol is single.
-     * See EqNode for why we can preemptively return.
+     * Note: this may break some cases I'm not sure...
      */
-    void beval(value_t seed, size_t i, size_t j, util::beval_policy pol)
+    template <class T>
+    void beval(const T& seed)
     {
-        if (seed == 0) return;
+        if (exprs_.empty()) return;
+        auto&& a_adj = util::to_array(this->get_adj());
+        a_adj = seed;
         std::for_each(exprs_.rbegin(), exprs_.rend(),
-            [=](auto& expr) {
-                expr.beval(seed, i, j, pol);
+            [&](auto& expr) {
+                expr.beval(a_adj);
             });
     }
 
@@ -81,24 +89,26 @@ public:
      *
      * @return  the next pointer not bound by any of the expressions and itself.
      */
-    value_t* bind(value_t* begin)
+    ptr_pack_t bind_cache(ptr_pack_t begin)
     {
-        if constexpr (!util::is_var_view_v<vec_elem_t>) {
-            for (auto& expr : exprs_) begin = expr.bind(begin);
+        for (auto& expr : exprs_) {
+            begin = expr.bind_cache(begin);
         }
-        return value_view_t::bind(begin);
+        return value_adj_view_t::bind(begin);
     }
 
-    size_t bind_size() const 
+    util::SizePack bind_cache_size() const 
     { 
-        size_t out = 0;
-        for (const auto& expr : exprs_) out += expr.bind_size();
-        return out + single_bind_size();
+        util::SizePack out = util::SizePack::Zero();
+        for (const auto& expr : exprs_) {
+            out += expr.bind_cache_size();
+        }
+        return out + single_bind_cache_size();
     }
 
-    size_t single_bind_size() const 
+    util::SizePack single_bind_cache_size() const
     { 
-        return this->size(); 
+        return {this->size(), this->size()}; 
     }
 
 private:
@@ -118,8 +128,8 @@ private:
 
 template <class ExprType>
 struct SumElemNode:
-    ValueView<typename util::expr_traits<ExprType>::value_t,
-              ad::scl>,
+    ValueAdjView<typename util::expr_traits<ExprType>::value_t,
+                 ad::scl>,
     ExprBase<SumElemNode<ExprType>>
 {
 private:
@@ -127,14 +137,14 @@ private:
     using expr_value_t = typename util::expr_traits<expr_t>::value_t;
     
 public:
-    using value_view_t = ValueView<expr_value_t, ad::scl>;
-    using typename value_view_t::value_t;
-    using typename value_view_t::shape_t;
-    using typename value_view_t::var_t;
-    using value_view_t::bind;
+    using value_adj_view_t = ValueAdjView<expr_value_t, ad::scl>;
+    using typename value_adj_view_t::value_t;
+    using typename value_adj_view_t::shape_t;
+    using typename value_adj_view_t::var_t;
+    using typename value_adj_view_t::ptr_pack_t;
 
     SumElemNode(const expr_t& expr)
-        : value_view_t(nullptr, 1, 1)
+        : value_adj_view_t(nullptr, nullptr, 1, 1)
         , expr_{expr}
     {}
 
@@ -154,43 +164,38 @@ public:
     }
 
     /** 
-     * Backward evaluate every element of expression with the same seed and policy.
-     * Since the current node is always a scalar, we can ignore the middle two parameters.
-     *
-     * Note that GlueNode and alike guarantee to seed 0 when pol is single.
-     * See EqNode for why we can preemptively return.
+     * Backward evaluate every element of expression with same seed.
+     * Note that since this node is always scalar, beval does not have to be templated.
      */
-    void beval(value_t seed, size_t, size_t, util::beval_policy pol)
+    void beval(value_t seed)
     {
-        if (seed == 0) return;
-        for (size_t k = 0; k < expr_.cols(); ++k) {
-            for (size_t l = 0; l < expr_.rows(); ++l) {
-                expr_.beval(seed, l, k, pol);
-            }
-        }
+        expr_.beval(seed);
     }
 
     /**
      * Bind the expression then itself to a scalar.
      *
-     * @return  the next pointer not bound by any of the expressions and itself.
+     * @return  the next pointer pack not bound by any of the expressions and itself.
      */
-    value_t* bind(value_t* begin)
+    ptr_pack_t bind_cache(ptr_pack_t begin)
     {
-        if constexpr (!util::is_var_view_v<expr_t>) {
-            begin = expr_.bind(begin);
-        }
-        return value_view_t::bind(begin);
+        begin = expr_.bind_cache(begin);
+        auto adj = begin.adj;
+        begin.adj = nullptr;
+        begin = value_adj_view_t::bind(begin);
+        begin.adj = adj;
+        return begin;
     }
 
-    size_t bind_size() const 
+    util::SizePack bind_cache_size() const 
     { 
-        return expr_.bind_size() + single_bind_size();
+        return expr_.bind_cache_size() + 
+                single_bind_cache_size();
     }
 
-    constexpr size_t single_bind_size() const 
+    util::SizePack single_bind_cache_size() const
     { 
-        return this->size(); 
+        return {this->size(), 0}; 
     }
 
 private:
@@ -214,7 +219,7 @@ inline auto sum(Iter begin, Iter end, Lmda&& f)
     using expr_t = std::decay_t<decltype(f(*begin))>;
     using value_t = typename util::expr_traits<expr_t>::value_t;
     using shape_t = typename util::shape_traits<expr_t>::shape_t;
-    using var_t = core::details::constant_var_t<value_t, shape_t>;
+    using var_t = util::constant_var_t<value_t, shape_t>;
 
     // optimized for f that returns a constant node
     if constexpr (util::is_constant_v<expr_t>) {
@@ -242,15 +247,13 @@ template <class Derived
 inline auto sum(const Derived& x)
 {
     using expr_t = util::convert_to_ad_t<Derived>;
-
     expr_t expr = x;
 
     // optimized when expr is constant
     if constexpr (util::is_constant_v<expr_t>) {
         if constexpr (util::is_scl_v<expr_t>) return expr;
         else {
-            auto&& res = expr.feval();
-            return ad::constant(res.sum());
+            return ad::constant(expr.feval().array().sum());
         }
     } else {
         return core::SumElemNode<expr_t>(expr);

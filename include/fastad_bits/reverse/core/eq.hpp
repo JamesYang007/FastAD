@@ -1,7 +1,10 @@
 #pragma once
 #include <fastad_bits/reverse/core/expr_base.hpp>
-#include <fastad_bits/reverse/core/value_view.hpp>
+#include <fastad_bits/reverse/core/value_adj_view.hpp>
 #include <fastad_bits/util/type_traits.hpp>
+#include <fastad_bits/util/size_pack.hpp>
+#include <fastad_bits/util/ptr_pack.hpp>
+#include <fastad_bits/util/value.hpp>
 
 namespace ad {
 namespace core {
@@ -25,8 +28,8 @@ namespace core {
 
 template <class VarViewType, class ExprType>
 struct EqNode:
-    ValueView<typename util::expr_traits<VarViewType>::value_t,
-              typename util::shape_traits<VarViewType>::shape_t>,
+    ValueAdjView<typename util::expr_traits<VarViewType>::value_t,
+                 typename util::shape_traits<VarViewType>::shape_t>,
     ExprBase<EqNode<VarViewType, ExprType>>
 {
 private:
@@ -57,18 +60,18 @@ private:
             typename util::expr_traits<expr_t>::shape_t>);
 
 public:
-    using value_view_t = ValueView<var_view_value_t,
-                                   var_view_shape_t>;
-    using typename value_view_t::value_t;
-    using typename value_view_t::shape_t;
-    using typename value_view_t::var_t;
-    using value_view_t::bind;
+    using value_adj_view_t = ValueAdjView<var_view_value_t,
+                                          var_view_shape_t>;
+    using typename value_adj_view_t::value_t;
+    using typename value_adj_view_t::shape_t;
+    using typename value_adj_view_t::var_t;
+    using typename value_adj_view_t::ptr_pack_t;
 
     EqNode(const var_view_t& var_view, 
            const expr_t& expr)
-        : value_view_t(nullptr, 
-                       var_view.rows(), 
-                       var_view.cols())
+        : value_adj_view_t(nullptr, nullptr,
+                           var_view.rows(), 
+                           var_view.cols())
         , var_view_(var_view)
         , expr_(expr)
     {
@@ -94,40 +97,13 @@ public:
      * and hence current seed is only a component of the full partial derivative.
      * It is assumed that at the time of calling beval,
      * all expressions using placeholder have backward evaluated.
-     *
-     * When pol is "all", it is a special signal from GlueNode or ForEachIterNode
-     * that we should back-evaluate every non-zero adjoint expressions.
-     * In general, after the right-most expression is backward-evaluated,
-     * every element of every left-ward expression may have been a dependency.
-     * Note: this is why users should always reset adjoint before back-evaluating -
-     * adjoints can accumulate otherwise.
-     *
-     * Assumptions:
-     * - The only exceptional node is this EqNode and any further embedded
-     *   EqNode inside the (right) expression cannot be referenced outside this current node.
-     *
-     * - If the i,j adjoint of variable is 0 after accounting for seeding,
-     *   there is no need to back-evaluate the i,jth expression by the above reason;
-     *   it implies that the adjoints of these further placeholders will remain 0
-     *   and all other nodes will have only computed a bunch of numbers 
-     *   only to be multiplied by 0 (their seed).
      */
-    void beval(value_t seed, size_t i, size_t j, util::beval_policy pol)
+    template <class T>
+    void beval(const T& seed)
     {
-        if (pol == util::beval_policy::all) {
-            assert(seed == 0);
-            for (size_t k = 0; k < var_view_.cols(); ++k) {
-                for (size_t l = 0; l < var_view_.rows(); ++l) {
-                    if (var_view_.get_adj(l,k)) {
-                        expr_.beval(var_view_.get_adj(l,k), l, k, 
-                                    util::beval_policy::single);
-                    }
-                }
-            }
-        } else {
-            var_view_.beval(seed, i, j, pol);
-            expr_.beval(var_view_.get_adj(i,j), i, j, pol);
-        }
+        var_view_.beval(seed);
+        auto&& a_adj = util::to_array(var_view_.get_adj());
+        expr_.beval(a_adj);
     }
 
     /**
@@ -140,17 +116,21 @@ public:
      *
      * @return  next pointer not bound by expression.
      */
-    value_t* bind(value_t* begin) 
+    ptr_pack_t bind_cache(ptr_pack_t begin)
     {
-        // bind current eqnode to var_view's values
-        value_view_t::bind(var_view_.data());
+        ptr_pack_t var_ptr_pack(var_view_.data(), var_view_.data_adj());
 
-        begin = expr_.bind(begin);
-        begin -= expr_.single_bind_size();
+        // bind current eqnode to var_view's values
+        value_adj_view_t::bind(var_ptr_pack);
+
+        begin = expr_.bind_cache(begin);
+        auto size_pack = expr_.single_bind_cache_size();
+        begin.val -= size_pack(0);
+        begin.adj -= size_pack(1);
 
         // only bind root to var_view's values, not recursively down
-        using expr_value_view_t = typename expr_t::value_view_t;
-        static_cast<expr_value_view_t&>(expr_).bind(var_view_.data());
+        using expr_value_adj_view_t = typename expr_t::value_adj_view_t;
+        static_cast<expr_value_adj_view_t&>(expr_).bind(var_ptr_pack);
 
         return begin;
     }
@@ -164,13 +144,14 @@ public:
      *
      * @return  bind size
      */
-    size_t bind_size() const 
+    util::SizePack bind_cache_size() const 
     { 
-        assert(expr_.bind_size() >= expr_.single_bind_size());
-        return expr_.bind_size() - expr_.single_bind_size();
+        assert((expr_.bind_cache_size() >= expr_.single_bind_cache_size()).all());
+        return expr_.bind_cache_size() - expr_.single_bind_cache_size();
     }
 
-    constexpr size_t single_bind_size() const { return 0; }
+    util::SizePack single_bind_cache_size() const
+    { return {0,0}; }
 
 private:
     var_view_t var_view_;
@@ -212,8 +193,8 @@ private:
 
 template <class Op, class VarViewType, class ExprType>
 struct OpEqNode:
-    ValueView<typename util::expr_traits<VarViewType>::value_t,
-              typename util::shape_traits<VarViewType>::shape_t>,
+    ValueAdjView<typename util::expr_traits<VarViewType>::value_t,
+                 typename util::shape_traits<VarViewType>::shape_t>,
     ExprBase<OpEqNode<Op, VarViewType, ExprType>>
 {
 private:
@@ -234,19 +215,19 @@ private:
                       typename util::expr_traits<expr_t>::shape_t>);
 
 public:
-    using value_view_t = ValueView<var_view_value_t,
-                                   var_view_shape_t>;
-    using typename value_view_t::value_t;
-    using typename value_view_t::shape_t;
-    using typename value_view_t::var_t;
-    using value_view_t::bind;
+    using value_adj_view_t = ValueAdjView<var_view_value_t,
+                                          var_view_shape_t>;
+    using typename value_adj_view_t::value_t;
+    using typename value_adj_view_t::shape_t;
+    using typename value_adj_view_t::var_t;
+    using typename value_adj_view_t::ptr_pack_t;
 
     OpEqNode(const var_view_t& var_view, 
              const expr_t& expr)
-        : value_view_t(nullptr, 
-                       var_view.rows(), 
-                       var_view.cols())
-        , cache_(nullptr, var_view.rows(), var_view.cols())
+        : value_adj_view_t(nullptr, nullptr,
+                           var_view.rows(), 
+                           var_view.cols())
+        , cache_(nullptr, nullptr, var_view.rows(), var_view.cols())
         , var_view_(var_view)
         , expr_(expr)
     {
@@ -259,79 +240,34 @@ public:
     const var_t& feval()
     {
         cache_.get() = var_view_.get();  // save previous lhs
-        auto& v_val = var_view_.get();
-        auto& expr_val = expr_.feval();
-        if constexpr (util::is_scl_v<var_view_t>) {
-            return this->get() = Op::fmap(v_val, expr_val);
-        } else if constexpr (util::is_scl_v<expr_t>) {
-            auto v_arr = v_val.array();
-            return this->get() = Op::fmap(v_arr, expr_val);
-        } else {
-            auto v_arr = v_val.array();
-            return this->get() = Op::fmap(v_arr, expr_val.array());
-        }
+        auto&& a_v = util::to_array(var_view_.get());
+        auto&& a_expr = util::to_array(expr_.feval());
+        util::to_array(this->get()) = Op::fmap(a_v, a_expr);
+        return this->get();
     }
 
-    void beval(value_t seed, size_t i, size_t j, util::beval_policy pol)
+    template <class T>
+    void beval(const T& seed)
     {
-        if (pol == util::beval_policy::all) {
-            assert(seed == 0);
+        var_view_.beval(seed);
 
-            // must reset var view to previous val
-            var_view_.get() = cache_.get();
+        // copy old value first before back-evaluating 
+        // because expr_ may depend on var_view_, which would have been the old value.
+        var_view_.get() = cache_.get();
 
-            // take advantage of the fact that cache size is the same as adjoint size
-            // need to save old adjoints since once we start beval, the adjoints of lhs may get updated.
-            cache_.get() = var_view_.get_adj();
+        // copy current seed such that it doesn't get modified during back-evaluation
+        // expr may depend on the var_view_, which may modify its adjoint.
+        // MUST reset adjoint so that back evaluation properly accumulates.
+        cache_.get_adj() = var_view_.get_adj(); 
+        var_view_.reset_adj();
 
-            // update left-side adjoint (with minor math optimizations)
-            // technically, this should happen after expr beval,
-            // but there shouldn't be any issues since the only problem that may arise
-            // in switching the order is if feval of expr depends on any changed states from
-            // feval of old lhs (note current expr is equivalent to u = u_old @ expr),
-            // but old lhs feval is trivial and does not change any states except possibly itself.
-            // In the latter case, feval of expr will perform that change anyway if it references old lhs.
-            //
-            // Must be careful about aliasing issues. 
-            // Since var_view_ already got replaced with old values, should be ok.
-            for (size_t k = 0; k < var_view_.cols(); ++k) {
-                for (size_t l = 0; l < var_view_.rows(); ++l) {
-                    if (var_view_.get_adj(l,k)) {
-                        var_view_.get_adj(l,k) *= 
-                            Op::blmap(var_view_.get(l,k), expr_.get(l,k));
-                    }
-                }
-            }
-
-            // special optimization when expression is scalar
-            if constexpr (util::is_scl_v<expr_t>) {
-                auto rseed = Op::brmap_scl(var_view_.get(), 
-                                           cache_.get(), 
-                                           expr_.get());
-                expr_.beval(rseed, 0, 0, util::beval_policy::single);
-
-            } else {
-                for (size_t k = 0; k < var_view_.cols(); ++k) {
-                    for (size_t l = 0; l < var_view_.rows(); ++l) {
-                        if (cache_.get(l,k)) {
-                            auto rseed = Op::brmap(var_view_.get(l,k), expr_.get(l,k));
-                            expr_.beval(cache_.get(l,k) * rseed,
-                                        l, k, util::beval_policy::single);
-                        }
-                    }
-                }
-            }
-
-        } else {
-            // must reset var view to previous val (only for (i,j) elt)
-            var_view_.get(i,j) = cache_.get(i,j);
-            var_view_.beval(seed, i, j, pol);
-            auto lseed = Op::blmap(var_view_.get(i,j), expr_.get(i,j));
-            auto rseed = Op::brmap(var_view_.get(i,j), expr_.get(i,j));
-            auto orig_adj = var_view_.get_adj(i,j);
-            var_view_.get_adj(i,j) *= lseed;
-            expr_.beval(orig_adj * rseed, i, j, pol);
-        }
+        auto&& a_val = util::to_array(var_view_.get());
+        auto&& a_adj = util::to_array(cache_.get_adj());
+        auto&& a_expr = util::to_array(expr_.get());
+        auto lseed = Op::blmap(a_adj, a_val, a_expr);
+        auto rseed = Op::brmap(a_adj, a_val, a_expr);
+        expr_.beval(rseed);
+        var_view_.beval(lseed);
     }
 
     /**
@@ -341,24 +277,27 @@ public:
      *
      * @return  next pointer not bound by expression or itself.
      */
-    value_t* bind(value_t* begin) 
+    ptr_pack_t bind_cache(ptr_pack_t begin)
     {
-        value_view_t::bind(var_view_.data());
-        if constexpr (!util::is_var_view_v<expr_t>) {
-            begin = expr_.bind(begin);
-        }
-        return cache_.bind(begin);
+        value_adj_view_t::bind({var_view_.data(), var_view_.data_adj()});
+        begin = expr_.bind_cache(begin);
+        begin = cache_.bind(begin);
+        return begin;
     }
 
-    size_t bind_size() const { 
-        return single_bind_size() + 
-                expr_.bind_size(); 
+    util::SizePack bind_cache_size() const 
+    {
+        return single_bind_cache_size() + 
+                expr_.bind_cache_size(); 
     }
 
-    size_t single_bind_size() const { return cache_.size(); }
+    util::SizePack single_bind_cache_size() const
+    {
+        return {cache_.size(), cache_.size()}; 
+    }
 
 private:
-    value_view_t cache_;
+    value_adj_view_t cache_;
     var_view_t var_view_;
     expr_t expr_;
 };
@@ -369,21 +308,24 @@ struct AddEq
     static inline constexpr T& fmap(T& x, const U& y) 
     { return x += y; }
 
-    template <class T, class U>
-    static inline constexpr auto blmap(const T&, const U&) 
-    { return 1.; }
+    template <class S, class T, class U>
+    static inline constexpr auto blmap(const S& seed, const T&, const U&) 
+    {
+        if constexpr (!util::is_eigen_v<T> && util::is_eigen_v<U>) {
+            return seed.sum();
+        } else {
+            return seed;
+        }
+    }
 
-    template <class T, class U>
-    static inline constexpr auto brmap(const T&, const U&) 
-    { return 1.; }
-
-    template <class T, class S, class U>
-    static inline constexpr double brmap_scl(const T&, 
-                                             const S& x_adj,
-                                             const U&) 
+    template <class S, class T, class U>
+    static inline constexpr auto brmap(const S& seed, const T&, const U&) 
     { 
-        if constexpr (util::is_eigen_v<T>) { return x_adj.array().sum(); } 
-        else { return x_adj; }
+        if constexpr (util::is_eigen_v<T> && !util::is_eigen_v<U>) {
+            return seed.sum();
+        } else {
+            return seed;
+        }
     }
 };
 
@@ -393,21 +335,24 @@ struct SubEq
     static inline constexpr T& fmap(T& x, const U& y) 
     { return x -= y; }
 
-    template <class T, class U>
-    static inline constexpr auto blmap(const T&, const U&) 
-    { return 1.; }
+    template <class S, class T, class U>
+    static inline constexpr auto blmap(const S& seed, const T&, const U&) 
+    {
+        if constexpr (!util::is_eigen_v<T> && util::is_eigen_v<U>) {
+            return seed.sum();
+        } else {
+            return seed;
+        }
+    }
 
-    template <class T, class U>
-    static inline constexpr auto brmap(const T&, const U&) 
-    { return -1.; }
-
-    template <class T, class S, class U>
-    static inline constexpr double brmap_scl(const T&, 
-                                             const S& x_adj,
-                                             const U&) 
+    template <class S, class T, class U>
+    static inline constexpr auto brmap(const S& seed, const T&, const U&) 
     { 
-        if constexpr (util::is_eigen_v<T>) { return -x_adj.array().sum(); } 
-        else { return -x_adj; }
+        if constexpr (util::is_eigen_v<T> && !util::is_eigen_v<U>) {
+            return -(seed.sum());
+        } else {
+            return -seed;
+        }
     }
 };
 
@@ -417,23 +362,24 @@ struct MulEq
     static inline constexpr T& fmap(T& x, const U& y) 
     { return x *= y; }
 
-    template <class T, class U>
-    static inline constexpr auto blmap(const T&, const U& y) 
-    { return y; }
-
-    template <class T, class U>
-    static inline constexpr auto brmap(const T& x, const U&) 
-    { return x; }
-
-    template <class T, class S, class U>
-    static inline constexpr double brmap_scl(const T& x, 
-                                             const S& x_adj,
-                                             const U&) 
+    template <class S, class T, class U>
+    static inline constexpr auto blmap(const S& seed, const T&, const U& y) 
     { 
-        if constexpr (util::is_eigen_v<T>) { 
-            return (x_adj.array() * x.array()).sum();
+        if constexpr (!util::is_eigen_v<T> && util::is_eigen_v<U>) {
+            return (seed * y).sum();
+        } else {
+            return seed * y;
         }
-        else { return x_adj * x; }
+    }
+
+    template <class S, class T, class U>
+    static inline constexpr auto brmap(const S& seed, const T& x, const U&) 
+    { 
+        if constexpr (util::is_eigen_v<T> && !util::is_eigen_v<U>) {
+            return (seed * x).sum();
+        } else {
+            return seed * x;
+        }
     }
 };
 
@@ -443,24 +389,27 @@ struct DivEq
     static inline constexpr T& fmap(T& x, const U& y) 
     { return x /= y; }
 
-    template <class T, class U>
-    static inline constexpr auto blmap(const T&, const U& y) 
-    { return 1. / y; }
-
-    template <class T, class U>
-    static inline constexpr auto brmap(const T& x, const U& y) 
-    { return -x / (y*y); }
-
-    template <class T, class S, class U>
-    static inline constexpr double brmap_scl(const T& x, 
-                                             const S& x_adj,
-                                             const U& y) 
+    template <class S, class T, class U>
+    static inline constexpr auto blmap(const S& seed, const T&, const U& y) 
     { 
-        if constexpr (util::is_eigen_v<T>) { 
-            return -(x_adj.array() * x.array()).sum() / (y*y);
+        if constexpr (!util::is_eigen_v<T> && util::is_eigen_v<U>) {
+            return (seed / y).sum();
+        } else {
+            return seed / y;
         }
-        else { return -x_adj * x / (y*y); }
     }
+
+    template <class S, class T, class U>
+    static inline constexpr auto brmap(const S& seed, const T& x, const U& y) 
+    { 
+        static_cast<void>(x);
+        if constexpr (util::is_eigen_v<T> && !util::is_eigen_v<U>) {
+            return (-seed * x / (y * y)).sum();
+        } else {
+            return -seed * x / (y * y);
+        }
+    }
+        
 };
 
 } // namespace core

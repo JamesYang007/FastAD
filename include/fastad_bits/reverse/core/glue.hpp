@@ -1,7 +1,8 @@
 #pragma once
 #include <fastad_bits/reverse/core/expr_base.hpp>
-#include <fastad_bits/reverse/core/value_view.hpp>
+#include <fastad_bits/reverse/core/value_adj_view.hpp>
 #include <fastad_bits/util/type_traits.hpp>
+#include <fastad_bits/util/size_pack.hpp>
 
 namespace ad {
 namespace core {
@@ -23,8 +24,8 @@ namespace core {
 
 template <class LeftExprType, class RightExprType>
 struct GlueNode:
-    ValueView<typename util::expr_traits<RightExprType>::value_t,
-              typename util::shape_traits<RightExprType>::shape_t>,
+    ValueAdjView<typename util::expr_traits<RightExprType>::value_t,
+                 typename util::shape_traits<RightExprType>::shape_t>,
     ExprBase<GlueNode<LeftExprType, RightExprType>>
 {
 private:
@@ -40,17 +41,17 @@ private:
                   util::is_expr_v<right_t>);
 
 public:
-    using value_view_t = ValueView<right_value_t, right_shape_t>;
-    using typename value_view_t::value_t;
-    using typename value_view_t::shape_t;
-    using typename value_view_t::var_t;
-    using value_view_t::bind;
+    using value_adj_view_t = ValueAdjView<right_value_t, right_shape_t>;
+    using typename value_adj_view_t::value_t;
+    using typename value_adj_view_t::shape_t;
+    using typename value_adj_view_t::var_t;
+    using typename value_adj_view_t::ptr_pack_t;
 
     GlueNode(const left_t& expr_lhs, 
              const right_t& expr_rhs)
-        : value_view_t(nullptr,
-                       expr_rhs.rows(),
-                       expr_rhs.cols())
+        : value_adj_view_t(nullptr, nullptr,
+                           expr_rhs.rows(),
+                           expr_rhs.cols())
         , expr_lhs_(expr_lhs)
         , expr_rhs_(expr_rhs)
     {}
@@ -71,41 +72,31 @@ public:
 
     /**
      * Backward evaluates the i,jth right expression with seed,
-     * and then evaluates left expression with seed equal to 0, i=j=-1.
+     * and then evaluates left expression with seed equal to 0.
      *
      * We do not seed the left expression since all seeding has been implicitly done
      * from the backward evaluation on right expression, which will have updated
      * all placeholder adjoints (assuming user passed the correct order of expressions to evaluate).
-     *
-     * Note that pol is "all" when we want the expression to back-evaluate all elements.
-     * In practice, the right-most expression will be seeded with 1. with pol = "single", 
-     * and all other leftward expressions will be seeded with 0 and pol = "all".
-     *
-     * See EqNode and UnaryNode, BinaryNode as examples of how other nodes handle these cases.
      */
-    void beval(value_t seed, size_t i, size_t j, util::beval_policy pol)
+    template <class T>
+    void beval(const T& seed)
     {
-        expr_rhs_.beval(seed, i, j, pol); 
-        expr_lhs_.beval(0, i, j, util::beval_policy::all);
+        expr_rhs_.beval(seed); 
+        expr_lhs_.beval(0);
     }
 
     /**
      * Binds left, then right expression, and binds itself
      * to whatever the right expression root is bound to.
      *
-     * @return  the next pointer not bound by left or right expressions
+     * @return  the next pointer pack not bound by left or right expressions
      */
-    value_t* bind(value_t* begin)
+    ptr_pack_t bind_cache(ptr_pack_t begin)
     {
-        value_t* next = begin;
-        if constexpr (!util::is_var_view_v<left_t>) {
-            next = expr_lhs_.bind(next);
-        }
-        if constexpr (!util::is_var_view_v<left_t>) {
-            next = expr_rhs_.bind(next);
-        }
-        value_view_t::bind(expr_rhs_.data());
-        return next;
+        begin = expr_lhs_.bind_cache(begin);
+        begin = expr_rhs_.bind_cache(begin);
+        value_adj_view_t::bind({expr_rhs_.data(), expr_rhs_.data_adj()});
+        return begin;
     }
 
     /**
@@ -115,13 +106,14 @@ public:
      *
      * @return  bind size
      */
-    size_t bind_size() const 
+    util::SizePack bind_cache_size() const 
     { 
-        return expr_lhs_.bind_size() + expr_rhs_.bind_size();
+        return expr_lhs_.bind_cache_size() + 
+                expr_rhs_.bind_cache_size();
     }
 
-    constexpr size_t single_bind_size() const
-    { return 0; }
+    util::SizePack single_bind_cache_size() const
+    { return {0,0}; }
 
 private:
     left_t expr_lhs_;

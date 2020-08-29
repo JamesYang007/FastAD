@@ -1,10 +1,10 @@
 #pragma once
 #include <tuple>
 #include <fastad_bits/reverse/core/expr_base.hpp>
-#include <fastad_bits/reverse/core/value_view.hpp>
-#include <fastad_bits/reverse/core/var_view.hpp>
+#include <fastad_bits/reverse/core/value_adj_view.hpp>
 #include <fastad_bits/reverse/core/constant.hpp>
 #include <fastad_bits/util/type_traits.hpp>
+#include <fastad_bits/util/value.hpp>
 #include <fastad_bits/util/numeric.hpp>
 
 namespace ad {
@@ -15,54 +15,51 @@ template <class XExprType
         , class LocExprType
         , class ScaleExprType>
 struct CauchyBase:
-    core::ValueView<util::common_value_t<XExprType, 
-                                   LocExprType, 
-                                   ScaleExprType>, ad::scl>
+    core::ValueAdjView<util::common_value_t<
+                        XExprType, 
+                        LocExprType, 
+                        ScaleExprType>, ad::scl>
 {
     using x_t = XExprType;
     using loc_t = LocExprType;
     using scale_t = ScaleExprType;
     using common_value_t = util::common_value_t<
         x_t, loc_t, scale_t>;
-    using value_view_t = core::ValueView<common_value_t, ad::scl>;
-    using typename value_view_t::value_t;
-    using typename value_view_t::shape_t;
-    using typename value_view_t::var_t;
-    using value_view_t::bind;
+    using value_adj_view_t = core::ValueAdjView<common_value_t, ad::scl>;
+    using typename value_adj_view_t::value_t;
+    using typename value_adj_view_t::shape_t;
+    using typename value_adj_view_t::var_t;
+    using typename value_adj_view_t::ptr_pack_t;
 
     CauchyBase(const x_t& x,
                const loc_t& loc,
                const scale_t& scale)
-        : value_view_t(nullptr, 1, 1)
+        : value_adj_view_t(nullptr, nullptr, 1, 1)
         , x_{x}
         , loc_{loc}
         , scale_{scale}
     {}
 
-    value_t* bind(value_t* begin) 
+    ptr_pack_t bind_cache(ptr_pack_t begin)
     {
-        value_t* next = begin;
-        if constexpr (!util::is_var_view_v<x_t>) {
-            next = x_.bind(next);
-        }
-        if constexpr (!util::is_var_view_v<loc_t>) {
-            next = loc_.bind(next);
-        }
-        if constexpr (!util::is_var_view_v<scale_t>) {
-            next = scale_.bind(next);
-        }
-        return value_view_t::bind(next);
+        begin = x_.bind_cache(begin);
+        begin = loc_.bind_cache(begin);
+        begin = scale_.bind_cache(begin);
+        return value_adj_view_t::bind(begin);
     }
 
-    size_t bind_size() const 
+    util::SizePack bind_cache_size() const 
     { 
-        return single_bind_size() + 
-                x_.bind_size() +
-                loc_.bind_size() +
-                scale_.bind_size();
+        return single_bind_cache_size() + 
+                x_.bind_cache_size() +
+                loc_.bind_cache_size() +
+                scale_.bind_cache_size();
     }
 
-    constexpr size_t single_bind_size() const { return this->size(); }
+    util::SizePack single_bind_cache_size() const
+    {
+        return {this->size(), 0}; 
+    }
 
 protected:
     x_t x_;
@@ -122,9 +119,6 @@ public:
     using base_t::x_;
     using base_t::loc_;
     using base_t::scale_;
-    using base_t::bind;
-    using base_t::bind_size;
-    using base_t::single_bind_size;
 
     CauchyAdjLogPDFNode(const x_t& x,
                         const loc_t& loc,
@@ -148,7 +142,7 @@ public:
         return this->get() = -std::log(inner_term_);
     }
 
-    void beval(value_t seed, size_t, size_t, util::beval_policy pol)
+    void beval(value_t seed)
     {
         if (seed == 0 || !within_range()) return;
 
@@ -161,9 +155,9 @@ public:
         auto x_adj = -x0_adj;
         auto gamma_adj = 1./gamma * (x0_adj * diff - 1);
 
-        scale_.beval(seed * gamma_adj, 0, 0, pol);
-        loc_.beval(seed * x0_adj, 0, 0, pol);
-        x_.beval(seed * x_adj, 0, 0, pol);
+        scale_.beval(seed * gamma_adj);
+        loc_.beval(seed * x0_adj);
+        x_.beval(seed * x_adj);
     }
 
 private:
@@ -198,9 +192,6 @@ public:
     using base_t::x_;
     using base_t::loc_;
     using base_t::scale_;
-    using base_t::bind;
-    using base_t::bind_size;
-    using base_t::single_bind_size;
 
     CauchyAdjLogPDFNode(const x_t& x,
                         const loc_t& loc,
@@ -218,30 +209,27 @@ public:
             return this->get() = util::neg_inf<value_t>;
         }
 
-        auto diff = x.array() - x0;
-        return this->get() = -(gamma + (1./gamma) * diff * diff).log().sum();
+        auto diff_sq = (x.array() - x0).square();
+        return this->get() = -(gamma + (1./gamma) * diff_sq).log().sum();
     }
 
-    void beval(value_t seed, size_t, size_t, util::beval_policy pol)
+    void beval(value_t seed)
     {
         if (seed == 0 || !within_range()) return;
 
-        auto&& x = x_.get();
+        auto&& x = x_.get().array();
         auto&& x0 = loc_.get();
         auto&& gamma = scale_.get();
         auto gamma_sq = gamma * gamma;
 
-        auto diff = (x.array() - x0);
-        auto dx = -2. * diff / (gamma_sq + diff * diff);
-        value_t dx0 = -dx.sum();
-        value_t dgamma = (-1./gamma) * ((dx * diff).sum() + x.size());
+        auto diff = (x - x0);
+        auto dx = (-2. * seed) * diff / (gamma_sq + diff.square());
+        value_t dx0 = (-seed) * dx.sum();
+        value_t dgamma = (-seed/gamma) * ((dx * diff).sum() + x.size());
         
-        scale_.beval(seed * dgamma, 0, 0, pol);
-        loc_.beval(seed * dx0, 0, 0, pol);
-
-        for (int i = 0; i < x.rows(); ++i) {
-            x_.beval(seed * dx(i), i, 0, pol);
-        }
+        scale_.beval(dgamma);
+        loc_.beval(dx0);
+        x_.beval(dx);
     }
 
 private:
@@ -274,9 +262,6 @@ public:
     using base_t::x_;
     using base_t::loc_;
     using base_t::scale_;
-    using base_t::bind;
-    using base_t::bind_size;
-    using base_t::single_bind_size;
 
     CauchyAdjLogPDFNode(const x_t& x,
                         const loc_t& loc,
@@ -295,10 +280,10 @@ public:
         }
         
         auto diff = x - x0;
-        return this->get() = -(gamma + (1./gamma) * diff * diff).log().sum();
+        return this->get() = -(gamma + (diff.square() / gamma)).log().sum();
     }
 
-    void beval(value_t seed, size_t, size_t, util::beval_policy pol)
+    void beval(value_t seed)
     {
         if (seed == 0 || !within_range()) return;
 
@@ -307,19 +292,13 @@ public:
         auto&& gamma = scale_.get().array();
 
         auto diff = x - x0;
-        auto dx = -2. * diff / (gamma * gamma + diff * diff);
-        value_t dx0 = -dx.sum();
-        auto dgamma = (-1./gamma) * (dx * diff + 1);
+        auto dx = (-2. * seed) * diff / (gamma.square() + diff.square());
+        value_t dx0 = (-seed) * dx.sum();
+        auto dgamma = (-seed) * (dx * diff + 1) / gamma;
 
-        for (size_t i = 0; i < scale_.rows(); ++i) {
-            scale_.beval(seed * dgamma(i), i, 0, pol);
-        }
-
-        loc_.beval(seed * dx0, 0, 0, pol);
-
-        for (size_t i = 0; i < x_.rows(); ++i) {
-            x_.beval(seed * dx(i), i, 0, pol);
-        }
+        scale_.beval(dgamma);
+        loc_.beval(dx0);
+        x_.beval(dx);
     }
 
 private:
@@ -352,9 +331,6 @@ public:
     using base_t::x_;
     using base_t::loc_;
     using base_t::scale_;
-    using base_t::bind;
-    using base_t::bind_size;
-    using base_t::single_bind_size;
 
     CauchyAdjLogPDFNode(const x_t& x,
                         const loc_t& loc,
@@ -373,10 +349,10 @@ public:
         }
 
         auto diff = x - x0;
-        return this->get() = -(gamma + (1./gamma) * diff * diff).log().sum();
+        return this->get() = -(gamma + (1./gamma) * diff.square()).log().sum();
     }
 
-    void beval(value_t seed, size_t, size_t, util::beval_policy pol)
+    void beval(value_t seed)
     {
         if (seed == 0 || !within_range()) return;
 
@@ -386,19 +362,13 @@ public:
         auto gamma_sq = gamma * gamma;
 
         auto diff = (x - x0);
-        auto dx = -2. * diff / (gamma_sq + diff * diff);
-        auto dx0 = -dx;
-        value_t dgamma = (-1./gamma) * ((dx * diff).sum() + x.size());
+        auto dx = (-2. * seed) * diff / (gamma_sq + diff.square());
+        auto dx0 = (-seed) * dx;
+        value_t dgamma = (-seed/gamma) * ((dx * diff).sum() + x.size());
 
-        scale_.beval(seed * dgamma, 0, 0, pol);
-
-        for (int i = 0; i < x0.rows(); ++i) {
-            loc_.beval(seed * dx0(i), i, 0, pol);
-        }
-
-        for (int i = 0; i < x.rows(); ++i) {
-            x_.beval(seed * dx(i), i, 0, pol);
-        }
+        scale_.beval(dgamma);
+        loc_.beval(dx0);
+        x_.beval(dx);
     }
 
 private:
@@ -431,9 +401,6 @@ public:
     using base_t::x_;
     using base_t::loc_;
     using base_t::scale_;
-    using base_t::bind;
-    using base_t::bind_size;
-    using base_t::single_bind_size;
 
     CauchyAdjLogPDFNode(const x_t& x,
                         const loc_t& loc,
@@ -452,10 +419,10 @@ public:
         }
 
         auto diff = x - x0;
-        return this->get() = -(gamma + (1./gamma) * diff * diff).log().sum();
+        return this->get() = -(gamma + (diff.square()/gamma)).log().sum();
     }
 
-    void beval(value_t seed, size_t, size_t, util::beval_policy pol)
+    void beval(value_t seed)
     {
         if (seed == 0 || !within_range()) return;
 
@@ -464,21 +431,13 @@ public:
         auto&& gamma = scale_.get().array();
 
         auto diff = (x - x0);
-        auto dx = -2. * diff / (gamma * gamma + diff * diff);
-        auto dx0 = -dx;
-        auto dgamma = (-1./gamma) * ((dx * diff) + 1);
+        auto dx = (-2. * seed) * diff / (gamma.square() + diff.square());
+        auto dx0 = (-seed) * dx;
+        auto dgamma = (-seed/gamma) * ((dx * diff) + 1);
 
-        for (int i = 0; i < gamma.rows(); ++i) {
-            scale_.beval(seed * dgamma(i), i, 0, pol);
-        }
-
-        for (int i = 0; i < x0.rows(); ++i) {
-            loc_.beval(seed * dx0(i), i, 0, pol);
-        }
-
-        for (int i = 0; i < x.rows(); ++i) {
-            x_.beval(seed * dx(i), i, 0, pol);
-        }
+        scale_.beval(dgamma);
+        loc_.beval(dx0);
+        x_.beval(dx);
     }
 
 private:

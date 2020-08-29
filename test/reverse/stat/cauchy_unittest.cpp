@@ -96,7 +96,7 @@ TEST_F(cauchy_fixture, sss_beval)
 {
     bind(sss_cauchy);
     sss_cauchy.feval();
-    sss_cauchy.beval(1, 0, 0, util::beval_policy::single);
+    sss_cauchy.beval(1);
     EXPECT_DOUBLE_EQ(scl_x.get_adj(0,0),
                      -0.0351507439654960);
     EXPECT_DOUBLE_EQ(scl_loc.get_adj(0,0), 
@@ -124,7 +124,7 @@ TEST_F(cauchy_fixture, vss_beval)
 {
     bind(vss_cauchy);
     vss_cauchy.feval();
-    vss_cauchy.beval(1, 0, 0, util::beval_policy::single);
+    vss_cauchy.beval(1);
     EXPECT_DOUBLE_EQ(vec_x.get_adj(0,0),
                      -0.0695735121824751);
     EXPECT_DOUBLE_EQ(vec_x.get_adj(1,0),
@@ -158,7 +158,7 @@ TEST_F(cauchy_fixture, vsv_beval)
 {
     bind(vsv_cauchy);
     vsv_cauchy.feval();
-    vsv_cauchy.beval(1, 0, 0, util::beval_policy::single);
+    vsv_cauchy.beval(1);
     
     EXPECT_DOUBLE_EQ(vec_x.get_adj(0,0),
                      -1.1142998307525727);
@@ -200,7 +200,7 @@ TEST_F(cauchy_fixture, vvs_beval)
 {
     bind(vvs_cauchy);
     vvs_cauchy.feval();
-    vvs_cauchy.beval(1, 0, 0, util::beval_policy::single);
+    vvs_cauchy.beval(1);
 
     EXPECT_DOUBLE_EQ(vec_x.get_adj(0,0),
                      -0.043903706877779093);
@@ -240,7 +240,7 @@ TEST_F(cauchy_fixture, vvv_beval)
 {
     bind(vvv_cauchy);
     vvv_cauchy.feval();
-    vvv_cauchy.beval(1, 0, 0, util::beval_policy::single);
+    vvv_cauchy.beval(1);
     
     EXPECT_DOUBLE_EQ(vec_x.get_adj(0,0),
                      -0.740466493891151267);

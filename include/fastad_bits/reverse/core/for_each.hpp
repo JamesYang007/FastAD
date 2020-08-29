@@ -1,7 +1,9 @@
 #pragma once
 #include <fastad_bits/reverse/core/expr_base.hpp>
-#include <fastad_bits/reverse/core/value_view.hpp>
+#include <fastad_bits/reverse/core/value_adj_view.hpp>
 #include <fastad_bits/util/type_traits.hpp>
+#include <fastad_bits/util/size_pack.hpp>
+#include <fastad_bits/util/value.hpp>
 
 namespace ad {
 namespace core {
@@ -16,10 +18,10 @@ namespace core {
 
 template <class VecType>
 struct ForEachIterNode: 
-    ValueView<typename util::expr_traits< 
-                typename VecType::value_type >::value_t,
-              typename util::shape_traits< 
-                typename VecType::value_type >::shape_t >,
+    ValueAdjView<typename util::expr_traits< 
+                    typename VecType::value_type >::value_t,
+                 typename util::shape_traits< 
+                    typename VecType::value_type >::shape_t >,
     ExprBase<ForEachIterNode<VecType>>
 {
 private:
@@ -28,16 +30,16 @@ private:
     using elem_shape_t = typename util::shape_traits<vec_elem_t>::shape_t;
 
 public:
-    using value_view_t = ValueView<elem_value_t, elem_shape_t>;
-    using typename value_view_t::value_t;
-    using typename value_view_t::shape_t;
-    using typename value_view_t::var_t;
-    using value_view_t::bind;
+    using value_adj_view_t = ValueAdjView<elem_value_t, elem_shape_t>;
+    using typename value_adj_view_t::value_t;
+    using typename value_adj_view_t::shape_t;
+    using typename value_adj_view_t::var_t;
+    using typename value_adj_view_t::ptr_pack_t;
 
     ForEachIterNode(const VecType& vec)
-        : value_view_t(nullptr,
-                       (vec.size() == 0) ? 0 : vec[0].rows(),
-                       (vec.size() == 0) ? 0 : vec[0].cols())
+        : value_adj_view_t(nullptr, nullptr,
+                           (vec.size() == 0) ? 0 : vec[0].rows(),
+                           (vec.size() == 0) ? 0 : vec[0].cols())
         , vec_(vec)
     {}
 
@@ -64,14 +66,15 @@ public:
      * and backward evaluates every expression in reverse order with 0 seed.
      * See GlueNode::beval for reasons for this design choice.
      */
-    void beval(value_t seed, size_t i, size_t j, util::beval_policy pol)
+    template <class T>
+    void beval(const T& seed)
     {
         if (vec_.size() == 0) return;
         auto it = vec_.rbegin();
-        it->beval(seed, i, j, pol);
+        it->beval(seed);
         std::for_each(std::next(it), vec_.rend(), 
-                [=](auto& expr) {
-                    expr.beval(0, i, j, util::beval_policy::all); 
+                [&](auto& expr) {
+                    expr.beval(0); 
                 }
         );
     }
@@ -82,24 +85,26 @@ public:
      *
      * @return  the next pointer not bound by any of the expressions and itself.
      */
-    value_t* bind(value_t* begin)
+    ptr_pack_t bind_cache(ptr_pack_t begin)
     {
         if (vec_.size() == 0) return begin;
-        if constexpr (!util::is_var_view_v<vec_elem_t>) {
-            for (auto& expr : vec_) begin = expr.bind(begin);
+        for (auto& expr : vec_) {
+            begin = expr.bind_cache(begin);
         }
-        value_view_t::bind(vec_.back().data());
+        value_adj_view_t::bind({vec_.back().data(), vec_.back().data_adj()});
         return begin;
     }
 
-    size_t bind_size() const 
+    util::SizePack bind_cache_size() const 
     { 
-        size_t out = 0;
-        for (const auto& expr : vec_) out += expr.bind_size();
+        util::SizePack out = util::SizePack::Zero();
+        for (const auto& expr : vec_) {
+            out += expr.bind_cache_size();
+        }
         return out;
     }
 
-    constexpr size_t single_bind_size() const { return 0; }
+    util::SizePack single_bind_cache_size() const { return {0,0}; }
 
 private:
     std::vector<vec_elem_t> vec_;

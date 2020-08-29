@@ -1,8 +1,13 @@
 #pragma once
-#include <fastad_bits/reverse/core/expr_base.hpp>
+#include <cmath>
+#include <unsupported/Eigen/SpecialFunctions>       // needed for erf
+#include <fastad_bits/forward/core/forward.hpp>    
+#include <fastad_bits/reverse/core/constant.hpp>
+#include <fastad_bits/reverse/core/value_adj_view.hpp>
 #include <fastad_bits/util/type_traits.hpp>
 #include <fastad_bits/util/shape_traits.hpp>
-#include <fastad_bits/reverse/core/value_view.hpp>
+#include <fastad_bits/util/size_pack.hpp>
+#include <fastad_bits/util/value.hpp>
 
 namespace ad {
 namespace core {
@@ -27,8 +32,8 @@ namespace core {
 template <class Unary
         , class ExprType>
 struct UnaryNode:
-    ValueView<typename util::expr_traits<ExprType>::value_t,
-              typename util::shape_traits<ExprType>::shape_t>,
+    ValueAdjView<typename util::expr_traits<ExprType>::value_t,
+                 typename util::shape_traits<ExprType>::shape_t>,
     ExprBase<UnaryNode<Unary, ExprType>>
 {
 private:
@@ -36,16 +41,16 @@ private:
     static_assert(util::is_expr_v<expr_t>);
 
 public:
-    using value_view_t = ValueView<
+    using value_adj_view_t = ValueAdjView<
         typename util::expr_traits<expr_t>::value_t, 
         typename util::shape_traits<expr_t>::shape_t >;
-    using typename value_view_t::value_t;
-    using typename value_view_t::shape_t;
-    using typename value_view_t::var_t;
-    using value_view_t::bind;
+    using typename value_adj_view_t::value_t;
+    using typename value_adj_view_t::shape_t;
+    using typename value_adj_view_t::var_t;
+    using typename value_adj_view_t::ptr_pack_t;
 
     UnaryNode(const expr_t& expr)
-        : value_view_t(nullptr, expr.rows(), expr.cols())
+        : value_adj_view_t(nullptr, nullptr, expr.rows(), expr.cols())
         , expr_(expr)
     {}
 
@@ -57,11 +62,9 @@ public:
      */
     const var_t& feval()
     {
-        if constexpr (util::is_scl_v<expr_t>) {
-            return this->get() = Unary::fmap(expr_.feval());
-        } else {
-            return this->get() = Unary::fmap(expr_.feval().array()).matrix();
-        }
+        auto&& a_expr = util::to_array(expr_.feval());
+        util::to_array(this->get()) = Unary::fmap(a_expr);
+        return this->get();
     }
 
     /**
@@ -73,51 +76,227 @@ public:
      *
      * where f is the univariate function, and w is the expression value.
      * It is assumed that feval is called before beval.
-     *
-     * See EqNode for why we can preemptively return.
+     * This is true for all shapes so long as both arguments are arrays or scalars.
      */
-    void beval(value_t seed, size_t i, size_t j, util::beval_policy pol)
+    template <class T>
+    void beval(const T& seed)
     {
-        if (seed == 0) return;
-        expr_.beval(seed * Unary::bmap(expr_.get(i,j)), i, j, pol);
+        auto&& a_val = util::to_array(this->get());
+        auto&& a_adj = util::to_array(this->get_adj());
+        auto&& a_expr = util::to_array(expr_.get());
+        a_adj = seed;
+        expr_.beval(Unary::bmap(a_adj, a_expr, a_val));
     }
 
     /**
-     * Disables usual binding rules and applies a recursive form.
      * First binds for underlying expression then binds itself.
-     * Ignores binding VarViews since the precondition states that
-     * they will have been bound prior to AD expression construction.
-     *
-     * @return  next pointer not bound by underlying expression and itself.
+     * @return  next pointer pack not bound by underlying expression and itself.
      */
-    value_t* bind(value_t* begin)
+    ptr_pack_t bind_cache(ptr_pack_t begin)
     { 
-        value_t* next = begin;
-        if constexpr (!util::is_var_view_v<expr_t>) {
-            next = expr_.bind(next);
-        }
-        return value_view_t::bind(next);
+        begin = expr_.bind_cache(begin);
+        return value_adj_view_t::bind(begin);
     }
 
     /**
      * Recursively gets the total number of values needed by the expression.
-     * Since a UnaryNode is a vectorized operation, it binds exactly
-     * the same number as its size.
-     * @return  bind size
+     * Since a UnaryNode is a vectorized operation, and does not require any
+     * extra temporaries, it binds exactly the same number as its size in both val and adj.
+     * @return  size pack
      */
-    size_t bind_size() const 
+    util::SizePack bind_cache_size() const 
     { 
-        return single_bind_size() + expr_.bind_size();
+        return single_bind_cache_size() + 
+                expr_.bind_cache_size();
     }
 
-    size_t single_bind_size() const
+    util::SizePack single_bind_cache_size() const
     {
-        return this->size();
+        return {this->size(), this->size()};
     }
 
 private:
     expr_t expr_;
 };
 
+//////////////////////////////////////////////////////////////////////////
+// Unary struct and helper function definitions
+//////////////////////////////////////////////////////////////////////////
+
+/*
+ * Expose fname from namespace various namespaces for look-up.
+ * forward/core/forward.hpp defines some of these overloads.
+ * Rest of the overloads are in this header
+ */
+#define USING_STD_AD_EIGEN(fname) \
+    using std::fname;\
+    using ad::fname;\
+    using Eigen::fname;
+
+/* 
+ * Defines a unary struct with name "name".
+ * This struct acts as a functor that will be passed as a type to UnaryNode.
+ *
+ * fmap evaluates f(x)
+ * bmap evaluates seed * df/dx 
+ *
+ * bmap is also given the value of f if it is more efficient to reuse its value (see Exp).
+ * Both functions are kept templatized since any combination of scalar or Eigen arrays can be passed.
+ */
+
+#define UNARY_STRUCT(name, fmap_body, bmap_body) \
+struct name \
+{ \
+    template <class T> \
+	inline static auto fmap(const T& x) \
+	{ \
+		fmap_body \
+	} \
+\
+    template <class S, class T, class U> \
+	inline static auto bmap(const S& seed, \
+                            const T& x, \
+                            const U& f) \
+	{ \
+		bmap_body \
+	} \
+}
+
+/* 
+ * Defines function with name associated with struct_name.
+ * Overloaded for constant nodes to be eager-evaluated.
+ * @tparam  Derived     the actual type of node in CRTP
+ * @return  Unary Node that will evaluate forward and backward direction 
+ *          defined by "struct_name"'s fmap and bmap acting on "node"
+ */
+
+#define ADNODE_UNARY_FUNC(name, struct_name) \
+    template <class Derived \
+            , class = std::enable_if_t< \
+                util::is_convertible_to_ad_v<Derived> && \
+                util::any_ad_v<Derived> >> \
+    inline auto name(const Derived& node) \
+    { \
+        using expr_t = util::convert_to_ad_t<Derived>; \
+        expr_t expr = node; \
+        if constexpr (util::is_constant_v<expr_t>) { \
+            return ad::constant(core::struct_name::fmap(\
+                        util::to_array(expr.feval())) ); \
+        } else { \
+            return core::UnaryNode<core::struct_name, expr_t>(expr); \
+        } \
+    }
+
+// UnaryMinus struct
+UNARY_STRUCT(UnaryMinus, 
+             return -x;, 
+             static_cast<void>(x); 
+             static_cast<void>(f); 
+             return -seed;);
+
+// Sin struct
+UNARY_STRUCT(Sin, 
+             USING_STD_AD_EIGEN(sin);
+             return sin(x);, 
+             static_cast<void>(f); 
+             USING_STD_AD_EIGEN(cos); 
+             return seed * cos(x););
+
+// Cos struct
+UNARY_STRUCT(Cos, 
+             USING_STD_AD_EIGEN(cos); 
+             return cos(x);, 
+             static_cast<void>(f); 
+             return -seed * Sin::fmap(x););
+
+// Tan struct
+UNARY_STRUCT(Tan, 
+             USING_STD_AD_EIGEN(tan); 
+             return tan(x);, 
+             static_cast<void>(f); 
+             auto tmp = Cos::fmap(x); 
+             return seed / (tmp * tmp););
+
+// Arcsin struct (degrees)
+UNARY_STRUCT(Arcsin, 
+             USING_STD_AD_EIGEN(asin);
+             return asin(x);, 
+             static_cast<void>(f); 
+             USING_STD_AD_EIGEN(sqrt);
+             return seed / sqrt(1. - x * x););
+
+// Arccos struct (degrees)
+UNARY_STRUCT(Arccos, 
+             USING_STD_AD_EIGEN(acos);
+             return acos(x);, 
+             static_cast<void>(f); 
+             return -Arcsin::bmap(seed, x, f););
+
+// Arctan struct (degrees)
+UNARY_STRUCT(Arctan, 
+             USING_STD_AD_EIGEN(atan);
+             return atan(x);, 
+             static_cast<void>(f); 
+             return seed / (1. + x * x););
+
+// Exp struct
+UNARY_STRUCT(Exp, 
+             USING_STD_AD_EIGEN(exp);
+             return exp(x);, 
+             static_cast<void>(x); 
+             return seed * f;);
+
+// Log struct
+UNARY_STRUCT(Log, 
+             USING_STD_AD_EIGEN(log);
+             return log(x);, 
+             static_cast<void>(f); 
+             return seed / x;);
+
+// Sqrt struct
+UNARY_STRUCT(Sqrt,
+             USING_STD_AD_EIGEN(sqrt);
+             return sqrt(x);,
+             static_cast<void>(x);
+             return 0.5 * seed / f;);
+
+// Erf struct
+UNARY_STRUCT(Erf,
+             USING_STD_AD_EIGEN(erf);
+             return erf(x);,
+             static_cast<void>(f); 
+             static constexpr double two_over_sqrt_pi =
+                1.1283791670955126;
+             return two_over_sqrt_pi * seed * Exp::fmap(-x * x););
+
+// operator- (IMPORTANT TO DECLARE IN core)
+ADNODE_UNARY_FUNC(operator-, UnaryMinus)
+
 } // namespace core
+
+// ad::sin(ADNode)
+ADNODE_UNARY_FUNC(sin, Sin)
+// ad::cos(ADNode)
+ADNODE_UNARY_FUNC(cos, Cos)
+// ad::tan(ADNode)
+ADNODE_UNARY_FUNC(tan, Tan)
+// ad::asin(ADNode)
+ADNODE_UNARY_FUNC(asin, Arcsin)
+// ad::acos(ADNode)
+ADNODE_UNARY_FUNC(acos, Arccos)
+// ad::atan(ADNode)
+ADNODE_UNARY_FUNC(atan, Arctan)
+// ad::exp(ADNode)
+ADNODE_UNARY_FUNC(exp, Exp)
+// ad::log(ADNode)
+ADNODE_UNARY_FUNC(log, Log)
+// ad::sqrt(ADNode)
+ADNODE_UNARY_FUNC(sqrt, Sqrt)
+// ad::erf(ADNode)
+ADNODE_UNARY_FUNC(erf, Erf)
+
 } // namespace ad
+
+#undef USING_STD_AD_EIGEN
+#undef UNARY_STRUCT
+#undef ADNODE_UNARY_FUNC

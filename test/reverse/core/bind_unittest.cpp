@@ -1,8 +1,7 @@
 #include <testutil/base_fixture.hpp>
 #include <fastad_bits/reverse/core/bind.hpp>
-#include <fastad_bits/reverse/core/var.hpp>
-#include <fastad_bits/reverse/core/math.hpp>
 #include <fastad_bits/reverse/core/eq.hpp>
+#include <fastad_bits/reverse/core/binary.hpp>
 #include <fastad_bits/reverse/core/glue.hpp>
 #include <fastad_bits/reverse/core/eval.hpp>
 

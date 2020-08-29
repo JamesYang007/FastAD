@@ -1,7 +1,7 @@
-#include <fastad_bits/reverse/core/math.hpp>
 #include <fastad_bits/reverse/core/var.hpp>
+#include <fastad_bits/reverse/core/unary.hpp>
+#include <fastad_bits/reverse/core/binary.hpp>
 #include <fastad_bits/reverse/core/eval.hpp>
-#include <fastad_bits/reverse/core/eq.hpp>
 #include <fastad_bits/reverse/core/pow.hpp>
 #include <fastad_bits/reverse/core/sum.hpp>
 #include <fastad_bits/reverse/stat/normal.hpp>
@@ -45,18 +45,15 @@ BENCHMARK_DEFINE_F(normal_fixture, BM_normal_adj_log_pdf)(benchmark::State& stat
 
     VarView<value_t, vec> x(nullptr, nullptr, size);
     VarView<value_t, vec> mu(nullptr, nullptr, size);
-    VarView<value_t, selfadjmat> sigma(nullptr, nullptr, size, size);
+    VarView<value_t, mat> sigma(nullptr, nullptr, size, size);
 
     size_t tot_size = x.size() + mu.size() + sigma.size();
     std::vector<double> val(tot_size, 0);
     std::vector<double> adj(tot_size, 0);
 
-    auto val_next = x.bind(val.data());
-    auto adj_next = x.bind_adj(adj.data());
-    val_next = mu.bind(val_next);
-    adj_next = mu.bind_adj(adj_next);
-    val_next = sigma.bind(val_next);
-    adj_next = sigma.bind_adj(adj_next);
+    auto ptr_pack = x.bind({val.data(), adj.data()});
+    ptr_pack = mu.bind(ptr_pack);
+    ptr_pack = sigma.bind(ptr_pack);
 
     x.get().Random();
     mu.get().Random();
@@ -79,31 +76,20 @@ BENCHMARK_DEFINE_F(normal_fixture, BM_normal_adj_log_pdf_flat)(benchmark::State&
     VarView<value_t, vec> x(nullptr, nullptr, size);
     VarView<value_t, vec> mu(nullptr, nullptr, size);
 
-    size_t tot_size = x.size() + mu.size() + (size * (size + 1))/2;
+    size_t tot_size = x.size() + mu.size() + (size * size);
     std::vector<double> val(tot_size, 0);
     std::vector<double> adj(tot_size, 0);
 
-    auto val_next = x.bind(val.data());
-    auto adj_next = x.bind_adj(adj.data());
-    val_next = mu.bind(val_next);
-    adj_next = mu.bind_adj(adj_next);
+    auto ptr_pack = x.bind({val.data(), adj.data()});
+    ptr_pack = mu.bind(ptr_pack);
 
-    Eigen::MatrixXd mat_vals(size, size);
-    VarView<value_t, selfadjmat> sigma(mat_vals.data(), 
-                                       val_next, 
-                                       adj_next, 
-                                       size);
+    VarView<value_t, mat> sigma(ptr_pack.val, 
+                                ptr_pack.adj,
+                                size, size);
 
     x.get().Random();
     mu.get().Random();
     make_cov(sigma);
-
-    size_t k = 0;
-    for (size_t j = 0; j < sigma.cols(); ++j) {
-        for (size_t i = j; i < sigma.rows(); ++i, ++k) {
-            val_next[k] = sigma.get()(i,j);
-        }
-    }
 
     auto expr = ad::bind(normal_adj_log_pdf(x, mu, sigma));
 

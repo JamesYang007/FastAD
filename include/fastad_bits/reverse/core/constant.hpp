@@ -3,6 +3,8 @@
 #include <fastad_bits/reverse/core/value_view.hpp>
 #include <fastad_bits/util/shape_traits.hpp>
 #include <fastad_bits/util/type_traits.hpp>
+#include <fastad_bits/util/ptr_pack.hpp>
+#include <fastad_bits/util/size_pack.hpp>
 
 namespace ad {
 namespace core {
@@ -10,43 +12,6 @@ namespace core {
 template <class Derived>
 struct ConstantBase: ExprBase<Derived>
 {};
-
-} // namespace core
-
-namespace util {
-
-template <class T>
-inline constexpr bool is_constant_v =
-    std::is_base_of_v<core::ConstantBase<T>, T>;
-
-namespace details {
-
-template <class ValueType, class ShapeType>
-struct shape_to_raw_const_view;
-
-template <class ValueType>
-struct shape_to_raw_const_view<ValueType, ad::vec>
-{
-    using type = Eigen::Map<
-        const Eigen::Matrix<ValueType, Eigen::Dynamic, 1>>;
-};
-
-template <class ValueType>
-struct shape_to_raw_const_view<ValueType, ad::mat>
-{
-    using type = Eigen::Map<
-        const Eigen::Matrix<ValueType, Eigen::Dynamic, Eigen::Dynamic>>;
-};
-
-} // namespace details
-
-template <class ValueType, class ShapeType>
-using shape_to_raw_const_view_t = typename
-    details::shape_to_raw_const_view<ValueType, ShapeType>::type;
-
-} // namespace util
-
-namespace core {
 
 /**
  * ConstantView represents constants in a mathematical formula.
@@ -63,10 +28,14 @@ template <class ValueType
 struct ConstantView:
     ConstantBase<ConstantView<ValueType, ShapeType>>
 {
+    static_assert(!std::is_same_v<ShapeType, scl>,
+                  "ConstantView is currently disabled for scalars. "
+                  "It is more efficient to just create a Constant. ");
     using value_t = ValueType;
     using shape_t = ShapeType;
-    using value_view_t = ConstantView<value_t, shape_t>;
-    using var_t = util::shape_to_raw_const_view_t<value_t, shape_t>;
+    using value_adj_view_t = ConstantView<value_t, shape_t>;
+    using var_t = util::shape_to_raw_view_t<value_t, shape_t>;
+    using ptr_pack_t = util::PtrPack<value_t>;
 
     ConstantView(const value_t* begin,
                  size_t rows,
@@ -83,66 +52,32 @@ struct ConstantView:
     /**
      * Backward evaluation does nothing.
      */
-    void beval(value_t, size_t, size_t, util::beval_policy) const {}
+    template <class T>
+    void beval(const T&) const {}
 
-    constexpr size_t bind_size() const { return 0; }
-    constexpr size_t single_bind_size() const { return 0; }
-
-    const var_t& get() const { return val_; }
-    value_t get(size_t i, size_t j) const { return val_(i, j); }
-
+    /**
+     * Templatized because constant can have a different value type
+     * from what is expected from the PtrPack<...> that gets passed as T.
+     */
     template <class T>
     constexpr T bind(T begin) const { return begin; }
 
-    size_t size() const { return val_.size(); }
-    size_t rows() const { return val_.rows(); }
-    size_t cols() const { return val_.cols(); }
+    template <class T>
+    constexpr T bind_cache(T begin) const { return begin; }
+
+    util::SizePack bind_cache_size() const { return {0,0}; }
+    util::SizePack single_bind_cache_size() const { return {0,0}; }
+
+    const var_t& get() const { return val_; }
+    value_t get(size_t i, size_t j) const { return val_(i, j); }
+    constexpr size_t size() const { return val_.size(); }
+    constexpr size_t rows() const { return val_.rows(); }
+    constexpr size_t cols() const { return val_.cols(); }
     const value_t* data() const { return val_.data(); }
 
 private:
     var_t val_;
 };
-
-/**
- * Constant represents constants in a mathematical formula.
- * It owns the constant values rather than viewing them elsewhere.
- *
- * @tparam  ValueType   underlying data type
- */
-namespace details {
-
-template <class ValueType, class ShapeType>
-struct constant_var; 
-
-template <class ValueType>
-struct constant_var<ValueType, ad::scl>
-{
-    using type = ValueType;
-};
-
-template <class ValueType>
-struct constant_var<ValueType, ad::vec>
-{
-    using type = Eigen::Matrix<ValueType, Eigen::Dynamic, 1>;
-};
-
-template <class ValueType>
-struct constant_var<ValueType, ad::mat>
-{
-    using type = Eigen::Matrix<ValueType, Eigen::Dynamic, Eigen::Dynamic>;
-};
-
-template <class ValueType>
-struct constant_var<ValueType, ad::selfadjmat>
-{
-    using type = Eigen::Matrix<ValueType, Eigen::Dynamic, Eigen::Dynamic>;
-};
-
-template <class ValueType, class ShapeType>
-using constant_var_t = typename 
-    constant_var<ValueType, ShapeType>::type;
-
-} // namespace details
 
 template <class ValueType, class ShapeType>
 struct Constant:
@@ -153,8 +88,9 @@ private:
 public:
     using value_t = ValueType;
     using shape_t = ShapeType;
-    using var_t = details::constant_var_t<value_t, shape_t>;
-    using value_view_t = Constant<value_t, shape_t>;
+    using var_t = util::constant_var_t<value_t, shape_t>;
+    using value_adj_view_t = Constant<value_t, shape_t>;
+    using ptr_pack_t = util::PtrPack<value_t>;
 
     template <class T>
     Constant(const T& c)
@@ -162,9 +98,18 @@ public:
     {}
 
     const var_t& feval() const { return c_; }
-    void beval(value_t, size_t, size_t, util::beval_policy) const {}
-    constexpr size_t bind_size() const { return 0; }
-    constexpr size_t single_bind_size() const { return 0; }
+
+    template <class T>
+    void beval(const T&) const {}
+
+    template <class T>
+    constexpr T bind(T begin) const { return begin; }
+
+    template <class T>
+    constexpr T bind_cache(T begin) const { return begin; }
+
+    util::SizePack bind_cache_size() const { return {0,0}; }
+    util::SizePack single_bind_cache_size() const { return {0,0}; }
 
     const var_t& get() const { return c_; }
     const value_t& get(size_t i, size_t j) const { 
@@ -176,9 +121,6 @@ public:
             return c_(i,j); 
         }
     }
-
-    template <class T>
-    constexpr T bind(T begin) const { return begin; }
 
     const value_t* data() const { 
         if constexpr (util::is_scl_v<this_t>) {

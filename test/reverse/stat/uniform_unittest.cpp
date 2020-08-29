@@ -96,7 +96,7 @@ TEST_F(uniform_fixture, sss_beval)
 {
     bind(sss_uniform);
     sss_uniform.feval();
-    sss_uniform.beval(1, 0, 0, util::beval_policy::single);
+    sss_uniform.beval(1);
     EXPECT_DOUBLE_EQ(scl_min.get_adj(0,0), 
                      0.2656324709132444);
     EXPECT_DOUBLE_EQ(scl_max.get_adj(0,0), 
@@ -122,7 +122,7 @@ TEST_F(uniform_fixture, vss_beval)
 {
     bind(vss_uniform);
     vss_uniform.feval();
-    vss_uniform.beval(1, 0, 0, util::beval_policy::single);
+    vss_uniform.beval(1);
     EXPECT_DOUBLE_EQ(scl_min.get_adj(0,0), 
                      0.7968974127397332);
     EXPECT_DOUBLE_EQ(scl_max.get_adj(0,0), 
@@ -150,7 +150,7 @@ TEST_F(uniform_fixture, vsv_beval)
 {
     bind(vsv_uniform);
     vsv_uniform.feval();
-    vsv_uniform.beval(1, 0, 0, util::beval_policy::single);
+    vsv_uniform.beval(1);
     
     EXPECT_DOUBLE_EQ(scl_min.get_adj(0,0), 
                      0.7256275899706838);
@@ -184,7 +184,7 @@ TEST_F(uniform_fixture, vvs_beval)
 {
     bind(vvs_uniform);
     vvs_uniform.feval();
-    vvs_uniform.beval(1, 0, 0, util::beval_policy::single);
+    vvs_uniform.beval(1);
     
     EXPECT_DOUBLE_EQ(vec_min.get_adj(0,0), 
                      8.1234768480909842);
@@ -219,7 +219,7 @@ TEST_F(uniform_fixture, vvv_beval)
 {
     bind(vvv_uniform);
     vvv_uniform.feval();
-    vvv_uniform.beval(1, 0, 0, util::beval_policy::single);
+    vvv_uniform.beval(1);
     
     EXPECT_DOUBLE_EQ(vec_min.get_adj(0,0), 
                      9.0909090909090917);

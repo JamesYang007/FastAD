@@ -1,7 +1,7 @@
+#include <testutil/base_fixture.hpp>
 #include <fastad_bits/reverse/core/unary.hpp>
 #include <fastad_bits/reverse/core/constant.hpp>
 #include <fastad_bits/reverse/core/norm.hpp>
-#include <testutil/base_fixture.hpp>
 
 namespace ad {
 namespace core {
@@ -31,49 +31,46 @@ protected:
 TEST_F(norm_fixture, vec_expr_feval)
 {
     value_t res = vec_norm.feval();
-    value_t actual = 0;
-    for (size_t i = 0; i < vec_expr.size(); ++i) {
-        value_t val = unary_t::fmap(vec_expr.get(i,0));
-        actual += val * val;
-    }
+    value_t actual = 
+        unary_t::fmap(vec_expr.get().array())
+            .matrix().squaredNorm();
     EXPECT_DOUBLE_EQ(res, actual);
 }
 
 TEST_F(norm_fixture, vec_expr_beval)
 {
+    Eigen::VectorXd uvec = unary_t::fmap(vec_expr.get().array());
+    Eigen::VectorXd adj = unary_t::bmap(
+        seed * 2 * uvec.array(),
+        vec_expr.get().array(),
+        uvec.array());
     vec_norm.feval();
-    vec_norm.beval(seed, 0,0, util::beval_policy::single);    // last two ignored
-    for (size_t i = 0; i < vec_expr.size(); ++i) {
-        EXPECT_DOUBLE_EQ(vec_expr.get_adj(i,0), 
-                seed * 2. * 2. * unary_t::fmap(vec_expr.get(i,0)));
-    }
+    vec_norm.beval(seed);
+    check_eq(adj, vec_expr.get_adj());
 }
 
 TEST_F(norm_fixture, mat_expr_feval)
 {
     this->bind(mat_norm);
     value_t res = mat_norm.feval();
-    value_t actual = 0;
-    for (size_t i = 0; i < mat_expr.rows(); ++i) {
-        for (size_t j = 0; j < mat_expr.cols(); ++j) {
-            value_t val = unary_t::fmap(mat_expr.get(i,j));
-            actual += val * val;
-        }
-    }
+    value_t actual = 
+        unary_t::fmap(mat_expr.get().array())
+            .matrix().squaredNorm();
     EXPECT_DOUBLE_EQ(res, actual);
 }
 
 TEST_F(norm_fixture, mat_expr_beval)
 {
+    Eigen::MatrixXd umat = unary_t::fmap(mat_expr.get().array());
+    Eigen::MatrixXd adj = unary_t::bmap(
+        seed * 2 * umat.array(),
+        mat_expr.get().array(),
+        umat.array());
+
     this->bind(mat_norm);
     mat_norm.feval();
-    mat_norm.beval(seed, 0,0, util::beval_policy::single);    // last two ignored
-    for (size_t i = 0; i < mat_expr.rows(); ++i) {
-        for (size_t j = 0; j < mat_expr.cols(); ++j) {
-            EXPECT_DOUBLE_EQ(mat_expr.get_adj(i,j), 
-                    seed * 2. * 2. * unary_t::fmap(mat_expr.get(i,j)));
-        }
-    }
+    mat_norm.beval(seed);
+    check_eq(mat_expr.get_adj(), adj);
 }
 
 TEST_F(norm_fixture, vec_expr_constant)
@@ -83,11 +80,7 @@ TEST_F(norm_fixture, vec_expr_constant)
             std::decay_t<decltype(normnode)>,
             Constant<double, ad::scl> >);
     auto res = normnode.feval();
-    value_t actual = 0;
-    for (size_t i = 0; i < vec_expr.size(); ++i) {
-        value_t val = vec_expr.get(i,0);
-        actual += val * val;
-    }
+    value_t actual = vec_expr.get().squaredNorm();
     EXPECT_DOUBLE_EQ(res, actual);
 }
 

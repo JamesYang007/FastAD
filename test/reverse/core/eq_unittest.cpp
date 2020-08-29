@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
+#include <testutil/base_fixture.hpp>
 #include <fastad_bits/reverse/core/unary.hpp>
 #include <fastad_bits/reverse/core/eq.hpp>
-#include <testutil/base_fixture.hpp>
 
 namespace ad {
 namespace core {
@@ -28,8 +28,8 @@ protected:
     mat_eq_t mat_eq;
 
     value_t seed = 3.14;
-
-    std::vector<value_t> val_buf;
+    Eigen::ArrayXd vseed;
+    Eigen::ArrayXXd mseed;
 
     eq_fixture()
         : base_fixture()
@@ -39,13 +39,24 @@ protected:
         , scl_eq(scl_place, {scl_expr})
         , vec_eq(vec_place, {vec_expr})
         , mat_eq(mat_place, {mat_expr})
-        , val_buf(std::max(vec_size, mat_size), 0)
+        , vseed(vec_size)
+        , mseed(mat_rows, mat_cols)
     {
+        vseed << 2.3, 1.4, -2.3, 0.3, 1.3;
+        mseed << 1.32, 4.24, 1.644, 
+                -0.23, 23.1, 4.24;
+
+        auto size_pack = vec_eq.bind_cache_size();
+        size_pack = size_pack.max(mat_eq.bind_cache_size());
+        val_buf.resize(size_pack(0));
+        adj_buf.resize(size_pack(1));
+
         // IMPORTANT: bind value for unary nodes.
         // No two unary node expressions can be used in a single test.
-        scl_eq.bind(val_buf.data());
-        vec_eq.bind(val_buf.data());
-        mat_eq.bind(val_buf.data());
+        ptr_pack_t ptr_pack(val_buf.data(), adj_buf.data());
+        scl_eq.bind_cache(ptr_pack);
+        vec_eq.bind_cache(ptr_pack);
+        mat_eq.bind_cache(ptr_pack);
     }
 };
 
@@ -60,88 +71,69 @@ TEST_F(eq_fixture, scl_feval)
 
 TEST_F(eq_fixture, scl_beval)
 {
-    scl_eq.beval(seed, 0,0, util::beval_policy::single);    // last two ignored
-    EXPECT_DOUBLE_EQ(scl_place.get_adj(0,0), seed);
-    EXPECT_DOUBLE_EQ(scl_expr.get_adj(0,0), 4.*seed);
+    scl_eq.beval(seed);
+    EXPECT_DOUBLE_EQ(scl_place.get_adj(), seed);
+    EXPECT_DOUBLE_EQ(scl_expr.get_adj(), 4.*seed);
 }
 
 TEST_F(eq_fixture, vec_feval)
 {
     Eigen::VectorXd res = vec_eq.feval();
-    for (int i = 0; i < res.size(); ++i) {
-        EXPECT_DOUBLE_EQ(res(i), 4.*vec_expr.get(i,0));
-
-        // check that placeholder value has been modified
-        EXPECT_DOUBLE_EQ(vec_place.get(i,0), 4.*vec_expr.get(i,0));
-    }
+    Eigen::VectorXd actual = 4 * vec_expr.get();
+    check_eq(res, actual);
+    // check that placeholder value has been modified
+    check_eq(vec_place.get(), actual);
 }
 
 TEST_F(eq_fixture, vec_beval)
 {
-    vec_eq.beval(seed, 2,0, util::beval_policy::single);    // last ignored
-    for (size_t i = 0; i < vec_size; ++i) {
-        value_t actual = (i == 2) ? seed : 0;
-        EXPECT_DOUBLE_EQ(vec_place.get_adj(i,0), actual);
-        EXPECT_DOUBLE_EQ(vec_expr.get_adj(i,0), 4.*actual);
-    }
+    vec_eq.feval();
+    vec_eq.beval(seed);
+    Eigen::VectorXd actual = seed * Eigen::VectorXd::Ones(vec_size);
+    check_eq(actual, vec_place.get_adj());
+    check_eq(4 * actual, vec_expr.get_adj());
 }
 
 TEST_F(eq_fixture, mat_feval)
 {
     Eigen::MatrixXd res = mat_eq.feval();
-    for (int i = 0; i < res.rows(); ++i) {
-        for (int j = 0; j < res.cols(); ++j) {
-            EXPECT_DOUBLE_EQ(res(i,j), 4.*mat_expr.get(i,j));
-
-            // check that placeholder value has been modified
-            EXPECT_DOUBLE_EQ(mat_place.get(i,j), 4.*mat_expr.get(i,j));
-        }
-    }
+    Eigen::MatrixXd actual = 4. * mat_expr.get();
+    check_eq(res, actual);
+    check_eq(mat_place.get(), actual);
 }
 
 TEST_F(eq_fixture, mat_beval)
 {
-    mat_eq.beval(seed,1,1, util::beval_policy::single);
-    mat_eq.beval(seed,0,2, util::beval_policy::single);
-    for (size_t i = 0; i < mat_rows; ++i) {
-        for (size_t j = 0; j < mat_cols; ++j) {
-            value_t actual = ((i == 1 && j == 1) ||
-                              (i == 0 && j == 2)) ? seed : 0;
-            EXPECT_DOUBLE_EQ(mat_place.get_adj(i,j), actual);
-            EXPECT_DOUBLE_EQ(mat_expr.get_adj(i,j), 4.*actual);
-        }
-    }
+    mat_eq.beval(mseed);
+    Eigen::MatrixXd actual_p = mseed;
+    Eigen::MatrixXd actual = 4 * mseed;
+    check_eq(mat_place.get_adj(), actual_p);
+    check_eq(mat_expr.get_adj(), actual);
 }
 
 TEST_F(eq_fixture, vec_nested_eq_feval)
 {
     Var<value_t, ad::vec> y(vec_size);
     auto expr = (y = vec_eq);
-    expr.bind(val_buf.data());
-
+    this->bind(expr);
     Eigen::VectorXd res = expr.feval();
-    for (int i = 0; i < res.size(); ++i) {
-        EXPECT_DOUBLE_EQ(res(i), 4.*vec_expr.get(i,0));
-        // check that placeholder value has been modified
-        EXPECT_DOUBLE_EQ(vec_place.get(i,0), 4.*vec_expr.get(i,0));
-        EXPECT_DOUBLE_EQ(y.get(i,0), 4.*vec_expr.get(i,0));
-    }
+
+    Eigen::VectorXd actual = 4. * vec_expr.get();
+    check_eq(res, actual);
+    check_eq(vec_place.get(), actual);
+    check_eq(y.get(), actual);
 }
 
 TEST_F(eq_fixture, vec_nested_eq_beval)
 {
     Var<value_t, ad::vec> y(vec_size);
     auto expr = (y = vec_eq);
-    expr.bind(val_buf.data());
-
-    expr.beval(seed, 2, 0, util::beval_policy::single);
-    expr.beval(seed, 0, 0, util::beval_policy::single);
-    for (size_t i = 0; i < vec_size; ++i) {
-        value_t actual = (i == 0 || i == 2) ? seed : 0;
-        EXPECT_DOUBLE_EQ(y.get_adj(i,0), actual);
-        EXPECT_DOUBLE_EQ(vec_place.get_adj(i,0), actual);
-        EXPECT_DOUBLE_EQ(vec_expr.get_adj(i,0), actual * 4.);
-    }
+    this->bind(expr);
+    expr.feval();
+    expr.beval(vseed);
+    check_eq(y.get_adj(), vseed);
+    check_eq(vec_place.get_adj(), vseed);
+    check_eq(vec_expr.get_adj(), 4. * vseed);
 }
 
 ///////////////////////////////////////
@@ -151,139 +143,100 @@ TEST_F(eq_fixture, vec_nested_eq_beval)
 TEST_F(eq_fixture, opeq_scl_feval_alias)
 {
     auto expr = (scl_expr *= scl_expr); 
-    val_buf.resize(expr.bind_size());
-    expr.bind(val_buf.data());
-    double orig = scl_expr.get();
-    double res = expr.feval();
-
+    this->bind(expr);
+    value_t orig = scl_expr.get();
+    value_t res = expr.feval();
     EXPECT_DOUBLE_EQ(res, orig * orig);
 }
 
 TEST_F(eq_fixture, opeq_scl_beval_alias)
 {
     auto expr = (scl_expr *= scl_expr); 
-    val_buf.resize(expr.bind_size());
-    expr.bind(val_buf.data());
+    this->bind(expr);
     double orig = scl_expr.get();
     expr.feval();
-    expr.beval(seed, 0, 0, util::beval_policy::single);
-
+    expr.beval(seed);
     EXPECT_DOUBLE_EQ(scl_expr.get_adj(), seed*2*orig);
 }
 
 TEST_F(eq_fixture, opeq_scl_feval_noalias)
 {
     auto expr = (scl_expr /= scl_unary_t(scl_expr)); 
-    val_buf.resize(expr.bind_size());
-    expr.bind(val_buf.data());
+    this->bind(expr);
     double orig = scl_expr.get();
     double res = expr.feval();
-
     EXPECT_DOUBLE_EQ(res, orig / unary_t::fmap(orig));
 }
 
 TEST_F(eq_fixture, opeq_scl_beval_noalias)
 {
     auto expr = (scl_expr /= scl_unary_t(scl_expr)); 
-    val_buf.resize(expr.bind_size());
-    expr.bind(val_buf.data());
+    this->bind(expr);
     expr.feval();
-    expr.beval(seed, 0, 0, util::beval_policy::single);
-
+    expr.beval(seed);
     EXPECT_DOUBLE_EQ(scl_expr.get_adj(), 0.);
 }
 
 TEST_F(eq_fixture, opeq_vec_scl_feval_noalias)
 {
     auto expr = (vec_expr *= scl_expr); 
-    val_buf.resize(expr.bind_size());
-    expr.bind(val_buf.data());
+    this->bind(expr);
     Eigen::VectorXd orig = vec_expr.get();
     Eigen::VectorXd res = expr.feval();
-
-    for (int i = 0; i < res.size(); ++i) {
-        EXPECT_DOUBLE_EQ(res(i), orig(i) * scl_expr.get());
-    }
+    Eigen::VectorXd actual = orig * scl_expr.get();
+    check_eq(res, actual);
 }
 
 TEST_F(eq_fixture, opeq_vec_scl_beval_noalias)
 {
     auto expr = (vec_expr *= scl_expr); 
-    val_buf.resize(expr.bind_size());
-    expr.bind(val_buf.data());
+    this->bind(expr);
     Eigen::VectorXd orig = vec_expr.get();
     expr.feval();
-    expr.beval(seed, 1, 0, util::beval_policy::single);
-    expr.beval(seed, 2, 0, util::beval_policy::single);
-
-    for (size_t i = 0; i < vec_expr.size(); ++i) {
-        value_t actual = (i == 1 || i == 2) ? seed * scl_expr.get(): 0;
-        EXPECT_DOUBLE_EQ(vec_expr.get_adj(i,0), 
-                         actual);
-    }
-
-    EXPECT_DOUBLE_EQ(scl_expr.get_adj(), seed * (orig(1) + orig(2)));
+    expr.beval(vseed);
+    check_eq(vec_expr.get_adj(), vseed * scl_expr.get());
+    EXPECT_DOUBLE_EQ(scl_expr.get_adj(), (vseed * orig.array()).sum());
 }
 
 TEST_F(eq_fixture, opeq_vec_vec_feval_alias)
 {
     auto expr = (vec_expr *= vec_expr); 
-    val_buf.resize(expr.bind_size());
-    expr.bind(val_buf.data());
+    this->bind(expr);
     Eigen::VectorXd orig = vec_expr.get();
     Eigen::VectorXd res = expr.feval();
-
-    for (int i = 0; i < res.size(); ++i) {
-        EXPECT_DOUBLE_EQ(res(i), orig(i) * orig(i));
-    }
+    check_eq(res, orig.array() * orig.array());
 }
 
 TEST_F(eq_fixture, opeq_vec_vec_beval_alias)
 {
     auto expr = (vec_expr *= vec_expr); 
-    val_buf.resize(expr.bind_size());
-    expr.bind(val_buf.data());
+    this->bind(expr);
     Eigen::VectorXd orig = vec_expr.get();
     expr.feval();
-    expr.beval(seed, 1, 0, util::beval_policy::single);
-    expr.beval(seed, 2, 0, util::beval_policy::single);
-
-    for (size_t i = 0; i < vec_expr.size(); ++i) {
-        value_t actual = (i == 1 || i == 2) ? seed * 2 * orig(i): 0;
-        EXPECT_DOUBLE_EQ(vec_expr.get_adj(i,0), 
-                         actual);
-    }
+    expr.beval(vseed);
+    check_eq(vec_expr.get_adj(), vseed * 2 * orig.array());
 }
 
 TEST_F(eq_fixture, opeq_vec_vec_feval_noalias)
 {
     auto expr = (vec_expr *= vec_unary_t(vec_expr)); 
-    val_buf.resize(expr.bind_size());
-    expr.bind(val_buf.data());
+    this->bind(expr);
     Eigen::VectorXd orig = vec_expr.get();
     Eigen::VectorXd res = expr.feval();
-
-    for (int i = 0; i < res.size(); ++i) {
-        EXPECT_DOUBLE_EQ(res(i), orig(i) * unary_t::fmap(orig(i)));
-    }
+    check_eq(res, orig.array() * unary_t::fmap(orig.array()));
 }
 
 TEST_F(eq_fixture, opeq_vec_vec_beval_noalias)
 {
     auto expr = (vec_expr *= vec_unary_t(vec_expr)); 
-    val_buf.resize(expr.bind_size());
-    expr.bind(val_buf.data());
+    this->bind(expr);
     Eigen::VectorXd orig = vec_expr.get();
     expr.feval();
-    expr.beval(seed, 1, 0, util::beval_policy::single);
-    expr.beval(seed, 2, 0, util::beval_policy::single);
-
-    for (size_t i = 0; i < vec_expr.size(); ++i) {
-        value_t actual = (i == 1 || i == 2) ? 
-            seed * (unary_t::fmap(orig(i)) + orig(i) * unary_t::bmap(orig(i))): 0;
-        EXPECT_DOUBLE_EQ(vec_expr.get_adj(i,0), 
-                         actual);
-    }
+    expr.beval(vseed);
+    Eigen::VectorXd actual = 
+        vseed * (unary_t::fmap(orig.array()) + 
+                 unary_t::bmap(orig.array(), 0, 0));
+    check_eq(vec_expr.get_adj(), actual);
 }
 
 } // namespace core

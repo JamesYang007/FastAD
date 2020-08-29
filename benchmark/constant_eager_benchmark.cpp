@@ -1,5 +1,6 @@
 #include <fastad_bits/reverse/core/var.hpp>
-#include <fastad_bits/reverse/core/math.hpp>
+#include <fastad_bits/reverse/core/unary.hpp>
+#include <fastad_bits/reverse/core/binary.hpp>
 #include <fastad_bits/reverse/core/eval.hpp>
 #include <fastad_bits/reverse/core/pow.hpp>
 #include <fastad_bits/reverse/core/sum.hpp>
@@ -38,16 +39,14 @@ static void BM_normal_repeated_stddev(benchmark::State& state)
     }
 
     int i = 0;
-    auto expr = ad::sum(values.begin(), values.end(),
+    auto expr = ad::bind(ad::sum(values.begin(), values.end(),
         [&](double v) {
             auto&& expr = -ad::constant(0.5) *
                 ad::pow<2>((ad::constant(v) - w * ad::constant(values2[i])) / ad::constant(2.)) -
                 ad::log(ad::constant(2.));
             ++i;
             return expr;
-        });
-    std::vector<double> tmp(expr.bind_size());
-    expr.bind(tmp.data());
+        }));
 
     for (auto _ : state) {
         ad::autodiff(expr);

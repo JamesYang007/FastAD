@@ -1,8 +1,10 @@
 #include <fastad_bits/reverse/core/var.hpp>
 #include <fastad_bits/reverse/core/eq.hpp>
-#include <fastad_bits/reverse/core/prod.hpp>
-#include <fastad_bits/reverse/core/math.hpp>
+#include <fastad_bits/reverse/core/unary.hpp>
+#include <fastad_bits/reverse/core/binary.hpp>
 #include <fastad_bits/reverse/core/eval.hpp>
+#include <fastad_bits/reverse/core/pow.hpp>
+#include <fastad_bits/reverse/core/prod.hpp>
 #include <benchmark/benchmark.h>
 #ifdef USE_ADEPT
 #include <adept_arrays.h>
@@ -53,9 +55,7 @@ static void BM_prod_fastad(benchmark::State& state)
         , [](const auto& x) {
             return x * x;
         });
-    auto expr = (w4 = prod_expr, w5 = w4 * w4 + ad::cos(w4));
-    std::vector<double> tmp(expr.bind_size());
-    expr.bind(tmp.data());
+    auto expr = ad::bind((w4 = prod_expr, w5 = w4 * w4 + ad::cos(w4)));
 
     for (auto _ : state) {
         autodiff(expr);

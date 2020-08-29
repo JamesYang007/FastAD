@@ -1,8 +1,7 @@
 #pragma once
 #include <tuple>
 #include <fastad_bits/reverse/core/expr_base.hpp>
-#include <fastad_bits/reverse/core/value_view.hpp>
-#include <fastad_bits/reverse/core/var_view.hpp>
+#include <fastad_bits/reverse/core/value_adj_view.hpp>
 #include <fastad_bits/reverse/core/constant.hpp>
 #include <fastad_bits/util/type_traits.hpp>
 #include <fastad_bits/util/numeric.hpp>
@@ -16,54 +15,51 @@ template <class XExprType
         , class MeanExprType
         , class SigmaExprType>
 struct NormalBase:
-    core::ValueView<util::common_value_t<XExprType, 
-                                         MeanExprType, 
-                                         SigmaExprType>, ad::scl>
+    core::ValueAdjView<util::common_value_t<
+                        XExprType, 
+                        MeanExprType, 
+                        SigmaExprType>, ad::scl>
 {
     using x_t = XExprType;
     using mean_t = MeanExprType;
     using sigma_t = SigmaExprType;
     using common_value_t = util::common_value_t<
         x_t, mean_t, sigma_t>;
-    using value_view_t = core::ValueView<common_value_t, ad::scl>;
-    using typename value_view_t::value_t;
-    using typename value_view_t::shape_t;
-    using typename value_view_t::var_t;
-    using value_view_t::bind;
+    using value_adj_view_t = core::ValueAdjView<common_value_t, ad::scl>;
+    using typename value_adj_view_t::value_t;
+    using typename value_adj_view_t::shape_t;
+    using typename value_adj_view_t::var_t;
+    using typename value_adj_view_t::ptr_pack_t;
 
     NormalBase(const x_t& x,
                const mean_t& mean,
                const sigma_t& sigma)
-        : value_view_t(nullptr, 1, 1)
+        : value_adj_view_t(nullptr, nullptr, 1, 1)
         , x_{x}
         , mean_{mean}
         , sigma_{sigma}
     {}
 
-    value_t* bind(value_t* begin) 
+    ptr_pack_t bind_cache(ptr_pack_t begin)
     {
-        value_t* next = begin;
-        if constexpr (!util::is_var_view_v<x_t>) {
-            next = x_.bind(next);
-        }
-        if constexpr (!util::is_var_view_v<mean_t>) {
-            next = mean_.bind(next);
-        }
-        if constexpr (!util::is_var_view_v<sigma_t>) {
-            next = sigma_.bind(next);
-        }
-        return value_view_t::bind(next);
+        begin = x_.bind_cache(begin);
+        begin = mean_.bind_cache(begin);
+        begin = sigma_.bind_cache(begin);
+        return value_adj_view_t::bind(begin);
     }
 
-    size_t bind_size() const 
+    util::SizePack bind_cache_size() const 
     { 
-        return single_bind_size() + 
-                x_.bind_size() +
-                mean_.bind_size() +
-                sigma_.bind_size();
+        return single_bind_cache_size() + 
+                x_.bind_cache_size() +
+                mean_.bind_cache_size() +
+                sigma_.bind_cache_size();
     }
 
-    constexpr size_t single_bind_size() const { return this->size(); }
+    util::SizePack single_bind_cache_size() const
+    {
+        return {this->size(), 0}; 
+    }
 
 protected:
     x_t x_;
@@ -126,9 +122,6 @@ public:
     using base_t::x_;
     using base_t::mean_;
     using base_t::sigma_;
-    using base_t::bind;
-    using base_t::bind_size;
-    using base_t::single_bind_size;
 
     NormalAdjLogPDFNode(const x_t& x,
                         const mean_t& mean,
@@ -146,6 +139,7 @@ public:
         auto&& x = x_.feval();
         auto&& m = mean_.feval();
         auto&& s = sigma_.feval();
+
         if (s <= 0) return this->get() = util::neg_inf<value_t>;
 
         if constexpr (!util::is_constant_v<sigma_t>) {
@@ -157,7 +151,7 @@ public:
         return this->get() = -0.5 * z * z - log_sigma_; 
     }
 
-    void beval(value_t seed, size_t, size_t, util::beval_policy pol)
+    void beval(value_t seed)
     {
         if (seed == 0 || sigma_.get() <= 0) return;
 
@@ -165,11 +159,11 @@ public:
         value_t z = (x_.get() - mean_.get()) * inv_s;
 
         if constexpr (!util::is_constant_v<sigma_t>) {
-            sigma_.beval(seed * (z*z - 1) * inv_s, 0, 0, pol);
+            sigma_.beval(seed * (z*z - 1) * inv_s);
         }
-        value_t adj = z * inv_s;
-        mean_.beval(seed * adj, 0, 0, pol);
-        x_.beval(seed * (-adj), 0, 0, pol);
+        value_t adj = seed * z * inv_s;
+        mean_.beval(adj);
+        x_.beval(-adj);
     }
 
 private:
@@ -202,9 +196,6 @@ public:
     using base_t::x_;
     using base_t::mean_;
     using base_t::sigma_;
-    using base_t::bind;
-    using base_t::bind_size;
-    using base_t::single_bind_size;
 
     NormalAdjLogPDFNode(const x_t& x,
                         const mean_t& mean,
@@ -229,9 +220,10 @@ public:
 
     const var_t& feval()
     {
-        auto&& x = x_.feval();
+        auto&& x = x_.feval().array();
         auto&& m = mean_.feval();
         auto&& s = sigma_.feval();
+
         if (s <= 0) return this->get() = util::neg_inf<value_t>;
 
         if constexpr (!util::is_constant_v<sigma_t>) {
@@ -245,20 +237,20 @@ public:
                 -0.5 * inv_s_sq * (x_var_ + x_.rows() * centered * centered) 
                         - x_.rows() * log_sigma_;
         } else {
-            auto z = (x.array() - m).matrix();
+            auto z = (x - m).matrix();
             z_sq = z.squaredNorm() / (s * s);
             return this->get() = -0.5 * z_sq - x_.rows() * log_sigma_; 
         }
     }
 
-    void beval(value_t seed, size_t, size_t, util::beval_policy pol)
+    void beval(value_t seed)
     {
         if (seed == 0 || sigma_.get() <= 0) return;
 
         value_t inv_s = 1./sigma_.get();
         value_t inv_s_sq = inv_s * inv_s;
 
-        auto&& x = x_.get();
+        auto&& x = x_.get().array();
         auto&& m = mean_.get();
 
         // if x is constant, more optimized beval
@@ -267,25 +259,23 @@ public:
             if constexpr (!util::is_constant_v<sigma_t>) {
                 value_t c = (m - x_mean_);
                 value_t sigma_adj = ((x_var_ + x_.rows() * c * c) * inv_s_sq - x_.rows()) * inv_s;
-                sigma_.beval(seed * sigma_adj, 0, 0, pol);
+                sigma_.beval(seed * sigma_adj);
             }
 
             value_t mean_adj = x_.rows() * (x_mean_ - m) * inv_s_sq;
-            mean_.beval(seed * mean_adj, 0, 0, pol);
+            mean_.beval(seed * mean_adj);
 
         } else {
 
             if constexpr (!util::is_constant_v<sigma_t>) {
-                sigma_.beval(seed * (z_sq - x_.rows()) * inv_s, 0, 0, pol);
+                sigma_.beval(seed * (z_sq - x_.rows()) * inv_s);
             }
 
             value_t mean_adj = (x.array() - m).sum() * inv_s_sq;
-            mean_.beval(seed * mean_adj, 0, 0, pol);
+            mean_.beval(seed * mean_adj);
 
             if constexpr (!util::is_constant_v<x_t>) {
-                for (size_t i = 0; i < x_.rows(); ++i) {
-                    x_.beval(seed * ((m - x(i)) * inv_s_sq), i, 0, pol);
-                }
+                x_.beval((seed * inv_s_sq) * (m - x));
             }
 
         }
@@ -328,9 +318,6 @@ public:
     using base_t::x_;
     using base_t::mean_;
     using base_t::sigma_;
-    using base_t::bind;
-    using base_t::bind_size;
-    using base_t::single_bind_size;
 
     NormalAdjLogPDFNode(const x_t& x,
                         const mean_t& mean,
@@ -346,43 +333,38 @@ public:
 
     const var_t& feval()
     {
-        auto&& x = x_.feval();
-        auto&& m = mean_.feval();
+        auto&& x = x_.feval().array();
+        auto&& m = mean_.feval().array();
         auto&& s = sigma_.feval();
+
         if (s <= 0) return this->get() = util::neg_inf<value_t>;
 
         if constexpr (!util::is_constant_v<sigma_t>) {
             this->update_cache();
         }
 
-        auto z = (x.array() - m.array()).matrix();
+        auto z = (x - m).matrix();
         z_sq = z.squaredNorm() / (s * s);
         
         return this->get() = -0.5 * z_sq - x_.rows() * log_sigma_; 
     }
 
-    void beval(value_t seed, size_t, size_t, util::beval_policy pol)
+    void beval(value_t seed)
     {
         if (seed == 0 || sigma_.get() <= 0) return;
 
         value_t inv_s = 1./sigma_.get();
         value_t inv_s_sq = inv_s * inv_s;
 
-        auto&& x = x_.get();
-        auto&& m = mean_.get();
+        auto&& x = x_.get().array();
+        auto&& m = mean_.get().array();
 
         if constexpr (!util::is_constant_v<sigma_t>) {
-            sigma_.beval(seed * (z_sq - x_.rows()) * inv_s, 0, 0, pol);
+            sigma_.beval(seed * (z_sq - x_.rows()) * inv_s);
         }
 
-        for (size_t i = 0; i < x_.rows(); ++i) {
-            mean_.beval(seed * (x(i) - m(i)) * inv_s_sq, i, 0, pol);
-        }
-
-        for (size_t i = 0; i < x_.rows(); ++i) {
-            x_.beval(seed * (-(x(i) - m(i)) * inv_s_sq), i, 0, pol);
-        }
-
+        mean_.beval((seed * inv_s_sq) * (x - m));
+        x_.beval((seed * inv_s_sq) * (m - x));
     }
 
 private:
@@ -416,9 +398,6 @@ public:
     using base_t::x_;
     using base_t::mean_;
     using base_t::sigma_;
-    using base_t::bind;
-    using base_t::bind_size;
-    using base_t::single_bind_size;
 
     NormalAdjLogPDFNode(const x_t& x,
                         const mean_t& mean,
@@ -446,9 +425,9 @@ public:
 
     const var_t& feval()
     {
-        auto&& x = x_.feval();
+        auto&& x = x_.feval().array();
         auto&& m = mean_.feval();
-        auto&& s = sigma_.feval();
+        auto&& s = sigma_.feval().array();
 
         if constexpr (!util::is_constant_v<sigma_t>) {
             this->update_cache();
@@ -464,50 +443,42 @@ public:
                 -0.5 * (sq_term_ - 2 * m * lin_term_ + m * m * const_term_)
                     - log_sigma_;
         } else {
-            auto z = ((x.array() - m) / s.array()).matrix();
+            auto z = ((x - m) / s).matrix();
             return this->get() = -0.5 * z.squaredNorm() - log_sigma_; 
         }
     }
 
-    void beval(value_t seed, size_t, size_t, util::beval_policy pol)
+    void beval(value_t seed)
     {
         if (seed == 0 || !is_pos_def_) return;
 
-        auto&& x = x_.get();
+        auto&& x = x_.get().array();
         auto&& m = mean_.get();
-        auto&& s = sigma_.get();
+        auto&& s = sigma_.get().array();
 
         if constexpr (util::is_constant_v<x_t> &&
                       util::is_constant_v<sigma_t>) {
             value_t mean_adj = lin_term_ - m * const_term_;
-            mean_.beval(seed * mean_adj, 0, 0, pol);
+            mean_.beval(seed * mean_adj);
         } else {
 
             if constexpr (!util::is_constant_v<sigma_t>) {
-                for (size_t i = 0; i < sigma_.rows(); ++i) {
-                    value_t inv_s = 1./s(i);
-                    value_t sigma_adj = (x(i) - m) * inv_s;
-                    sigma_adj *= sigma_adj;
-                    sigma_adj = (sigma_adj - 1) * inv_s;
-                    sigma_.beval(seed * sigma_adj, i, 0, pol);
-                }
+                sigma_.beval((seed / s) * ( ((x - m)/s).square() - 1. ));
             }
 
-            value_t mean_adj = ((x.array() - m) / s.array().square()).sum();
-            mean_.beval(seed * mean_adj, 0, 0, pol);
-
-            for (size_t i = 0; i < x_.rows(); ++i) {
-                value_t inv_s_sq = 1./(s(i) * s(i));
-                x_.beval(seed * (-(x(i) - m) * inv_s_sq), i, 0, pol);
-            }
+            value_t mean_adj = ((x - m) / s.square()).sum();
+            mean_.beval(seed * mean_adj);
+            x_.beval((seed / s.square()) * (m - x));
 
         }
     }
 
 private:
     void update_cache() {
-        log_sigma_ = sigma_.get().array().log().sum();
-        is_pos_def_ = !(sigma_.get().array() <= 0).any();
+        is_pos_def_ = (sigma_.get().array() > 0).all();
+        if (is_pos_def_) {
+            log_sigma_ = sigma_.get().array().log().sum();
+        }
     }
 
     value_t log_sigma_;
@@ -541,9 +512,6 @@ public:
     using base_t::x_;
     using base_t::mean_;
     using base_t::sigma_;
-    using base_t::bind;
-    using base_t::bind_size;
-    using base_t::single_bind_size;
 
     NormalAdjLogPDFNode(const x_t& x,
                         const mean_t& mean,
@@ -559,9 +527,9 @@ public:
 
     const var_t& feval()
     {
-        auto&& x = x_.feval();
-        auto&& m = mean_.feval();
-        auto&& s = sigma_.feval();
+        auto&& x = x_.feval().array();
+        auto&& m = mean_.feval().array();
+        auto&& s = sigma_.feval().array();
 
         if constexpr (!util::is_constant_v<sigma_t>) {
             this->update_cache();
@@ -571,46 +539,34 @@ public:
             return this->get() = util::neg_inf<value_t>;
         }
 
-        auto z = ((x.array() - m.array()) / s.array()).matrix();
+        auto z = ((x - m) / s).matrix();
         
         return this->get() = -0.5 * z.squaredNorm() - log_sigma_; 
     }
 
-    void beval(value_t seed, size_t, size_t, util::beval_policy pol)
+    void beval(value_t seed)
     {
         if (seed == 0 || !is_pos_def_) return;
 
-        auto&& x = x_.get();
-        auto&& m = mean_.get();
-        auto&& s = sigma_.get();
+        auto&& x = x_.get().array();
+        auto&& m = mean_.get().array();
+        auto&& s = sigma_.get().array();
 
         if constexpr (!util::is_constant_v<sigma_t>) {
-            for (size_t i = 0; i < sigma_.rows(); ++i) {
-                value_t inv_s = 1./s(i);
-                value_t sigma_adj = (x(i) - m(i)) * inv_s;
-                sigma_adj *= sigma_adj;
-                sigma_adj = (sigma_adj - 1) * inv_s;
-                sigma_.beval(seed * sigma_adj, i, 0, pol);
-            }
+            sigma_.beval((seed / s) * ( ((x - m)/s).square() - 1. ));
         }
 
-        for (size_t i = 0; i < mean_.rows(); ++i) {
-            value_t mean_adj = (x(i) - m(i))/(s(i) * s(i));
-            mean_.beval(seed * mean_adj, i, 0, pol);
-        }
-
-        for (size_t i = 0; i < x_.rows(); ++i) {
-            value_t x_adj = (m(i) - x(i))/(s(i) * s(i));
-            x_.beval(seed * x_adj, i, 0, pol);
-        }
-
+        mean_.beval(seed * (x - m) / s.square());
+        x_.beval(seed * (m - x) / s.square());
     }
 
 private:
     void update_cache()
     {
-        log_sigma_ = sigma_.get().array().log().sum();
-        is_pos_def_ = !(sigma_.get().array() <= 0).any();
+        is_pos_def_ = (sigma_.get().array() > 0).all();
+        if (is_pos_def_) {
+            log_sigma_ = sigma_.get().array().log().sum();
+        }
     }
 
     value_t log_sigma_;
@@ -641,9 +597,6 @@ public:
     using base_t::x_;
     using base_t::mean_;
     using base_t::sigma_;
-    using base_t::bind;
-    using base_t::bind_size;
-    using base_t::single_bind_size;
 
     NormalAdjLogPDFNode(const x_t& x,
                         const mean_t& mean,
@@ -666,7 +619,7 @@ public:
 
     const var_t& feval()
     {
-        auto&& x = x_.feval();
+        auto&& x = x_.feval().array();
         auto&& m = mean_.feval();
         sigma_.feval();
 
@@ -678,31 +631,23 @@ public:
             return this->get() = util::neg_inf<value_t>;
         }
         
-        z_ = inv_ * (x.array() - m).matrix();
-        value_t sq_term = (x.array() - m).matrix().transpose() * z_;
+        z_ = inv_ * (x - m).matrix();
+        value_t sq_term = (x - m).matrix().transpose() * z_;
         
         return this->get() = -0.5 * sq_term - log_det_; 
     }
 
-    void beval(value_t seed, size_t, size_t, util::beval_policy pol)
+    void beval(value_t seed)
     {
         if (seed == 0 || !is_pos_def_) return;
 
         if constexpr (!util::is_constant_v<sigma_t>) {
-            for (size_t j = 0; j < sigma_.cols(); ++j) {
-                for (size_t i = 0; i < sigma_.rows(); ++i) {
-                    value_t sigma_adj = -0.5 * (inv_(i,j) - z_(i)*z_(j));
-                    sigma_.beval(seed * sigma_adj, i, j, pol);
-                }
-            }
+            auto adj = (-0.5 * seed) * (inv_ - z_ * z_.transpose());
+            sigma_.beval(adj.array());
         }
 
-        mean_.beval(seed * z_.sum(), 0, 0, pol);
-
-        for (size_t i = 0; i < x_.rows(); ++i) {
-            x_.beval(seed * -z_(i), i, 0, pol);
-        }
-
+        mean_.beval(seed * z_.sum());
+        x_.beval((-seed) * z_.array());
     }
 
 private:
@@ -749,9 +694,6 @@ public:
     using base_t::x_;
     using base_t::mean_;
     using base_t::sigma_;
-    using base_t::bind;
-    using base_t::bind_size;
-    using base_t::single_bind_size;
 
     NormalAdjLogPDFNode(const x_t& x,
                         const mean_t& mean,
@@ -793,27 +735,17 @@ public:
         return this->get() = -0.5 * sq_term - log_det_; 
     }
 
-    void beval(value_t seed, size_t, size_t, util::beval_policy pol)
+    void beval(value_t seed)
     {
         if (seed == 0 || !is_pos_def_) return;
 
         if constexpr (!util::is_constant_v<sigma_t>) {
-            for (size_t j = 0; j < sigma_.cols(); ++j) {
-                for (size_t i = 0; i < sigma_.rows(); ++i) {
-                    value_t sigma_adj = -0.5 * (inv_(i,j) - z_(i)*z_(j));
-                    sigma_.beval(seed * sigma_adj, i, j, pol);
-                }
-            }
+            auto adj = (-0.5 * seed) * (inv_ - z_ * z_.transpose());
+            sigma_.beval(adj.array());
         }
 
-        for (size_t i = 0; i < mean_.rows(); ++i) {
-            mean_.beval(seed * z_(i), i, 0, pol);
-        }
-
-        for (size_t i = 0; i < x_.rows(); ++i) {
-            x_.beval(seed * -z_(i), i, 0, pol);
-        }
-
+        mean_.beval(seed * z_.array());
+        x_.beval((-seed) * z_.array());
     }
 
 private:
