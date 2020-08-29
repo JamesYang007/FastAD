@@ -26,8 +26,8 @@ protected:
 
     aVectorXd v;
     aVectorXd u;
-    aVectorXd val_buf;
-    aVectorXd adj_buf;
+    Eigen::VectorXd val_buf;
+    Eigen::VectorXd adj_buf;
 
     unary_fixture()
         : base_fixture()
@@ -38,6 +38,8 @@ protected:
         , vseed(3)
         , v(3)
         , u(3)
+        , val_buf()
+        , adj_buf()
     {
         vseed << 2.13, 0.3231, 4.231;
         v << 1, 0, 0.3;
@@ -46,7 +48,8 @@ protected:
         // IMPORTANT: bind value for unary nodes.
         // Heuristic: vec and mat have largest requirement on cache, 
         // so take max between the two and should suffice for all other exprs.
-        auto size_pack = vec_unary.bind_cache_size().max(mat_unary.bind_cache_size());
+        auto size_pack = vec_unary.bind_cache_size();
+        size_pack = size_pack.max(mat_unary.bind_cache_size());
         val_buf.resize(size_pack(0));
         adj_buf.resize(size_pack(1));
         ptr_pack_t ptr_pack(val_buf.data(), adj_buf.data());
