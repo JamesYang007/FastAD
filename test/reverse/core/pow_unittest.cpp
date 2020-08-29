@@ -105,6 +105,15 @@ TEST_F(pow_fixture, scl_inv_beval)
                      seed * 2 * -inv(sq(2.*scl_expr.get())));
 }
 
+TEST_F(pow_fixture, scl_inv_beval_singular)
+{
+    scl_expr.get() = 0.;
+    scl_inv.feval();
+    scl_inv.beval(seed);
+    EXPECT_DOUBLE_EQ(scl_expr.get_adj(), 
+                     -std::numeric_limits<value_t>::infinity());
+}
+
 TEST_F(pow_fixture, scl_const_feval)
 {
     value_t res = scl_const.feval();
