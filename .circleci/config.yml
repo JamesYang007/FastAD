@@ -21,8 +21,8 @@ jobs:
       - run:
           name: Check g++ version
           command: |
-              sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 60 \
-                                       --slave /usr/bin/g++ g++ /usr/bin/g++-8 
+              sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 60 \
+                                       --slave /usr/bin/g++ g++ /usr/bin/g++-7 
               sudo update-alternatives --config gcc
               gcc --version
               g++ --version
@@ -47,7 +47,12 @@ jobs:
           command: 'cmake --version; uname -a'
       - run:
           name: Compile
-          command: './clean-build.sh release'
+          command: |
+              mkdir -p build && cd build
+              mkdir -p release && cd release
+              rm -rf ./*
+              cmake ../../ -GNinja
+              cmake --build . -- -j4
       - run:
           name: Execute test suite
-          command: 'cd build/release ; ctest -j12'
+          command: 'cd build/release ; ctest -j6'
