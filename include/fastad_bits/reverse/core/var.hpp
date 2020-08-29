@@ -31,18 +31,6 @@ public:
     using typename base_t::value_t;
     using typename base_t::shape_t;
     using typename base_t::var_t;
-
-    using base_t::feval;
-    using base_t::beval;
-    using base_t::bind;
-    using base_t::bind_adj;
-    using base_t::get;
-    using base_t::get_adj;
-    using base_t::size;
-    using base_t::rows;
-    using base_t::cols;
-    using base_t::data;
-    using base_t::reset_adj;
     using base_t::operator=;
 
     Var()
@@ -94,8 +82,7 @@ public:
 private:
     void rebind() 
     {
-        this->bind(&val_);
-        this->bind_adj(&adj_);
+        this->bind({&val_, &adj_});
     }
 
     value_t val_;
@@ -115,28 +102,13 @@ public:
     using typename base_t::value_t;
     using typename base_t::shape_t;
     using typename base_t::var_t;
-
-    using base_t::feval;
-    using base_t::beval;
-    using base_t::bind;
-    using base_t::bind_adj;
-    using base_t::get;
-    using base_t::get_adj;
-    using base_t::size;
-    using base_t::rows;
-    using base_t::cols;
-    using base_t::data;
-    using base_t::reset_adj;
     using base_t::operator=;
 
     explicit Var(size_t size)
         : base_t(nullptr, nullptr, size) 
         , val_(vec_t::Zero(size))
         , adj_(vec_t::Zero(size))
-    {
-        this->bind(val_.data());
-        this->bind_adj(adj_.data());
-    }
+    { rebind(); }
 
     Var(const Var& v)
         : base_t(v)
@@ -175,8 +147,7 @@ public:
 private:
     void rebind() 
     {
-        this->bind(val_.data());
-        this->bind_adj(adj_.data());
+        this->bind({val_.data(), adj_.data()});
     }
 
     vec_t val_;
@@ -196,18 +167,6 @@ public:
     using typename base_t::value_t;
     using typename base_t::shape_t;
     using typename base_t::var_t;
-
-    using base_t::feval;
-    using base_t::beval;
-    using base_t::bind;
-    using base_t::bind_adj;
-    using base_t::get;
-    using base_t::get_adj;
-    using base_t::size;
-    using base_t::rows;
-    using base_t::cols;
-    using base_t::data;
-    using base_t::reset_adj;
     using base_t::operator=;
 
     explicit Var(size_t n_rows, size_t n_cols)
@@ -253,90 +212,15 @@ public:
 private:
     void rebind() 
     {
-        this->bind(val_.data());
-        this->bind_adj(adj_.data());
+        this->bind({val_.data(), adj_.data()});
     }
 
     mat_t val_;
     mat_t adj_;
 };
 
-template <class ValueType>
-struct Var<ValueType, selfadjmat>:
-    VarView<ValueType, selfadjmat>
-{
-private:
-    using base_t = VarView<ValueType, selfadjmat>;
-    using mat_t = Eigen::Matrix<
-        typename base_t::value_t, Eigen::Dynamic, Eigen::Dynamic>;
-
-public:
-    using typename base_t::value_t;
-    using typename base_t::shape_t;
-    using typename base_t::var_t;
-
-    using base_t::feval;
-    using base_t::beval;
-    using base_t::bind;
-    using base_t::bind_adj;
-    using base_t::get;
-    using base_t::get_adj;
-    using base_t::size;
-    using base_t::rows;
-    using base_t::cols;
-    using base_t::data;
-    using base_t::reset_adj;
-    using base_t::operator=;
-
-    explicit Var(size_t n_rows, size_t n_cols)
-        : base_t(nullptr, nullptr, n_rows, n_cols) 
-        , val_(mat_t::Zero(n_rows, n_cols))
-        , adj_(mat_t::Zero(n_rows, n_cols))
-    { rebind(); }
-
-    Var(const Var& v)
-        : base_t(v)
-        , val_(v.val_)
-        , adj_(v.adj_)
-    { rebind(); }
-
-    Var(Var&& v)
-        : base_t(std::move(v))
-        , val_(std::move(v.val_))
-        , adj_(std::move(v.adj_))
-    { rebind(); }
-
-    Var& operator=(const Var& v)
-    {
-        if (this == &v) return *this;
-        assert(v.rows() == this->rows());
-        assert(v.cols() == this->cols());
-        val_ = v.val_;
-        adj_ = v.adj_;
-        rebind();
-        return *this;
-    }
-
-    Var& operator=(Var&& v) 
-    {
-        if (this == &v) return *this;
-        assert(v.rows() == this->rows());
-        assert(v.cols() == this->cols());
-        val_ = std::move(v.val_);
-        adj_ = std::move(v.adj_);
-        rebind();
-        return *this;
-    }
-
-private:
-    void rebind() 
-    {
-        this->bind(val_.data());
-        this->bind_adj(adj_.data());
-    }
-
-    mat_t val_;
-    mat_t adj_;
-};
+template struct Var<double, scl>;
+template struct Var<double, vec>;
+template struct Var<double, mat>;
 
 } // namespace ad

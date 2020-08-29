@@ -49,12 +49,12 @@ static void BM_test1_fastad(benchmark::State& state)
         x.emplace_back(i / 100.);
     }
     std::vector<Var<double>> w(3);
-    auto expr = (w[0] = x[0] * x[1] - x[2] * sin(x[0]),
+    auto expr = ad::bind(
+                (w[0] = x[0] * x[1] - x[2] * sin(x[0]),
                  w[1] = x[1] * w[0] - cos(w[0]) + 
                         ad::sum(x.begin(), x.end(), [](const auto& xi) {return xi;}),
-                 w[2] = w[1] + ad::exp(w[1] - w[0]));
-    std::vector<double> tmp(expr.bind_size());
-    expr.bind(tmp.data());
+                 w[2] = w[1] + ad::exp(w[1] - w[0])) 
+    );
 
     for (auto _ : state) {
         autodiff(expr);

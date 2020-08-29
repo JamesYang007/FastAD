@@ -8,44 +8,30 @@ struct wishart_fixture : base_fixture
 {
 protected:
     using const_t = core::Constant<size_t, scl>;
-    using selfadjmat_expr_view_t = VarView<value_t, selfadjmat>;
     using wishart_t = WishartAdjLogPDFNode<
         mat_expr_view_t, 
         mat_expr_view_t, 
         const_t>;
-    using selfadj_wishart_t = WishartAdjLogPDFNode<
-        selfadjmat_expr_view_t,
-        mat_expr_view_t,
-        const_t>;
 
-    Eigen::MatrixXd x_selfadj_vals;
     Eigen::VectorXd x_flat_vals;
     Eigen::VectorXd x_flat_adjs;
 
     mat_expr_t x;
-    selfadjmat_expr_view_t x_selfadj;
     mat_expr_t v;
     value_t n;
 
     wishart_t wishart;
-    selfadj_wishart_t selfadj_wishart;
 
     value_t tol = 1e-15;
 
     wishart_fixture()
         : base_fixture()
-        , x_selfadj_vals(3,3)
         , x_flat_vals(6)
         , x_flat_adjs(6)
         , x(3,3)
-        , x_selfadj(x_selfadj_vals.data(),
-                    x_flat_vals.data(),
-                    x_flat_adjs.data(),
-                    3)
         , v(3,3)
         , n(4)
         , wishart(x, v, n)
-        , selfadj_wishart(x_selfadj, v, n)
     {
         // initialize some values
         x.get(0,0) = x_flat_vals(0) = 10;
@@ -92,7 +78,7 @@ TEST_F(wishart_fixture, beval)
 {
     bind(wishart);
     wishart.feval();
-    wishart.beval(1., 0, 0, util::beval_policy::single);
+    wishart.beval(1.);
 
     value_t p = v.rows();
 
@@ -108,44 +94,6 @@ TEST_F(wishart_fixture, beval)
     for (size_t i = 0; i < x.rows(); ++i) {
         for (size_t j = 0; j < x.cols(); ++j) {
             EXPECT_NEAR(x.get_adj(i,j), dX(i,j), tol);
-        }
-    }
-
-    for (size_t i = 0; i < v.rows(); ++i) {
-        for (size_t j = 0; j < v.cols(); ++j) {
-            EXPECT_NEAR(v.get_adj(i,j), dV(i,j), tol);
-        }
-    }
-}
-
-TEST_F(wishart_fixture, selfadj_feval)
-{
-    bind(selfadj_wishart);
-    value_t res = selfadj_wishart.feval();
-    EXPECT_DOUBLE_EQ(res, -12.55942947411780252764);
-}
-
-TEST_F(wishart_fixture, selfadj_beval) 
-{
-    bind(selfadj_wishart);
-    selfadj_wishart.feval();
-    selfadj_wishart.beval(1., 0, 0, util::beval_policy::single);
-
-    value_t p = v.rows();
-
-    Eigen::MatrixXd v_inv = v.get().inverse();
-    Eigen::MatrixXd dX = 0.5 * ((n-p-1) * x_selfadj.get().inverse() - v_inv);
-    Eigen::MatrixXd dV = 0.5 * ((v_inv * x_selfadj.get() * v_inv) - n * v_inv);
-
-    EXPECT_EQ(static_cast<size_t>(dX.rows()), x_selfadj.rows());
-    EXPECT_EQ(static_cast<size_t>(dX.cols()), x_selfadj.cols());
-    EXPECT_EQ(static_cast<size_t>(dV.rows()), v.rows());
-    EXPECT_EQ(static_cast<size_t>(dV.cols()), v.cols());
-
-    for (size_t i = 0; i < x_selfadj.rows(); ++i) {
-        for (size_t j = 0; j < x_selfadj.cols(); ++j) {
-            value_t actual = (i == j) ? dX(i,i) : dX(i,j) + dX(j,i);
-            EXPECT_NEAR(x_selfadj.get_adj(i,j), actual, tol);
         }
     }
 

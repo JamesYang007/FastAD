@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
 #include <fastad_bits/reverse/core/pow.hpp>
-#include <fastad_bits/reverse/core/math.hpp>
+#include <fastad_bits/reverse/core/unary.hpp>
 #include <testutil/base_fixture.hpp>
 
 namespace ad {
@@ -28,8 +28,10 @@ protected:
     vec_const_t vec_const;
 
     value_t seed = 0.32188;
+    aVectorXd vseed;
 
-    std::vector<value_t> val_buf;
+    Eigen::VectorXd val_buf;
+    Eigen::VectorXd adj_buf;
 
     pow_fixture()
         : base_fixture()
@@ -39,14 +41,19 @@ protected:
         , vec_sq{vec_expr}
         , vec_inv{vec_expr}
         , vec_const{vec_expr}
-        , val_buf(2*vec_size, 0)
+        , vseed(vec_expr.size())
+        , val_buf(vec_sq.bind_cache_size()(0))
+        , adj_buf(vec_sq.bind_cache_size()(1))
     {
-        scl_sq.bind(val_buf.data());
-        scl_inv.bind(val_buf.data());
-        scl_const.bind(val_buf.data());
-        vec_sq.bind(val_buf.data());
-        vec_inv.bind(val_buf.data());
-        vec_const.bind(val_buf.data());
+        vseed << 2.13, 0.3231, 4.231, 2.41, 3.13;
+
+        ptr_pack_t ptr_pack(val_buf.data(), adj_buf.data());
+        scl_sq.bind_cache(ptr_pack);
+        scl_inv.bind_cache(ptr_pack);
+        scl_const.bind_cache(ptr_pack);
+        vec_sq.bind_cache(ptr_pack);
+        vec_inv.bind_cache(ptr_pack);
+        vec_const.bind_cache(ptr_pack);
     }
 
     template <class T>
@@ -71,8 +78,8 @@ TEST_F(pow_fixture, scl_sq_feval)
 TEST_F(pow_fixture, scl_sq_beval)
 {
     scl_sq.feval();
-    scl_sq.beval(seed, 0,0, util::beval_policy::single);
-    EXPECT_DOUBLE_EQ(scl_expr.get_adj(0,0), 
+    scl_sq.beval(seed);
+    EXPECT_DOUBLE_EQ(scl_expr.get_adj(), 
                      seed * 8.*scl_expr.get());
 }
 
@@ -80,8 +87,8 @@ TEST_F(pow_fixture, scl_sq_x_zero_beval)
 {
     scl_expr.get() = 0;
     scl_sq.feval();
-    scl_sq.beval(seed, 0,0, util::beval_policy::single);
-    EXPECT_DOUBLE_EQ(scl_expr.get_adj(0,0), 0);
+    scl_sq.beval(seed);
+    EXPECT_DOUBLE_EQ(scl_expr.get_adj(), 0);
 }
 
 TEST_F(pow_fixture, scl_inv_feval)
@@ -93,9 +100,18 @@ TEST_F(pow_fixture, scl_inv_feval)
 TEST_F(pow_fixture, scl_inv_beval)
 {
     scl_inv.feval();
-    scl_inv.beval(seed, 0,0, util::beval_policy::single);
-    EXPECT_DOUBLE_EQ(scl_expr.get_adj(0,0), 
+    scl_inv.beval(seed);
+    EXPECT_DOUBLE_EQ(scl_expr.get_adj(), 
                      seed * 2 * -inv(sq(2.*scl_expr.get())));
+}
+
+TEST_F(pow_fixture, scl_inv_beval_singular)
+{
+    scl_expr.get() = 0.;
+    scl_inv.feval();
+    scl_inv.beval(seed);
+    EXPECT_DOUBLE_EQ(scl_expr.get_adj(), 
+                     -std::numeric_limits<value_t>::infinity());
 }
 
 TEST_F(pow_fixture, scl_const_feval)
@@ -107,8 +123,8 @@ TEST_F(pow_fixture, scl_const_feval)
 TEST_F(pow_fixture, scl_const_beval)
 {
     scl_const.feval();
-    scl_const.beval(seed, 0,0, util::beval_policy::single);
-    EXPECT_DOUBLE_EQ(scl_expr.get_adj(0,0), 0.);
+    scl_const.beval(seed);
+    EXPECT_DOUBLE_EQ(scl_expr.get_adj(), 0.);
 }
 
 // vec TEST
@@ -124,11 +140,9 @@ TEST_F(pow_fixture, vec_sq_feval)
 TEST_F(pow_fixture, vec_sq_beval)
 {
     vec_sq.feval();
-    vec_sq.beval(seed, 0,0, util::beval_policy::single);
-    vec_sq.beval(seed, 2,0, util::beval_policy::single);
+    vec_sq.beval(vseed);
     for (size_t i = 0; i < vec_expr.size(); ++i) {
-        value_t actual = (i == 0 || i == 2) ? 
-            seed * 8.*vec_expr.get(i,0) : 0;
+        value_t actual = vseed(i) * 8.* vec_expr.get(i,0);
         EXPECT_DOUBLE_EQ(vec_expr.get_adj(i,0), actual);
     }
 }
@@ -144,11 +158,9 @@ TEST_F(pow_fixture, vec_inv_feval)
 TEST_F(pow_fixture, vec_inv_beval)
 {
     vec_inv.feval();
-    vec_inv.beval(seed, 0,0, util::beval_policy::single);
-    vec_inv.beval(seed, 3,0, util::beval_policy::single);
+    vec_inv.beval(vseed);
     for (size_t i = 0; i < vec_expr.size(); ++i) {
-        value_t actual = (i == 0 || i == 3) ? 
-            seed * 2 * -inv(sq(2.*vec_expr.get(i,0))) : 0;
+        value_t actual = vseed(i) * 2 * -inv(sq(2.*vec_expr.get(i,0)));
         EXPECT_DOUBLE_EQ(vec_expr.get_adj(i,0), actual);
     }
 }
@@ -164,7 +176,7 @@ TEST_F(pow_fixture, vec_const_feval)
 TEST_F(pow_fixture, vec_const_beval)
 {
     vec_const.feval();
-    vec_const.beval(seed, 0,0, util::beval_policy::single);
+    vec_const.beval(vseed);
     for (size_t i = 0; i < vec_expr.size(); ++i) {
         EXPECT_DOUBLE_EQ(vec_expr.get_adj(i,0), 0.);
     }

@@ -23,17 +23,4 @@ struct ExprBase
 };
 
 } // namespace core
-
-namespace util {
-
-/**
- * Useful enum to indicate how to handle back-evaluation
- */
-
-enum class beval_policy : char {
-    single,
-    all
-};
-
-} // namespace util
 } // namespace ad

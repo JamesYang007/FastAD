@@ -1,6 +1,11 @@
 #pragma once
 #include <fastad_bits/reverse/core/expr_base.hpp>
-#include <fastad_bits/reverse/core/math.hpp>
+#include <fastad_bits/reverse/core/value_adj_view.hpp>
+#include <fastad_bits/reverse/core/constant.hpp>
+#include <fastad_bits/util/type_traits.hpp>
+#include <fastad_bits/util/shape_traits.hpp>
+#include <fastad_bits/util/size_pack.hpp>
+#include <fastad_bits/util/value.hpp>
 
 namespace ad {
 namespace core {
@@ -16,10 +21,10 @@ namespace core {
 
 template <class VecType>
 struct ProdIterNode :
-    ValueView<typename util::expr_traits< 
-                typename VecType::value_type >::value_t,
-              typename util::shape_traits< 
-                typename VecType::value_type >::shape_t >,
+    ValueAdjView<typename util::expr_traits< 
+                    typename VecType::value_type >::value_t,
+                 typename util::shape_traits< 
+                    typename VecType::value_type >::shape_t >,
     ExprBase<ProdIterNode<VecType>>
 {
 private:
@@ -28,14 +33,14 @@ private:
     using elem_shape_t = typename util::shape_traits<vec_elem_t>::shape_t;
     
 public:
-    using value_view_t = ValueView<elem_value_t, elem_shape_t>;
-    using typename value_view_t::value_t;
-    using typename value_view_t::shape_t;
-    using typename value_view_t::var_t;
-    using value_view_t::bind;
+    using value_adj_view_t = ValueAdjView<elem_value_t, elem_shape_t>;
+    using typename value_adj_view_t::value_t;
+    using typename value_adj_view_t::shape_t;
+    using typename value_adj_view_t::var_t;
+    using typename value_adj_view_t::ptr_pack_t;
 
     ProdIterNode(const VecType& exprs)
-        : value_view_t(nullptr,
+        : value_adj_view_t(nullptr, nullptr,
                        (exprs.size() == 0) ? 0 : exprs[0].rows(),
                        (exprs.size() == 0) ? 0 : exprs[0].cols())
         , exprs_{exprs}
@@ -51,40 +56,49 @@ public:
     {
         this->ones();
         for (auto& expr : exprs_) {
-            if constexpr (util::is_scl_v<vec_elem_t>) {
-                this->get() *= expr.feval();
-            } else {
-                this->get().array() *= expr.feval().array();
-            }
+            util::to_array(this->get()) *= util::to_array(expr.feval());
         }
         return this->get();
     }
 
     /** 
      * Backward evaluate from right to left.
-     *
-     * Note that GlueNode and alike guarantee to seed 0 when pol is single.
-     * See EqNode for why we can preemptively return.
      */
-    void beval(value_t seed, size_t i, size_t j, util::beval_policy pol)
+    template <class T>
+    void beval(const T& seed)
     {
-        if (seed == 0 || exprs_.size() == 0) return;
+        if (exprs_.size() == 0) return;
+        auto&& a_val = util::to_array(this->get());
+        auto&& a_adj = util::to_array(this->get_adj());
+        a_adj = seed;
+
         size_t idx = exprs_.size() - 1;
         std::for_each(exprs_.rbegin(), exprs_.rend(),
             [&](auto& expr) {
-                value_t adj = 1.;
+                auto&& a_expr = util::to_array(expr.get());
 
                 // if current expr's value is 0, cannot optimize,
                 // must recompute product leaving current index out.
-                if (expr.get(i,j) == 0) {
-                    for (size_t k = 0; k < exprs_.size(); ++k) {
-                        if (k != idx) adj *= exprs_[k].get(i,j);
-                    }
+                bool no_optimize;
+                if constexpr (util::is_scl_v<vec_elem_t>) {
+                    no_optimize = (expr.get() == 0);
                 } else {
-                    adj = this->get(i,j) / expr.get(i,j);
+                    no_optimize = (expr.get().array() == 0).any();
                 }
 
-                expr.beval(seed * adj, i, j, pol);
+                if (no_optimize) {
+
+                    util::ones(a_val);
+                    for (size_t k = 0; k < exprs_.size(); ++k) {
+                        if (k != idx) a_val *= util::to_array(exprs_[k].get());
+                    }
+                    expr.beval(a_adj * a_val);
+                    a_val *= util::to_array(exprs_[idx].get());
+
+                } else {
+                    expr.beval(a_adj * a_val / a_expr);
+                }
+
                 --idx;
             });
     }
@@ -94,24 +108,26 @@ public:
      *
      * @return  the next pointer not bound by any of the expressions and itself.
      */
-    value_t* bind(value_t* begin)
+    ptr_pack_t bind_cache(ptr_pack_t begin)
     {
-        if constexpr (!util::is_var_view_v<vec_elem_t>) {
-            for (auto& expr : exprs_) begin = expr.bind(begin);
+        for (auto& expr : exprs_) {
+            begin = expr.bind_cache(begin);
         }
-        return value_view_t::bind(begin);
+        return value_adj_view_t::bind(begin);
     }
 
-    size_t bind_size() const 
+    util::SizePack bind_cache_size() const 
     { 
-        size_t out = 0;
-        for (const auto& expr : exprs_) out += expr.bind_size();
-        return out + single_bind_size();
+        util::SizePack out = util::SizePack::Zero();
+        for (const auto& expr : exprs_) {
+            out += expr.bind_cache_size();
+        }
+        return out + single_bind_cache_size();
     }
 
-    size_t single_bind_size() const 
+    util::SizePack single_bind_cache_size() const
     { 
-        return this->size(); 
+        return {this->size(), this->size()}; 
     }
 
 private:
@@ -126,24 +142,26 @@ private:
 
 template <class ExprType>
 struct ProdElemNode :
-    ValueView<typename util::expr_traits<ExprType>::value_t,
-              ad::scl>,
+    ValueAdjView<typename util::expr_traits<ExprType>::value_t,
+                 ad::scl>,
     ExprBase<ProdElemNode<ExprType>>
 {
 private:
     using expr_t = ExprType;
     using expr_value_t = typename util::expr_traits<expr_t>::value_t;
+    using expr_shape_t = typename util::expr_traits<expr_t>::shape_t;
     
 public:
-    using value_view_t = ValueView<expr_value_t, ad::scl>;
-    using typename value_view_t::value_t;
-    using typename value_view_t::shape_t;
-    using typename value_view_t::var_t;
-    using value_view_t::bind;
+    using value_adj_view_t = ValueAdjView<expr_value_t, ad::scl>;
+    using typename value_adj_view_t::value_t;
+    using typename value_adj_view_t::shape_t;
+    using typename value_adj_view_t::var_t;
+    using typename value_adj_view_t::ptr_pack_t;
 
     ProdElemNode(const expr_t& expr)
-        : value_view_t(nullptr, 1, 1)
+        : value_adj_view_t(nullptr, nullptr, 1, 1)
         , expr_{expr}
+        , adj_cache_(nullptr, expr.rows(), expr.cols())
     {}
 
     /** 
@@ -167,57 +185,63 @@ public:
      * Note that GlueNode and alike guarantee to seed 0 when pol is single.
      * See EqNode for why we can preemptively return.
      */
-    void beval(value_t seed, size_t, size_t, util::beval_policy pol)
+    void beval(value_t seed)
     {
-        if (seed == 0) return;
-
         for (size_t k = 0; k < expr_.cols(); ++k) {
             for (size_t l = 0; l < expr_.rows(); ++l) {
 
-                value_t adj = 1.;
+                adj_cache_.get(l,k) = seed;
+
                 // if current expr's value is 0, cannot optimize,
                 // must recompute product leaving current index out.
                 if (expr_.get(l,k) == 0) {
                     for (size_t kk = 0; kk < expr_.cols(); ++kk) {
                         for (size_t ll = 0; ll < expr_.rows(); ++ll) {
-                            if (ll != l || kk != k) adj *= expr_.get(ll, kk);
+                            if (ll != l || kk != k) {
+                                adj_cache_.get(l,k) *= expr_.get(ll, kk);
+                            }
                         }
                     }
                 } else {
-                    adj = this->get() / expr_.get(l,k);
+                    adj_cache_.get(l,k) *= this->get() / expr_.get(l,k);
                 }
 
-                expr_.beval(seed * adj, l, k, pol);
-                
             }
         }
+        expr_.beval(util::to_array(adj_cache_.get()));
     }
 
     /**
      * Bind every expression from left to right then bind itself.
      *
-     * @return  the next pointer not bound by any of the expressions and itself.
+     * @return  the next pointer pack not bound by any of the expressions and itself.
      */
-    value_t* bind(value_t* begin)
+    ptr_pack_t bind_cache(ptr_pack_t begin)
     {
-        if constexpr (!util::is_var_view_v<expr_t>) {
-            begin = expr_.bind(begin);
-        }
-        return value_view_t::bind(begin);
+        begin = expr_.bind_cache(begin);
+        begin.adj = adj_cache_.bind(begin.adj);
+        auto adj = begin.adj;
+        begin.adj = nullptr;
+        begin = value_adj_view_t::bind(begin);
+        begin.adj = adj;
+        return begin;
     }
 
-    size_t bind_size() const 
+    util::SizePack bind_cache_size() const 
     { 
-        return expr_.bind_size() + single_bind_size();
+        return expr_.bind_cache_size() + 
+                single_bind_cache_size();
     }
 
-    constexpr size_t single_bind_size() const 
+    util::SizePack single_bind_cache_size() const
     { 
-        return this->size(); 
+        return {this->size(), expr_.size()}; 
     }
 
 private:
+    using value_view_t = ValueView<value_t, expr_shape_t>;
     expr_t expr_;
+    value_view_t adj_cache_;
 };
 
 } // namespace core
@@ -238,7 +262,7 @@ inline auto prod(Iter begin, Iter end, Lmda f)
     using expr_t = std::decay_t<decltype(f(*begin))>;
     using value_t = typename util::expr_traits<expr_t>::value_t;
     using shape_t = typename util::shape_traits<expr_t>::shape_t;
-    using var_t = core::details::constant_var_t<value_t, shape_t>;
+    using var_t = util::constant_var_t<value_t, shape_t>;
 
     // optimized for f that returns a constant node
     if constexpr (util::is_constant_v<expr_t>) {
@@ -247,11 +271,7 @@ inline auto prod(Iter begin, Iter end, Lmda f)
         std::for_each(std::next(begin), end, 
                 [&](const auto& x) 
                 { 
-                    if constexpr (util::is_scl_v<expr_t>) {
-                        prod *= f(x).feval(); 
-                    } else {
-                        prod.array() *= f(x).feval().array(); 
-                    }
+                    util::to_array(prod) *= util::to_array(f(x).feval()); 
                 });
         return ad::constant(prod);
     } else {
@@ -272,15 +292,13 @@ template <class Derived
 inline auto prod(const Derived& x)
 {
     using expr_t = util::convert_to_ad_t<Derived>;
-
     expr_t expr = x;
 
     // optimized when expr is constant
     if constexpr (util::is_constant_v<expr_t>) {
         if constexpr (util::is_scl_v<expr_t>) return expr;
         else {
-            auto&& res = expr.feval();
-            return ad::constant(res.prod());
+            return ad::constant(expr.feval().array().prod());
         }
     } else {
         return core::ProdElemNode<expr_t>(expr);

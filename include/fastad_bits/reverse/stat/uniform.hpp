@@ -1,8 +1,7 @@
 #pragma once
 #include <tuple>
 #include <fastad_bits/reverse/core/expr_base.hpp>
-#include <fastad_bits/reverse/core/value_view.hpp>
-#include <fastad_bits/reverse/core/var_view.hpp>
+#include <fastad_bits/reverse/core/value_adj_view.hpp>
 #include <fastad_bits/reverse/core/constant.hpp>
 #include <fastad_bits/util/type_traits.hpp>
 #include <fastad_bits/util/numeric.hpp>
@@ -15,54 +14,51 @@ template <class XExprType
         , class MinExprType
         , class MaxExprType>
 struct UniformBase:
-    core::ValueView<util::common_value_t<XExprType, 
-                                   MinExprType, 
-                                   MaxExprType>, ad::scl>
+    core::ValueAdjView<util::common_value_t<
+                        XExprType, 
+                        MinExprType, 
+                        MaxExprType>, ad::scl>
 {
     using x_t = XExprType;
     using min_t = MinExprType;
     using max_t = MaxExprType;
     using common_value_t = util::common_value_t<
         x_t, min_t, max_t>;
-    using value_view_t = core::ValueView<common_value_t, ad::scl>;
-    using typename value_view_t::value_t;
-    using typename value_view_t::shape_t;
-    using typename value_view_t::var_t;
-    using value_view_t::bind;
+    using value_adj_view_t = core::ValueAdjView<common_value_t, ad::scl>;
+    using typename value_adj_view_t::value_t;
+    using typename value_adj_view_t::shape_t;
+    using typename value_adj_view_t::var_t;
+    using typename value_adj_view_t::ptr_pack_t;
 
     UniformBase(const x_t& x,
                 const min_t& min,
                 const max_t& max)
-        : value_view_t(nullptr, 1, 1)
+        : value_adj_view_t(nullptr, nullptr, 1, 1)
         , x_{x}
         , min_{min}
         , max_{max}
     {}
 
-    value_t* bind(value_t* begin) 
+    ptr_pack_t bind_cache(ptr_pack_t begin)
     {
-        value_t* next = begin;
-        if constexpr (!util::is_var_view_v<x_t>) {
-            next = x_.bind(next);
-        }
-        if constexpr (!util::is_var_view_v<min_t>) {
-            next = min_.bind(next);
-        }
-        if constexpr (!util::is_var_view_v<max_t>) {
-            next = max_.bind(next);
-        }
-        return value_view_t::bind(next);
+        begin = x_.bind_cache(begin);
+        begin = min_.bind_cache(begin);
+        begin = max_.bind_cache(begin);
+        return value_adj_view_t::bind(begin);
     }
 
-    size_t bind_size() const 
+    util::SizePack bind_cache_size() const 
     { 
-        return single_bind_size() + 
-                x_.bind_size() +
-                min_.bind_size() +
-                max_.bind_size();
+        return single_bind_cache_size() + 
+                x_.bind_cache_size() +
+                min_.bind_cache_size() +
+                max_.bind_cache_size();
     }
 
-    constexpr size_t single_bind_size() const { return this->size(); }
+    util::SizePack single_bind_cache_size() const
+    {
+        return {this->size(), 0};
+    }
 
 protected:
     x_t x_;
@@ -122,9 +118,6 @@ public:
     using base_t::x_;
     using base_t::min_;
     using base_t::max_;
-    using base_t::bind;
-    using base_t::bind_size;
-    using base_t::single_bind_size;
 
     UniformAdjLogPDFNode(const x_t& x,
                          const min_t& min,
@@ -157,12 +150,12 @@ public:
         return this->get() = -log_diff_;
     }
 
-    void beval(value_t seed, size_t, size_t, util::beval_policy pol)
+    void beval(value_t seed)
     {
         if (seed == 0 || !within_range()) return;
-        value_t adj = 1./(max_.get() - min_.get());
-        max_.beval(seed * -adj, 0, 0, pol);
-        min_.beval(seed * adj, 0, 0, pol);
+        value_t adj = seed / (max_.get() - min_.get());
+        max_.beval(-adj);
+        min_.beval(adj);
     }
 
 private:
@@ -202,9 +195,6 @@ public:
     using base_t::x_;
     using base_t::min_;
     using base_t::max_;
-    using base_t::bind;
-    using base_t::bind_size;
-    using base_t::single_bind_size;
 
     UniformAdjLogPDFNode(const x_t& x,
                          const min_t& min,
@@ -246,13 +236,13 @@ public:
         return this->get() = -n * log_diff_;
     }
 
-    void beval(value_t seed, size_t, size_t, util::beval_policy pol)
+    void beval(value_t seed)
     {
         if (seed == 0 || !within_range()) return;
-        value_t adj = static_cast<value_t>(x_.size()) /
+        value_t adj = seed * static_cast<value_t>(x_.size()) /
             (max_.get() - min_.get());
-        max_.beval(seed * -adj, 0, 0, pol);
-        min_.beval(seed * adj, 0, 0, pol);
+        max_.beval(-adj);
+        min_.beval(adj);
     }
 
 private:
@@ -299,9 +289,6 @@ public:
     using base_t::x_;
     using base_t::min_;
     using base_t::max_;
-    using base_t::bind;
-    using base_t::bind_size;
-    using base_t::single_bind_size;
 
     UniformAdjLogPDFNode(const x_t& x,
                          const min_t& min,
@@ -335,8 +322,6 @@ public:
             update_x_cache();
         }
 
-        x_bounded_above_ = (x_.get().array() < max_.get().array()).all();
-
         if (!within_range()) {
             return this->get() = util::neg_inf<value_t>;
         }
@@ -344,17 +329,14 @@ public:
         return this->get() = -log_diff_;
     }
 
-    void beval(value_t seed, size_t, size_t, util::beval_policy pol)
+    void beval(value_t seed)
     {
         if (seed == 0 || !within_range()) return;
 
-        for (size_t i = 0; i < max_.size(); ++i) {
-            value_t adj = 1. / (max_.get()(i) - min_.get());
-            max_.beval(seed * -adj, i, 0, pol);
-        }
-
-        value_t adj = (1./(max_.get().array() - min_.get())).sum();
-        min_.beval(seed * adj, 0, 0, pol);
+        auto&& min = min_.get();
+        auto&& max = max_.get().array();
+        max_.beval((-seed) / (max - min));
+        min_.beval(seed * (1. / (max - min)).sum());
     }
 
 private:
@@ -364,6 +346,7 @@ private:
 
     void update_x_cache() {
         x_min_ = x_.get().minCoeff();
+        x_bounded_above_ = (x_.get().array() < max_.get().array()).all();
     }
 
     bool within_range() const {
@@ -399,9 +382,6 @@ public:
     using base_t::x_;
     using base_t::min_;
     using base_t::max_;
-    using base_t::bind;
-    using base_t::bind_size;
-    using base_t::single_bind_size;
 
     UniformAdjLogPDFNode(const x_t& x,
                          const min_t& min,
@@ -435,8 +415,6 @@ public:
             update_x_cache();
         }
 
-        x_bounded_below_ = (x_.get().array() > min_.get().array()).all();
-
         if (!within_range()) {
             return this->get() = util::neg_inf<value_t>;
         }
@@ -444,17 +422,14 @@ public:
         return this->get() = -log_diff_;
     }
 
-    void beval(value_t seed, size_t, size_t, util::beval_policy pol)
+    void beval(value_t seed)
     {
         if (seed == 0 || !within_range()) return;
 
-        value_t adj = (1. / (max_.get() - min_.get().array())).sum();
-        max_.beval(seed * -adj, 0, 0, pol);
-
-        for (size_t i = 0; i < min_.size(); ++i) {
-            value_t adj = 1./(max_.get() - min_.get()(i));
-            min_.beval(seed * adj, i, 0, pol);
-        }
+        auto&& min = min_.get().array();
+        auto&& max = max_.get();
+        max_.beval((-seed) * (1. / (max - min)).sum());
+        min_.beval(seed / (max - min));
     }
 
 private:
@@ -464,6 +439,7 @@ private:
 
     void update_x_cache() {
         x_max_ = x_.get().maxCoeff();
+        x_bounded_below_ = (x_.get().array() > min_.get().array()).all();
     }
 
     bool within_range() const {
@@ -499,9 +475,6 @@ public:
     using base_t::x_;
     using base_t::min_;
     using base_t::max_;
-    using base_t::bind;
-    using base_t::bind_size;
-    using base_t::single_bind_size;
 
     UniformAdjLogPDFNode(const x_t& x,
                          const min_t& min,
@@ -538,19 +511,13 @@ public:
         return this->get() = -log_diff_;
     }
 
-    void beval(value_t seed, size_t, size_t, util::beval_policy pol)
+    void beval(value_t seed)
     {
         if (seed == 0 || !within_range()) return;
-
-        for (size_t i = 0; i < min_.size(); ++i) {
-            value_t adj = 1./(max_.get()(i) - min_.get()(i));
-            max_.beval(seed * -adj, i, 0, pol);
-        }
-
-        for (size_t i = 0; i < min_.size(); ++i) {
-            value_t adj = 1./(max_.get()(i) - min_.get()(i));
-            min_.beval(seed * adj, i, 0, pol);
-        }
+        auto&& min = min_.get().array();
+        auto&& max = max_.get().array();
+        max_.beval((-seed) / (max - min));
+        min_.beval(seed / (max - min));
     }
 
 private:

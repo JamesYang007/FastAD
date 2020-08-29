@@ -1,8 +1,7 @@
 #pragma once
 #include <tuple>
 #include <fastad_bits/reverse/core/expr_base.hpp>
-#include <fastad_bits/reverse/core/value_view.hpp>
-#include <fastad_bits/reverse/core/var_view.hpp>
+#include <fastad_bits/reverse/core/value_adj_view.hpp>
 #include <fastad_bits/reverse/core/constant.hpp>
 #include <fastad_bits/util/type_traits.hpp>
 #include <fastad_bits/util/numeric.hpp>
@@ -16,8 +15,9 @@ template <class XExprType
         , class VExprType
         , class NExprType>
 struct WishartBase:
-    core::ValueView<util::common_value_t<XExprType, 
-                                         VExprType>, ad::scl>
+    core::ValueAdjView<util::common_value_t<
+                        XExprType, 
+                        VExprType>, ad::scl>
 {
     static_assert(util::is_mat_v<XExprType>);
     static_assert(util::is_mat_v<VExprType>);
@@ -28,43 +28,41 @@ struct WishartBase:
     using v_t = VExprType;
     using n_t = NExprType;
     using common_value_t = util::common_value_t<x_t, v_t>;
-    using value_view_t = core::ValueView<common_value_t, ad::scl>;
-    using typename value_view_t::value_t;
-    using typename value_view_t::shape_t;
-    using typename value_view_t::var_t;
-    using value_view_t::bind;
+    using value_adj_view_t = core::ValueAdjView<common_value_t, ad::scl>;
+    using typename value_adj_view_t::value_t;
+    using typename value_adj_view_t::shape_t;
+    using typename value_adj_view_t::var_t;
+    using typename value_adj_view_t::ptr_pack_t;
 
     WishartBase(const x_t& x,
                 const v_t& v,
                 const n_t& n)
-        : value_view_t(nullptr, 1, 1)
+        : value_adj_view_t(nullptr, nullptr, 1, 1)
         , x_{x}
         , v_{v}
         , n_{n}
     {}
 
     // Note: we do not bind for n_ since it is a constant
-    value_t* bind(value_t* begin) 
+    ptr_pack_t bind_cache(ptr_pack_t begin)
     {
-        value_t* next = begin;
-        if constexpr (!util::is_var_view_v<x_t>) {
-            next = x_.bind(next);
-        }
-        if constexpr (!util::is_var_view_v<v_t>) {
-            next = v_.bind(next);
-        }
-        return value_view_t::bind(next);
+        begin = x_.bind_cache(begin);
+        begin = v_.bind_cache(begin);
+        return value_adj_view_t::bind(begin);
     }
 
-    size_t bind_size() const 
+    util::SizePack bind_cache_size() const 
     { 
-        return single_bind_size() + 
-                x_.bind_size() +
-                v_.bind_size() +
-                n_.bind_size();
+        return single_bind_cache_size() + 
+                x_.bind_cache_size() +
+                v_.bind_cache_size() +
+                n_.bind_cache_size();
     }
 
-    constexpr size_t single_bind_size() const { return this->size(); }
+    util::SizePack single_bind_cache_size() const
+    { 
+        return {this->size(), 0}; 
+    }
 
 protected:
     x_t x_;
@@ -132,9 +130,6 @@ public:
     using base_t::x_;
     using base_t::v_;
     using base_t::n_;
-    using base_t::bind;
-    using base_t::bind_size;
-    using base_t::single_bind_size;
 
     WishartAdjLogPDFNode(const x_t& x,
                          const v_t& v,
@@ -181,26 +176,17 @@ public:
                               - n * log_v_det_;
     }
 
-    void beval(value_t seed, size_t, size_t, util::beval_policy pol)
+    void beval(value_t seed)
     {
         if (seed == 0 || !valid()) return;
 
-        auto n = n_.get();
+        value_t n = n_.get();
         value_t p = v_.rows();
 
-        for (size_t j = 0; j < v_.cols(); ++j) {
-            for (size_t i = 0; i < v_.rows(); ++i) {
-                value_t adj = 0.5 * (v_inv_.row(i) * xv_inv_.col(j) - n * v_inv_(i,j));
-                v_.beval(seed * adj, i, j, pol);
-            }
-        }
-
-        for (size_t j = 0; j < x_.cols(); ++j) {
-            for (size_t i = 0; i < x_.rows(); ++i) {
-                value_t adj = 0.5 * ((n-p-1) * x_inv_(i,j) - v_inv_(i,j));
-                x_.beval(seed * adj, i, j, pol);
-            }
-        }
+        auto x_adj = (0.5 * seed) * ((n-p-1) * x_inv_ - v_inv_);
+        auto v_adj = (0.5 * seed) * (v_inv_ * xv_inv_ - n * v_inv_);
+        v_.beval(v_adj.array());
+        x_.beval(x_adj.array());
     }
 
 private:

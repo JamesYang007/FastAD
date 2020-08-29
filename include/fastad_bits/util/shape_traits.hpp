@@ -7,7 +7,6 @@ namespace ad {
 struct scl { static constexpr size_t dim = 0; };
 struct vec { static constexpr size_t dim = 1; };
 struct mat { static constexpr size_t dim = 2; };
-struct selfadjmat : mat {};
 
 namespace util {
 
@@ -47,11 +46,6 @@ inline constexpr bool is_vec_v =
                    vec>;
 
 template <class T>
-inline constexpr bool is_selfadjmat_v =
-    std::is_same_v<details::get_shape_t<T>,
-                   selfadjmat>;
-
-template <class T>
 inline constexpr bool is_mat_v =
     std::is_base_of_v<mat, details::get_shape_t<T>>;
 
@@ -62,7 +56,6 @@ inline constexpr bool is_mat_v =
  * scl -> T*
  * vec -> Map<Matrix<T, Dynamic, 1>>
  * mat -> Map<Matrix<T, Dynamic, Dynamic>>
- * selfadjmat -> Map<Matrix<T, Dynamic, Dynamic>>
  */
 namespace details {
 
@@ -89,13 +82,6 @@ struct shape_to_raw_view<T, mat>
         Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> >;
 };
 
-template <class T>
-struct shape_to_raw_view<T, selfadjmat>
-{
-    using type = Eigen::Map<
-        Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> >;
-};
-
 } // namespace details
 
 template <class T, class ShapeType>
@@ -107,6 +93,8 @@ using shape_to_raw_view_t = typename
  *
  * If one of the shapes is a mat, then automatically the result is mat.
  * Otherwise, choose the biggest sized shape.
+ *
+ * (FOLLOWING DEPRECATED: selfadjmat is deprecated) 
  * This is so that for cases when one is a mat and the other is selfadjmat, the result is mat,
  * and when both are selfadjmats, then the result is selfadjmat.
  */

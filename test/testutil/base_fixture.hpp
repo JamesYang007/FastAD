@@ -11,30 +11,47 @@ struct MockUnary
     template <class T>
     static auto fmap(T x) { return 2.*x; }
 
-    template <class T>
-    static auto bmap(T) { return 2.; }
+    template <class S, class T, class U>
+    static auto bmap(S seed, T, U) { return seed * 2.; }
 };
 
 // Represents f(x, y) = x - 2*y
 struct MockBinary
 {
-    template <class T, class U>
-    static auto fmap(T x, U y)
-    { return x - 2*y; }
+    static constexpr bool is_comparison = false;
 
     template <class T, class U>
-    static auto blmap(T, U) 
-    { return 1.; }
+    static auto fmap(const T& x, const U& y)
+    { return x - 2.*y; }
 
-    template <class T, class U>
-    static auto brmap(T, U)
-    { return -2.; }
+    template <class S, class T, class U, class F>
+    static auto blmap(const S& seed, const T&, const U&, const F&) 
+    { 
+        if constexpr (!util::is_eigen_v<T> && util::is_eigen_v<U>) {
+            return seed.sum();
+        } else {
+            return seed; 
+        }
+    }
+
+    template <class S, class T, class U, class F>
+    static auto brmap(const S& seed, const T&, const U&, const F&) 
+    { 
+        if constexpr (util::is_eigen_v<T> && !util::is_eigen_v<U>) {
+            return -2. * seed.sum();
+        } else {
+            return -2. * seed; 
+        }
+    }
 };
 
 struct base_fixture : ::testing::Test
 {
 protected:
     using value_t = double;
+    using aVectorXd = Eigen::Array<value_t, Eigen::Dynamic, 1>;
+    using ptr_pack_t = util::PtrPack<value_t>;
+
     using scl_expr_t = Var<value_t, ad::scl>;
     using vec_expr_t = Var<value_t, ad::vec>;
     using mat_expr_t = Var<value_t, ad::mat>;
@@ -51,7 +68,8 @@ protected:
     vec_expr_t vec_expr;
     mat_expr_t mat_expr;
 
-    std::vector<value_t> val_buf;
+    Eigen::VectorXd val_buf;
+    Eigen::VectorXd adj_buf;
 
     base_fixture(size_t vec_size=5,
                  size_t mat_rows=2,
@@ -64,6 +82,7 @@ protected:
         , vec_expr(vec_size)
         , mat_expr(mat_rows, mat_cols)
         , val_buf()
+        , adj_buf()
     {
         // if default setting, initialize
         scl_initialize(scl_expr);
@@ -110,9 +129,28 @@ protected:
     template <class T>
     void bind(T& expr)
     {
-        size_t buf_size = expr.bind_size();
-        val_buf.resize(buf_size);
-        expr.bind(val_buf.data());
+        auto buf_size = expr.bind_cache_size();
+        val_buf.resize(buf_size(0));
+        adj_buf.resize(buf_size(1));
+        expr.bind_cache({val_buf.data(), adj_buf.data()});
+    }
+
+    void check_eq(value_t x, value_t y)
+    {
+        EXPECT_DOUBLE_EQ(x, y);
+    }
+
+    template <class T, class U>
+    void check_eq(const Eigen::DenseBase<T>& x,
+                  const Eigen::DenseBase<U>& y)
+    {
+        EXPECT_EQ(x.rows(), y.rows());
+        EXPECT_EQ(x.cols(), y.cols());
+        for (int i = 0; i < x.rows(); ++i) {
+            for (int j = 0; j < x.cols(); ++j) {
+                EXPECT_DOUBLE_EQ(x(i,j), y(i,j));
+            }
+        }
     }
 };
 

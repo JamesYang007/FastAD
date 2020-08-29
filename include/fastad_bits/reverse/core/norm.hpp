@@ -1,8 +1,10 @@
 #pragma once
 #include <fastad_bits/reverse/core/expr_base.hpp>
-#include <fastad_bits/reverse/core/value_view.hpp>
-#include <fastad_bits/util/type_traits.hpp>
+#include <fastad_bits/reverse/core/value_adj_view.hpp>
 #include <fastad_bits/reverse/core/constant.hpp>
+#include <fastad_bits/util/type_traits.hpp>
+#include <fastad_bits/util/size_pack.hpp>
+#include <fastad_bits/util/value.hpp>
 
 namespace ad {
 namespace core {
@@ -21,8 +23,8 @@ namespace core {
 
 template <class ExprType>
 struct NormNode:
-    ValueView<typename util::expr_traits<ExprType>::value_t,
-              ad::scl>,
+    ValueAdjView<typename util::expr_traits<ExprType>::value_t,
+                 ad::scl>,
     ExprBase<NormNode<ExprType>>
 {
 private:
@@ -32,14 +34,14 @@ private:
     static_assert(!util::is_scl_v<expr_t>);
 
 public:
-    using value_view_t = ValueView<expr_value_t, ad::scl>;
-    using typename value_view_t::value_t;
-    using typename value_view_t::shape_t;
-    using typename value_view_t::var_t;
-    using value_view_t::bind;
+    using value_adj_view_t = ValueAdjView<expr_value_t, ad::scl>;
+    using typename value_adj_view_t::value_t;
+    using typename value_adj_view_t::shape_t;
+    using typename value_adj_view_t::var_t;
+    using typename value_adj_view_t::ptr_pack_t;
 
     NormNode(const expr_t& expr)
-        : value_view_t(nullptr, 1, 1)
+        : value_adj_view_t(nullptr, nullptr, 1, 1)
         , expr_{expr}
     {}
 
@@ -49,32 +51,31 @@ public:
         return this->get() = res.squaredNorm();
     }
 
-    void beval(value_t seed, size_t, size_t, util::beval_policy pol)
+    void beval(value_t seed)
     {
-        if (seed == 0) return;
-        for (size_t j = 0; j < expr_.cols(); ++j) {
-            for (size_t i = 0; i < expr_.rows(); ++i) {
-                expr_.beval(seed * 2. * expr_.get(i,j), i, j, pol);
-            }
-        }
+        auto&& a_expr = util::to_array(expr_.get());
+        expr_.beval(seed * 2. * a_expr);
     }
 
-    value_t* bind(value_t* begin)
+    ptr_pack_t bind_cache(ptr_pack_t begin)
     {
-        if constexpr (!util::is_var_view_v<expr_t>) {
-            begin = expr_.bind(begin);
-        }
-        return value_view_t::bind(begin);
+        begin = expr_.bind_cache(begin);
+        auto adj = begin.adj;
+        begin.adj = nullptr;
+        begin = value_adj_view_t::bind(begin);
+        begin.adj = adj;
+        return begin;
     }
 
-    size_t bind_size() const 
+    util::SizePack bind_cache_size() const 
     { 
-        return expr_.bind_size() + single_bind_size();
+        return expr_.bind_cache_size() + 
+                single_bind_cache_size();
     }
 
-    constexpr size_t single_bind_size() const 
+    util::SizePack single_bind_cache_size() const
     { 
-        return this->size(); 
+        return {this->size(), 0}; 
     }
 
 private:
@@ -91,13 +92,12 @@ inline auto norm(const T& x)
 {
     using expr_t = util::convert_to_ad_t<T>;
     using value_t = typename util::expr_traits<expr_t>::value_t;
-
     expr_t expr = x;
 
     // optimization for when expression is constant
     if constexpr (util::is_constant_v<expr_t>) {
         static_assert(!util::is_scl_v<expr_t>);
-        using var_t = core::details::constant_var_t<value_t, ad::scl>;
+        using var_t = util::constant_var_t<value_t, ad::scl>;
         var_t out = expr.feval().squaredNorm();
         return ad::constant(out);
     } else {

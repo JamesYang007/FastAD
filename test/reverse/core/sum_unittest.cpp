@@ -17,19 +17,25 @@ protected:
 
     size_t size = 5;
     value_t seed = 3.14;
+    aVectorXd vseed;
 
     std::vector<scl_expr_t> scl_exprs;
     std::vector<vec_expr_t> vec_exprs;
     std::vector<mat_expr_t> mat_exprs;
-    std::vector<value_t> val_buf;
+
+    Eigen::VectorXd val_buf;
+    Eigen::VectorXd adj_buf;
 
     sum_fixture()
         : base_fixture()
+        , vseed(size)
         , scl_exprs(size)
         , vec_exprs(size, vec_expr_t{vec_size})
         , mat_exprs(size, mat_expr_t{mat_rows, mat_cols})
-        , val_buf((size+1)*std::max(vec_size, mat_size), 0)
+        , val_buf((size+1)*std::max(vec_size, mat_size))
+        , adj_buf((size+1)*std::max(vec_size, mat_size))
     {
+        vseed << 0.23, 0.1, 3.231, 4.23, 5.;
         for (auto& expr : scl_exprs) this->scl_initialize(expr);
         for (auto& expr : vec_exprs) this->vec_initialize(expr);
         for (auto& expr : mat_exprs) this->mat_initialize(expr);
@@ -40,20 +46,21 @@ protected:
     template <class ShapeType>
     auto make_sum()
     {
+        ptr_pack_t ptr_pack(val_buf.data(), adj_buf.data());
         if constexpr (std::is_same_v<ShapeType, ad::scl>) {
             auto sumnode = sum(scl_exprs.begin(), scl_exprs.end(), 
                                [](const auto& x) { return scl_unary_t(x); });
-            sumnode.bind(val_buf.data());
+            sumnode.bind_cache(ptr_pack);
             return sumnode;
         } else if constexpr (std::is_same_v<ShapeType, ad::vec>) {
             auto sumnode = sum(vec_exprs.begin(), vec_exprs.end(), 
                                [](const auto& x) { return vec_unary_t(x); });
-            sumnode.bind(val_buf.data());
+            sumnode.bind_cache(ptr_pack);
             return sumnode;
         } else {
             auto sumnode = sum(mat_exprs.begin(), mat_exprs.end(), 
                                [](const auto& x) { return mat_unary_t(x); });
-            sumnode.bind(val_buf.data());
+            sumnode.bind_cache(ptr_pack);
             return sumnode;
         }
     }
@@ -71,7 +78,7 @@ TEST_F(sum_fixture, scl_feval)
 TEST_F(sum_fixture, scl_beval)
 {
     auto scl_sum = make_sum<ad::scl>();
-    scl_sum.beval(seed, 0,0, util::beval_policy::single);    // last two ignored
+    scl_sum.beval(seed);
     for (size_t i = 0; i < scl_exprs.size(); ++i) {
         EXPECT_DOUBLE_EQ(scl_exprs[i].get_adj(0,0), 2.*seed);
     }
@@ -89,12 +96,10 @@ TEST_F(sum_fixture, vec_feval)
 TEST_F(sum_fixture, vec_beval)
 {
     auto vec_sum = make_sum<ad::vec>();
-    vec_sum.beval(seed, 1,0, util::beval_policy::single);    // last ignored
-    vec_sum.beval(seed, 3,0, util::beval_policy::single);    // last ignored
+    vec_sum.beval(vseed);
     for (size_t k = 0; k < vec_exprs.size(); ++k) {
         for (size_t i = 0; i < vec_size; ++i) {
-            value_t actual = (i == 1 || i == 3) ? 2*seed : 0;
-            EXPECT_DOUBLE_EQ(vec_exprs[k].get_adj(i,0), actual);
+            EXPECT_DOUBLE_EQ(vec_exprs[k].get_adj(i,0), 2*vseed[i]);
         }        
     }
 }
@@ -113,14 +118,11 @@ TEST_F(sum_fixture, mat_feval)
 TEST_F(sum_fixture, mat_beval)
 {
     auto mat_sum = make_sum<ad::mat>();
-    mat_sum.beval(seed, 1,1, util::beval_policy::single);    // last ignored
-    mat_sum.beval(seed, 0,0, util::beval_policy::single);    // last ignored
+    mat_sum.beval(seed);
     for (size_t k = 0; k < mat_exprs.size(); ++k) {
         for (size_t i = 0; i < mat_rows; ++i) {
             for (size_t j = 0; j < mat_cols; ++j) {
-                value_t actual = ((i == 0 && j == 0) ||
-                                  (i == 1 && j == 1)) ? 2*seed : 0;
-                EXPECT_DOUBLE_EQ(mat_exprs[k].get_adj(i,j), actual);
+                EXPECT_DOUBLE_EQ(mat_exprs[k].get_adj(i,j), 2*seed);
             }
         }        
     }
@@ -157,8 +159,9 @@ TEST_F(sum_fixture, vec_constant)
 TEST_F(sum_fixture, scl_expr_feval)
 {
     auto scl_sum = ad::sum(scl_unary_t(scl_expr));
-    val_buf.resize(scl_sum.bind_size());
-    scl_sum.bind(val_buf.data());
+    val_buf.resize(scl_sum.bind_cache_size()(0));
+    adj_buf.resize(scl_sum.bind_cache_size()(1));
+    scl_sum.bind_cache({val_buf.data(), adj_buf.data()});
     value_t res = scl_sum.feval();
     EXPECT_DOUBLE_EQ(res, 2.*scl_expr.get());
 }
@@ -166,17 +169,19 @@ TEST_F(sum_fixture, scl_expr_feval)
 TEST_F(sum_fixture, scl_expr_beval)
 {
     auto scl_sum = ad::sum(scl_unary_t(scl_expr));
-    val_buf.resize(scl_sum.bind_size());
-    scl_sum.bind(val_buf.data());
-    scl_sum.beval(seed, 0,0, util::beval_policy::single);    // last two ignored
-    EXPECT_DOUBLE_EQ(scl_expr.get_adj(0,0), 2.*seed);
+    val_buf.resize(scl_sum.bind_cache_size()(0));
+    adj_buf.resize(scl_sum.bind_cache_size()(1));
+    scl_sum.bind_cache({val_buf.data(), adj_buf.data()});
+    scl_sum.beval(seed);
+    EXPECT_DOUBLE_EQ(scl_expr.get_adj(), 2.*seed);
 }
 
 TEST_F(sum_fixture, vec_expr_feval)
 {
     auto vec_sum = ad::sum(vec_unary_t(vec_expr));
-    val_buf.resize(vec_sum.bind_size());
-    vec_sum.bind(val_buf.data());
+    val_buf.resize(vec_sum.bind_cache_size()(0));
+    adj_buf.resize(vec_sum.bind_cache_size()(1));
+    vec_sum.bind_cache({val_buf.data(), adj_buf.data()});
     value_t res = vec_sum.feval();
     value_t actual = 0;
     for (size_t i = 0; i < vec_expr.size(); ++i) {
@@ -188,9 +193,10 @@ TEST_F(sum_fixture, vec_expr_feval)
 TEST_F(sum_fixture, vec_expr_beval)
 {
     auto vec_sum = ad::sum(vec_unary_t(vec_expr));
-    val_buf.resize(vec_sum.bind_size());
-    vec_sum.bind(val_buf.data());
-    vec_sum.beval(seed, 0,0, util::beval_policy::single);    // last two ignored
+    val_buf.resize(vec_sum.bind_cache_size()(0));
+    adj_buf.resize(vec_sum.bind_cache_size()(1));
+    vec_sum.bind_cache({val_buf.data(), adj_buf.data()});
+    vec_sum.beval(seed);
     for (size_t i = 0; i < vec_expr.size(); ++i) {
         EXPECT_DOUBLE_EQ(vec_expr.get_adj(i,0), 2.*seed);
     }
@@ -199,8 +205,9 @@ TEST_F(sum_fixture, vec_expr_beval)
 TEST_F(sum_fixture, mat_expr_feval)
 {
     auto mat_sum = ad::sum(mat_unary_t(mat_expr));
-    val_buf.resize(mat_sum.bind_size());
-    mat_sum.bind(val_buf.data());
+    val_buf.resize(mat_sum.bind_cache_size()(0));
+    adj_buf.resize(mat_sum.bind_cache_size()(1));
+    mat_sum.bind_cache({val_buf.data(), adj_buf.data()});
     value_t res = mat_sum.feval();
     value_t actual = 0;
     for (size_t i = 0; i < mat_expr.rows(); ++i) {
@@ -214,9 +221,10 @@ TEST_F(sum_fixture, mat_expr_feval)
 TEST_F(sum_fixture, mat_expr_beval)
 {
     auto mat_sum = ad::sum(mat_unary_t(mat_expr));
-    val_buf.resize(mat_sum.bind_size());
-    mat_sum.bind(val_buf.data());
-    mat_sum.beval(seed, 0,0, util::beval_policy::single);    // last two ignored
+    val_buf.resize(mat_sum.bind_cache_size()(0));
+    adj_buf.resize(mat_sum.bind_cache_size()(1));
+    mat_sum.bind_cache({val_buf.data(), adj_buf.data()});
+    mat_sum.beval(seed);
     for (size_t i = 0; i < mat_expr.rows(); ++i) {
         for (size_t j = 0; j < mat_expr.cols(); ++j) {
             EXPECT_DOUBLE_EQ(mat_expr.get_adj(i,j), 2.*seed);

@@ -1,9 +1,11 @@
 #pragma once
 #include <fastad_bits/reverse/core/expr_base.hpp>
-#include <fastad_bits/reverse/core/value_view.hpp>
+#include <fastad_bits/reverse/core/value_adj_view.hpp>
 #include <fastad_bits/reverse/core/constant.hpp>
 #include <fastad_bits/util/shape_traits.hpp>
 #include <fastad_bits/util/type_traits.hpp>
+#include <fastad_bits/util/size_pack.hpp>
+#include <fastad_bits/util/value.hpp>
 
 namespace ad {
 namespace core {
@@ -26,8 +28,8 @@ template <class CondExprType
         , class IfExprType
         , class ElseExprType>
 struct IfElseNode : 
-    ValueView<typename util::expr_traits<IfExprType>::value_t,
-              typename util::shape_traits<IfExprType>::shape_t>,
+    ValueAdjView<typename util::expr_traits<IfExprType>::value_t,
+                 typename util::shape_traits<IfExprType>::shape_t >,
     ExprBase<IfElseNode<CondExprType, IfExprType, ElseExprType>>
 {
 private:
@@ -54,18 +56,16 @@ private:
     static_assert(std::is_same_v<if_value_t, else_value_t>);
 
 public:
-    using value_view_t = ValueView<if_value_t, if_shape_t>;
-    using typename value_view_t::value_t;
-    using typename value_view_t::shape_t;
-    using typename value_view_t::var_t;
-    using value_view_t::bind;
+    using value_adj_view_t = ValueAdjView<if_value_t, if_shape_t>;
+    using typename value_adj_view_t::value_t;
+    using typename value_adj_view_t::shape_t;
+    using typename value_adj_view_t::var_t;
+    using typename value_adj_view_t::ptr_pack_t;
 
     IfElseNode(const cond_t& cond_expr,
                const if_t& if_expr,
                const else_t& else_expr)
-        : value_view_t(nullptr, 
-                       if_expr.rows(), 
-                       if_expr.cols())
+        : value_adj_view_t(nullptr, nullptr, if_expr.rows(), if_expr.cols())
         , cond_expr_{cond_expr}
         , if_expr_{if_expr}
         , else_expr_{else_expr}
@@ -75,52 +75,38 @@ public:
         assert(if_expr.cols() == else_expr.cols());
     }
 
-    const var_t& feval()
+    const auto& feval()
     {
-        if (cond_expr_.feval()) {
-            return this->get() = if_expr_.feval();
-        } else {
-            return this->get() = else_expr_.feval();
-        }
+        return cond_expr_.feval() ? 
+                if_expr_.feval() : else_expr_.feval();
     }
 
-    void beval(value_t seed, size_t i, size_t j, util::beval_policy pol)
+    template <class T>
+    void beval(const T& seed)
     {
-        if (seed == 0) return;
         if (cond_expr_.get()) {
-            if_expr_.beval(seed, i, j, pol);
+            if_expr_.beval(seed);
         } else {
-            else_expr_.beval(seed, i, j, pol);
+            else_expr_.beval(seed);
         } 
     }
 
-    value_t* bind(value_t* begin) 
+    ptr_pack_t bind_cache(ptr_pack_t begin)
     {
-        value_t* next = begin;
-        if constexpr (!util::is_var_view_v<cond_t>) {
-            next = cond_expr_.bind(next);
-        }
-        if constexpr (!util::is_var_view_v<if_t>) {
-            next = if_expr_.bind(next);
-        }
-        if constexpr (!util::is_var_view_v<else_t>) {
-            next = else_expr_.bind(next);
-        }
-        return value_view_t::bind(next);
+        begin = cond_expr_.bind_cache(begin);
+        begin = if_expr_.bind_cache(begin);
+        return else_expr_.bind_cache(begin);
     }
 
-    size_t bind_size() const 
+    util::SizePack bind_cache_size() const 
     { 
-        return single_bind_size() + 
-                cond_expr_.bind_size() +
-                if_expr_.bind_size() + 
-                else_expr_.bind_size();
+        return cond_expr_.bind_cache_size() +
+                if_expr_.bind_cache_size() + 
+                else_expr_.bind_cache_size();
     }
 
-    size_t single_bind_size() const
-    {
-        return this->size();
-    }
+    util::SizePack single_bind_cache_size() const
+    { return {0,0}; }
 
 private:
     cond_t cond_expr_;
@@ -157,7 +143,7 @@ inline constexpr auto if_else(const CondType& c,
                   util::is_constant_v<if_t> &&
                   util::is_constant_v<else_t>) {
 
-        using var_t = core::details::constant_var_t<if_value_t, if_shape_t>;
+        using var_t = util::constant_var_t<if_value_t, if_shape_t>;
 
         var_t if_out = if_expr.feval();
         var_t else_out = else_expr.feval();

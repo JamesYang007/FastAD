@@ -1,10 +1,10 @@
 #pragma once
 #include <tuple>
 #include <fastad_bits/reverse/core/expr_base.hpp>
-#include <fastad_bits/reverse/core/value_view.hpp>
-#include <fastad_bits/reverse/core/var_view.hpp>
+#include <fastad_bits/reverse/core/value_adj_view.hpp>
 #include <fastad_bits/reverse/core/constant.hpp>
 #include <fastad_bits/util/type_traits.hpp>
+#include <fastad_bits/util/value.hpp>
 #include <fastad_bits/util/numeric.hpp>
 
 namespace ad {
@@ -14,45 +14,43 @@ namespace details {
 template <class XExprType
         , class PExprType>
 struct BernoulliBase:
-    core::ValueView<util::common_value_t<XExprType, 
-                                   PExprType>, ad::scl>
+    core::ValueAdjView<util::common_value_t<
+                        XExprType, PExprType>, ad::scl>
 {
     using x_t = XExprType;
     using p_t = PExprType;
     using p_value_t = typename util::expr_traits<p_t>::value_t;
-    using value_view_t = core::ValueView<p_value_t, ad::scl>;
-    using typename value_view_t::value_t;
-    using typename value_view_t::shape_t;
-    using typename value_view_t::var_t;
-    using value_view_t::bind;
+    using value_adj_view_t = core::ValueAdjView<p_value_t, ad::scl>;
+    using typename value_adj_view_t::value_t;
+    using typename value_adj_view_t::shape_t;
+    using typename value_adj_view_t::var_t;
+    using typename value_adj_view_t::ptr_pack_t;
 
     BernoulliBase(const x_t& x,
                   const p_t& p)
-        : value_view_t(nullptr, 1, 1)
+        : value_adj_view_t(nullptr, nullptr, 1, 1)
         , x_{x}
         , p_{p}
     {}
 
-    value_t* bind(value_t* begin) 
+    ptr_pack_t bind_cache(ptr_pack_t begin)
     {
-        value_t* next = begin;
-        if constexpr (!util::is_var_view_v<x_t>) {
-            next = x_.bind(next);
-        }
-        if constexpr (!util::is_var_view_v<p_t>) {
-            next = p_.bind(next);
-        }
-        return value_view_t::bind(next);
+        begin = x_.bind_cache(begin);
+        begin = p_.bind_cache(begin);
+        return value_adj_view_t::bind(begin);
     }
 
-    size_t bind_size() const 
+    util::SizePack bind_cache_size() const 
     { 
-        return single_bind_size() + 
-                x_.bind_size() +
-                p_.bind_size();
+        return single_bind_cache_size() + 
+                x_.bind_cache_size() +
+                p_.bind_cache_size();
     }
 
-    constexpr size_t single_bind_size() const { return this->size(); }
+    util::SizePack single_bind_cache_size() const
+    {
+        return {this->size(), 0}; 
+    }
 
 protected:
     x_t x_;
@@ -109,9 +107,6 @@ public:
     using typename base_t::var_t;
     using base_t::x_;
     using base_t::p_;
-    using base_t::bind;
-    using base_t::bind_size;
-    using base_t::single_bind_size;
 
     BernoulliAdjLogPDFNode(const x_t& x,
                            const p_t& p)
@@ -151,15 +146,12 @@ public:
         }
     }
 
-    void beval(value_t seed, size_t, size_t, util::beval_policy pol)
+    void beval(value_t seed)
     {
         if (seed == 0 || !within_range() || (x_.get() != 0 && x_.get() != 1)) return;
 
-        if (x_.get() == 0) {
-            p_.beval(-seed / (1-p_.get()), 0, 0, pol);
-        } else {
-            p_.beval(seed / p_.get(), 0, 0, pol);
-        }
+        auto adj = (x_.get() == 0) ? -seed / (1-p_.get()) : seed / p_.get();
+        p_.beval(adj);
     }
 
 private:
@@ -199,9 +191,6 @@ public:
     using typename base_t::var_t;
     using base_t::x_;
     using base_t::p_;
-    using base_t::bind;
-    using base_t::bind_size;
-    using base_t::single_bind_size;
 
     BernoulliAdjLogPDFNode(const x_t& x,
                            const p_t& p)
@@ -250,13 +239,13 @@ public:
         }
     }
 
-    void beval(value_t seed, size_t, size_t, util::beval_policy pol)
+    void beval(value_t seed)
     {
         if (seed == 0 || !within_range() || !is_x_zero_one_) return;
 
         value_t adj = (x_sum_ - (x_.size() * p_.get())) /
                         (p_.get() * (1-p_.get()));
-        p_.beval(seed * adj, 0, 0, pol);
+        p_.beval(seed * adj);
     }
 
 private:
@@ -304,9 +293,6 @@ public:
     using typename base_t::var_t;
     using base_t::x_;
     using base_t::p_;
-    using base_t::bind;
-    using base_t::bind_size;
-    using base_t::single_bind_size;
 
     BernoulliAdjLogPDFNode(const x_t& x,
                            const p_t& p)
@@ -356,19 +342,21 @@ public:
         }
     }
 
-    void beval(value_t seed, size_t, size_t, util::beval_policy pol)
+    void beval(value_t seed)
     {
         if (seed == 0 || !is_x_zero_one_) return;
 
         auto&& x = x_.get().array();
         auto&& p = p_.get().array();
 
-        for (size_t i = 0; i < p_.size(); ++i) {
-            if (0 < p(i) && p(i) < 1) {
-                value_t adj = (x(i) == 1) ? 1./p(i) : -1/(1-p(i));
-                p_.beval(seed * adj, i, 0, pol);
-            }
-        }
+        using vec_t = std::decay_t<decltype(p)>;
+        auto adj = vec_t::NullaryExpr(x.size(),
+                [&](size_t i) {
+                    return (0. < p(i) && p(i) < 1.) ?
+                               ( (x(i) == 1) ? seed / p(i) : (-seed) / (1. - p(i)) ) :
+                               0.;
+                });
+        p_.beval(adj);
     }
 
 private:

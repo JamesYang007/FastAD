@@ -11,7 +11,6 @@ protected:
     using scl_view_t = VarView<value_t, scl>;
     using vec_view_t = VarView<value_t, vec>;
     using mat_view_t = VarView<value_t, mat>;
-    using selfadjmat_view_t = VarView<value_t, selfadjmat>;
 
     static constexpr size_t max_size = 10;
     static constexpr size_t vector_size = 5;
@@ -25,15 +24,12 @@ protected:
     scl_view_t scalar;
     vec_view_t vector;
     mat_view_t matrix;
-    selfadjmat_view_t selfadj_matrix;
 
     var_view_fixture()
         : scalar(val_buf.data(), adj_buf.data())
         , vector(val_buf.data(), adj_buf.data(), vector_size)
         , matrix(val_buf.data(), adj_buf.data(),
                  matrix_rows, matrix_cols)
-        , selfadj_matrix(val_buf.data(), adj_buf.data(),
-                         matrix_rows, matrix_rows)
     {
         // initialize value buffer with some random (fixed)
         // unique numbers for testing purposes
@@ -92,22 +88,22 @@ TEST_F(var_view_fixture, scl_feval)
 
 TEST_F(var_view_fixture, scl_beval)
 {
-    scalar.beval(3.,0,0, util::beval_policy::single); // last two params ignored
+    scalar.beval(3.);
     EXPECT_DOUBLE_EQ(adj_buf[0], 3.);
 }
 
 TEST_F(var_view_fixture, scl_bind)
 {
-    auto next = scalar.bind(val_buf.data() + 1);
-    EXPECT_EQ(next, val_buf.data() + 2);
+    auto next = scalar.bind({val_buf.data() + 1, nullptr});
+    EXPECT_EQ(next.val, val_buf.data() + 2);
     EXPECT_DOUBLE_EQ(scalar.feval(), val_buf[1]);
 }
 
 TEST_F(var_view_fixture, scl_bind_adj)
 {
-    auto next = scalar.bind_adj(adj_buf.data() + 1);
-    EXPECT_EQ(next, adj_buf.data() + 2);
-    scalar.beval(5.,0,0, util::beval_policy::single);   // last two params ignored
+    auto next = scalar.bind({nullptr, adj_buf.data() + 1});
+    EXPECT_EQ(next.adj, adj_buf.data() + 2);
+    scalar.beval(5.); 
     EXPECT_DOUBLE_EQ(5., adj_buf[1]);
 }
 
@@ -128,19 +124,28 @@ TEST_F(var_view_fixture, vec_feval)
     compare_vectors(vector.feval(), val_buf);
 }
 
-TEST_F(var_view_fixture, vec_beval)
+TEST_F(var_view_fixture, vec_beval_with_scl)
 {
-    vector.beval(3., 1, 0, util::beval_policy::single); // last param ignored
-    std::vector<value_t> actual(vector_size, 0.);
-    actual[1] = 3.;
+    vector.beval(3.);
+    Eigen::VectorXd actual(vector_size);
+    actual.array() = 3.;
     compare_vectors(adj_buf, actual);
+}
+
+TEST_F(var_view_fixture, vec_beval_with_vec)
+{
+    Eigen::VectorXd seed(vector_size);
+    seed.setZero();
+    seed(1) = 3;
+    vector.beval(seed.array());
+    compare_vectors(adj_buf, seed);
 }
 
 TEST_F(var_view_fixture, vec_bind)
 {
     size_t offset = 1;
-    auto next = vector.bind(val_buf.data() + offset);
-    EXPECT_EQ(next, val_buf.data() + vector_size + offset);
+    auto next = vector.bind({val_buf.data() + offset, nullptr});
+    EXPECT_EQ(next.val, val_buf.data() + vector_size + offset);
     std::vector<value_t> actual(val_buf.data()+offset,
                                 val_buf.data()+offset+vector_size);
     compare_vectors(vector.feval(), actual);
@@ -149,14 +154,30 @@ TEST_F(var_view_fixture, vec_bind)
 TEST_F(var_view_fixture, vec_bind_adj)
 {
     size_t offset = 1;
-    auto next = vector.bind_adj(adj_buf.data() + offset);
-    EXPECT_EQ(next, adj_buf.data() + offset + vector_size);
-    vector.beval(5., 2, 0, util::beval_policy::single); // last param ignored
+    auto next = vector.bind({nullptr, adj_buf.data() + offset});
+    EXPECT_EQ(next.adj, adj_buf.data() + offset + vector_size);
+    vector.beval(5);
     std::vector<value_t> res(adj_buf.data()+offset,
                              adj_buf.data()+offset+vector_size);
-    std::vector<value_t> actual(vector_size, 0.);
-    actual[2] = 5.;
+    Eigen::VectorXd actual(vector_size);
+    actual.array() = 5.;
     compare_vectors(res, actual);
+}
+
+TEST_F(var_view_fixture, vec_subscript)
+{
+    vector.bind({val_buf.data(), nullptr});
+    auto s = vector[1];
+    EXPECT_EQ(s.size(), 1ul);
+    EXPECT_EQ(s.data(), val_buf.data() + 1);
+}
+
+TEST_F(var_view_fixture, vec_call_operator)
+{
+    vector.bind({val_buf.data(), nullptr});
+    auto s = vector(2);
+    EXPECT_EQ(s.size(), 1ul);
+    EXPECT_EQ(s.data(), val_buf.data() + 2);
 }
 
 // TEST matrix
@@ -181,9 +202,20 @@ TEST_F(var_view_fixture, mat_feval)
     compare_matrix_vector(matrix.feval(), val_buf);
 }
 
-TEST_F(var_view_fixture, mat_beval)
+TEST_F(var_view_fixture, mat_beval_scl)
 {
-    matrix.beval(3., 1, 2, util::beval_policy::single);
+    matrix.beval(3.);
+    Eigen::VectorXd actual(matrix_size);
+    actual.array() = 3.;
+    compare_vectors(adj_buf, actual);
+}
+
+TEST_F(var_view_fixture, mat_beval_mat)
+{
+    Eigen::MatrixXd seed(matrix_rows, matrix_cols);
+    seed.setZero();
+    seed(1,2) = 3.;
+    matrix.beval(seed.array());
     std::vector<value_t> actual(matrix_size, 0.);
     actual[1 + 2*matrix_rows] = 3.;
     compare_vectors(adj_buf, actual);
@@ -192,8 +224,8 @@ TEST_F(var_view_fixture, mat_beval)
 TEST_F(var_view_fixture, mat_bind)
 {
     size_t offset = 1;
-    auto next = matrix.bind(val_buf.data() + offset);
-    EXPECT_EQ(next, val_buf.data() + matrix_size + offset);
+    auto next = matrix.bind({val_buf.data() + offset, nullptr});
+    EXPECT_EQ(next.val, val_buf.data() + matrix_size + offset);
     std::vector<value_t> actual(val_buf.data()+offset,
                                 val_buf.data()+offset+matrix_size);
     compare_matrix_vector(matrix.feval(), actual);
@@ -202,130 +234,14 @@ TEST_F(var_view_fixture, mat_bind)
 TEST_F(var_view_fixture, mat_bind_adj)
 {
     size_t offset = 1;
-    auto next = matrix.bind_adj(adj_buf.data() + offset);
-    EXPECT_EQ(next, adj_buf.data() + offset + matrix_size);
-    matrix.beval(5., 0, 2, util::beval_policy::single);
+    auto next = matrix.bind({nullptr, adj_buf.data() + offset});
+    EXPECT_EQ(next.adj, adj_buf.data() + offset + matrix_size);
+    matrix.beval(5.);
     std::vector<value_t> res(adj_buf.data()+offset,
                              adj_buf.data()+offset+matrix_size);
-    std::vector<value_t> actual(matrix_size, 0.);
-    actual[2*matrix_rows] = 5.;
+    Eigen::VectorXd actual(matrix_size);
+    actual.array() = 5.;
     compare_vectors(res, actual);
-}
-
-// TEST selfadjoint matrix
-
-TEST_F(var_view_fixture, selfadjmat_rows)
-{
-    EXPECT_EQ(selfadj_matrix.rows(), matrix_rows);
-}
-
-TEST_F(var_view_fixture, selfadjmat_cols)
-{
-    EXPECT_EQ(selfadj_matrix.cols(), matrix_rows);
-}
-
-TEST_F(var_view_fixture, selfadjmat_size)
-{
-    EXPECT_EQ(selfadj_matrix.size(), 
-              matrix_rows * matrix_rows);
-}
-
-TEST_F(var_view_fixture, selfadjmat_feval)
-{
-    auto res = selfadj_matrix.feval();
-    for (int j = 0; j < res.cols(); ++j) {
-        for (int i = 0; i < j; ++i) {
-            EXPECT_DOUBLE_EQ(res(i,j),
-                             val_buf[j + selfadj_matrix.rows() * i]);
-        }
-        for (int i = j; i < res.rows(); ++i) {
-            EXPECT_DOUBLE_EQ(res(i,j),
-                             val_buf[i + selfadj_matrix.rows() * j]);
-        }
-    }
-}
-
-TEST_F(var_view_fixture, selfadjmat_beval)
-{
-    selfadj_matrix.beval(3., 0, 1, util::beval_policy::single);
-    std::vector<value_t> actual(selfadj_matrix.size(), 0.);
-    actual[1] = 3.; // updates the lower half
-    compare_vectors(adj_buf, actual);
-}
-
-TEST_F(var_view_fixture, selfadjmat_bind)
-{
-    size_t offset = 1;
-    auto next = selfadj_matrix.bind(val_buf.data() + offset);
-    EXPECT_EQ(next, val_buf.data() + selfadj_matrix.size() + offset);
-    std::vector<value_t> actual(val_buf.data()+offset,
-                                val_buf.data()+offset+selfadj_matrix.size());
-    auto res = selfadj_matrix.feval();
-    for (int j = 0; j < res.cols(); ++j) {
-        for (int i = 0; i < j; ++i) {
-            EXPECT_DOUBLE_EQ(res(i,j),
-                             actual[j + selfadj_matrix.rows() * i]);
-        }
-        for (int i = j; i < res.rows(); ++i) {
-            EXPECT_DOUBLE_EQ(res(i,j),
-                             actual[i + selfadj_matrix.rows() * j]);
-        }
-    }
-}
-
-TEST_F(var_view_fixture, selfadjmat_bind_adj)
-{
-    size_t offset = 1;
-    auto next = selfadj_matrix.bind_adj(adj_buf.data() + offset);
-    EXPECT_EQ(next, adj_buf.data() + offset + selfadj_matrix.size());
-    selfadj_matrix.beval(5., 0, 0, util::beval_policy::single);
-    selfadj_matrix.beval(5., 1, 0, util::beval_policy::single); // updates lower half
-    selfadj_matrix.beval(5., 0, 1, util::beval_policy::single); // updates lower half
-    std::vector<value_t> res(adj_buf.data()+offset,
-                             adj_buf.data()+offset+selfadj_matrix.size());
-    std::vector<value_t> actual(selfadj_matrix.size(), 0.);
-    actual[0] = 5.;
-    actual[1] = 10.;
-    compare_vectors(res, actual);
-}
-
-TEST_F(var_view_fixture, selfadjmat_flat)
-{
-    size_t r = 5;
-    Eigen::VectorXd val((r * (r+1)) / 2);
-    for (int i = 0; i < val.size(); ++i) {
-        val(i) = i;
-    }
-    Eigen::VectorXd adj((r * (r+1)) / 2);
-    adj.setZero();
-    Eigen::MatrixXd mat(r, r);
-    selfadjmat_view_t m(mat.data(), val.data(), adj.data(), r);
-    Eigen::MatrixXd res = m.feval();
-
-    size_t k = 0;
-    for (int j = 0; j < res.cols(); ++j) {
-        for (int i = j; i < res.rows(); ++i, ++k) {
-            EXPECT_DOUBLE_EQ(res(i,j), res(j,i));
-            EXPECT_DOUBLE_EQ(res(i,j), val(k));
-        }
-    }
-
-    m.beval(1., 0, 0, util::beval_policy::single);
-    m.beval(2., 1, 0, util::beval_policy::single);
-    m.beval(3., 0, 1, util::beval_policy::single);
-
-    EXPECT_DOUBLE_EQ(m.get_adj(0,0), 1.);
-    EXPECT_DOUBLE_EQ(m.get_adj(1,0), 5.);
-    EXPECT_DOUBLE_EQ(m.get_adj(0,1), 5.);
-
-    for (size_t j = 0; j < m.cols(); ++j) {
-        for (size_t i = 0; i < m.rows(); ++i) {
-            if ((i == 0 && j == 0) ||
-                (i == 1 && j == 0) ||
-                (i == 0 && j == 1)) continue;
-            EXPECT_DOUBLE_EQ(m.get_adj(i,j), 0.);
-        }
-    }
 }
 
 } // namespace ad

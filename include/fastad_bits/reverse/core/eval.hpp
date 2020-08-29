@@ -4,13 +4,17 @@
 #include <tuple>
 #include <fastad_bits/reverse/core/expr_base.hpp>
 #include <fastad_bits/reverse/core/bind.hpp>
+#include <fastad_bits/util/value.hpp>
 
 namespace ad {
 
-// Evaluates expression in the forward direction of reverse-mode AD.
-// @tparam ExprType expression type
-// @param expr  expression to forward evaluate
-// @return the expression value
+/*
+ * Evaluates expression in the forward direction of reverse-mode AD.
+ * @tparam ExprType expression type
+ * @param expr  expression to forward evaluate
+ * @return the expression value
+ */
+
 template <class ExprType>
 inline auto evaluate(ExprType&& expr)
 {
@@ -29,44 +33,73 @@ inline auto evaluate(core::ExprBind<ExprType>&& expr)
     return expr.get().feval();
 }
 
-// Evaluates expression in the backward direction of reverse-mode AD.
-// @tparam ExprType expression type
-// @param expr  expression to backward evaluate
+/* 
+ * Evaluates expression in the backward direction of reverse-mode AD.
+ * Default parameter should fail exactly when expression is multi-dimensional.
+ *
+ * @tparam ExprType expression type
+ * @param expr  expression to backward evaluate
+ */
 template <class ExprType>
-inline void evaluate_adj(ExprType&& expr, 
-                         size_t i = 0, 
-                         size_t j = 0)
+inline std::enable_if_t<util::is_scl_v<std::decay_t<ExprType>>> 
+evaluate_adj(ExprType&& expr, 
+             typename util::expr_traits<std::decay_t<ExprType>>::value_t seed = 1.)
 {
-    expr.beval(1, i, j, util::beval_policy::single);
+    expr.beval(seed);
+}
+
+template <class ExprType, class T>
+inline std::enable_if_t<!util::is_scl_v<std::decay_t<ExprType>>> 
+evaluate_adj(ExprType&& expr, 
+             const Eigen::ArrayBase<T>& seed)
+{
+    expr.beval(seed);
 }
 
 template <class ExprType>
-inline void evaluate_adj(core::ExprBind<ExprType>& expr, 
-                         size_t i = 0, 
-                         size_t j = 0)
+inline std::enable_if_t<util::is_scl_v<std::decay_t<ExprType>>> 
+evaluate_adj(core::ExprBind<ExprType>& expr, 
+             typename util::expr_traits<std::decay_t<ExprType>>::value_t seed = 1.)
 {
-    expr.get().beval(1, i, j, util::beval_policy::single);
+    evaluate_adj(expr.get(), seed);
 }
 
-template <class ExprType>
-inline void evaluate_adj(core::ExprBind<ExprType>&& expr, 
-                         size_t i = 0, 
-                         size_t j = 0)
+template <class ExprType, class T>
+inline std::enable_if_t<!util::is_scl_v<std::decay_t<ExprType>>> 
+evaluate_adj(core::ExprBind<ExprType>&& expr, 
+             const Eigen::ArrayBase<T>& seed)
 {
-    expr.get().beval(1, i, j, util::beval_policy::single);
+    evaluate_adj(expr.get(), seed);
 }
 
-// Evaluates expression both in the forward and backward direction of reverse-mode AD.
-// @tparam ExprType expression type
-// @param expr  expression to forward and backward evaluate
-// Returns the forward expression value
-template <class ExprType>
+/* 
+ * Evaluates expression both in the forward and backward direction of reverse-mode AD.
+ * @tparam ExprType expression type
+ * @param expr  expression to forward and backward evaluate
+ * Returns the forward expression value
+ */
+
+template <class ExprType
+        , class = std::enable_if_t<util::is_scl_v<std::decay_t<ExprType>>> 
+        >
 inline auto autodiff(ExprType&& expr,
-                     size_t i = 0,
-                     size_t j = 0)
+                     typename util::expr_traits<
+                        std::decay_t<ExprType>>::value_t seed = 1.)
 {
     auto t = evaluate(expr);
-    evaluate_adj(expr, i, j);
+    evaluate_adj(expr, seed);
+    return t;
+}
+
+template <class ExprType
+        , class T
+        , class = std::enable_if_t<!util::is_scl_v<std::decay_t<ExprType>>> 
+        >
+inline auto autodiff(ExprType&& expr,
+                     const Eigen::ArrayBase<T>& seed)
+{
+    auto t = evaluate(expr);
+    evaluate_adj(expr, seed);
     return t;
 }
 
@@ -78,70 +111,45 @@ inline auto autodiff(ExprType&& expr,
  * @param expr  expression to forward and backward evaluate
  * Returns the forward expression value
  */
-template <class ExprType>
+
+template <class ExprType
+        , class = std::enable_if_t<util::is_scl_v<std::decay_t<ExprType>>> 
+        >
 inline auto autodiff(core::ExprBind<ExprType>& expr,
-                     size_t i = 0,
-                     size_t j = 0)
-{ return autodiff(expr.get(), i, j); }
+                     typename util::expr_traits<
+                        std::decay_t<ExprType>>::value_t seed = 1.)
+{
+    return autodiff(expr.get(), seed);
+}
 
-template <class ExprType>
+template <class ExprType
+        , class T
+        , class = std::enable_if_t<!util::is_scl_v<std::decay_t<ExprType>>> 
+        >
+inline auto autodiff(core::ExprBind<ExprType>& expr,
+                     const Eigen::ArrayBase<T>& seed)
+{
+    return autodiff(expr.get(), seed);
+}
+
+template <class ExprType
+        , class = std::enable_if_t<util::is_scl_v<std::decay_t<ExprType>>> 
+        >
 inline auto autodiff(core::ExprBind<ExprType>&& expr,
-                     size_t i = 0,
-                     size_t j = 0)
-{ return autodiff(expr.get(), i, j); }
-
-namespace details {
-
-///////////////////////////////////////////////////////
-// Sequential autodiff
-///////////////////////////////////////////////////////
-
-// This function is the ending condition when number of expressions is equal to I.
-// @tparam I    index of first expression to auto-differentiate
-// @tparam ExprTypes expression types
-template <size_t I, class... ExprTypes>
-inline typename std::enable_if<I == sizeof...(ExprTypes)>::type
-autodiff(std::tuple<ExprTypes...>&, size_t, size_t) 
-{}
-
-// This function calls ad::autodiff from the Ith expression to the last expression in tup.
-// @tparam I    index of first expression to auto-differentiate
-// @tparam ExprTypes    expression types
-// @param tup   the tuple of expressions to auto-differentiate
-template <size_t I, class... ExprTypes>
-inline typename std::enable_if < I < sizeof...(ExprTypes)>::type
-autodiff(std::tuple<ExprTypes...>& tup,
-         size_t i, 
-         size_t j)
+                     typename util::expr_traits<
+                        std::decay_t<ExprType>>::value_t seed = 1.)
 {
-    ad::autodiff(std::get<I>(tup), i, j); 
-    autodiff<I + 1>(tup, i, j);
+    return autodiff(expr.get(), seed);
 }
 
-} // namespace details 
-
-// Auto-differentiator for lvalue reference of tuple of expressions.
-// Always processes sequentially.
-// @tparam  ExprTypes   expression types
-// @param   tup tuple of expressions to auto-differentiate
-template <class... ExprTypes>
-inline void autodiff(std::tuple<ExprTypes...>& tup,
-                     size_t i = 0,
-                     size_t j = 0)
+template <class ExprType
+        , class T
+        , class = std::enable_if_t<!util::is_scl_v<std::decay_t<ExprType>>> 
+        >
+inline auto autodiff(core::ExprBind<ExprType>&& expr,
+                     const Eigen::ArrayBase<T>& seed)
 {
-    details::autodiff<0>(tup, i, j);
-}
-
-// Auto-differentiator for rvalue reference of tuple of expressions
-// Always processes sequentially.
-// @tparam  ExprTypes   expression types
-// @param   tup tuple of expressions to auto-differentiate
-template <class... ExprTypes>
-inline void autodiff(std::tuple<ExprTypes...>&& tup, 
-                     size_t i = 0, 
-                     size_t j = 0)
-{
-    details::autodiff<0>(tup, i, j);
+    return autodiff(expr.get(), seed);
 }
 
 } // namespace ad

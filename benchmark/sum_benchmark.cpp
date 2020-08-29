@@ -1,4 +1,5 @@
-#include <fastad_bits/reverse/core/math.hpp>
+#include <fastad_bits/reverse/core/binary.hpp>
+#include <fastad_bits/reverse/core/unary.hpp>
 #include <fastad_bits/reverse/core/var.hpp>
 #include <fastad_bits/reverse/core/eval.hpp>
 #include <fastad_bits/reverse/core/eq.hpp>
@@ -51,9 +52,7 @@ static void BM_sumnode_fastad(benchmark::State& state)
     }
     Var<double> w4, w5;
     auto sum_expr = ad::sum(vec.begin(), vec.end(), [](const auto& x) {return x * x;});
-    auto expr = (w4=sum_expr, w5 = w4 * w4 + ad::sin(w4));
-    std::vector<double> tmp(expr.bind_size());
-    expr.bind(tmp.data());
+    auto expr = ad::bind((w4=sum_expr, w5 = w4 * w4 + ad::sin(w4)));
 
     for (auto _ : state) {
         autodiff(expr);
@@ -78,16 +77,15 @@ static void BM_sumnode_fastad_large_vectorized(benchmark::State& state)
     }
 
     int i = 0;
-    auto expr = ad::sum(values.begin(), values.end(),
-        [&](double v) {
-            if (i % values2.size() == 0) i = 0;
-            auto&& expr = -ad::constant(0.5) *
-                ad::pow<2>((ad::constant(v) - w[0] * ad::constant(values2[i])) / w[1]);
-            ++i;
-            return expr;
-        });
-    std::vector<double> tmp(expr.bind_size());
-    expr.bind(tmp.data());
+    auto expr = ad::bind(
+        ad::sum(values.begin(), values.end(),
+            [&](double v) {
+                if (i % values2.size() == 0) i = 0;
+                auto&& expr = -ad::constant(0.5) *
+                    ad::pow<2>((ad::constant(v) - w[0] * ad::constant(values2[i])) / w[1]);
+                ++i;
+                return expr;
+            }));
 
     for (auto _ : state) {
         ad::autodiff(expr);

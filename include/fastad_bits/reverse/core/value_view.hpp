@@ -126,8 +126,8 @@ struct ValueView<ValueType, vec>
         return begin + this->size(); 
     }
 
-    size_t size() const { return val_.size(); }
-    size_t rows() const { return this->size(); }
+    constexpr size_t size() const { return val_.size(); }
+    constexpr size_t rows() const { return this->size(); }
     constexpr size_t cols() const { return 1; }
     value_t* data() { return val_.data(); }
     const value_t* data() const { return val_.data(); }
@@ -160,9 +160,9 @@ struct ValueView<ValueType, mat>
         return begin + this->size(); 
     }
 
-    size_t size() const { return val_.size(); }
-    size_t rows() const { return val_.rows(); }
-    size_t cols() const { return val_.cols(); }
+    constexpr size_t size() const { return val_.size(); }
+    constexpr size_t rows() const { return val_.rows(); }
+    constexpr size_t cols() const { return val_.cols(); }
     value_t* data() { return val_.data(); }
     const value_t* data() const { return val_.data(); }
     void zero() { val_.setZero(); }

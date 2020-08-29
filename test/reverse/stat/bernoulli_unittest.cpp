@@ -101,7 +101,7 @@ TEST_F(bernoulli_fixture, ss_beval)
 {
     bind(ss_bernoulli);
     ss_bernoulli.feval();
-    ss_bernoulli.beval(1, 0, 0, util::beval_policy::single);
+    ss_bernoulli.beval(1);
     EXPECT_NEAR(scl_p.get_adj(), 
                 -1.00010001000100001711, 
                 tol);
@@ -112,7 +112,7 @@ TEST_F(bernoulli_fixture, ss_x_one_beval)
     scl_x.get() = 1;
     bind(ss_bernoulli);
     ss_bernoulli.feval();
-    ss_bernoulli.beval(1, 0, 0, util::beval_policy::single);
+    ss_bernoulli.beval(1);
     EXPECT_NEAR(scl_p.get_adj(), 
                 10000.00000000000000000000, 
                 tol);
@@ -123,7 +123,7 @@ TEST_F(bernoulli_fixture, ss_beval_p_below_range)
     scl_p.get() = -0.00001;
     bind(ss_bernoulli);
     ss_bernoulli.feval();
-    ss_bernoulli.beval(1, 0, 0, util::beval_policy::single);
+    ss_bernoulli.beval(1);
     EXPECT_DOUBLE_EQ(scl_p.get_adj(), 0.);
 }
 
@@ -132,7 +132,7 @@ TEST_F(bernoulli_fixture, ss_beval_p_above_range)
     scl_p.get() = 1.00001;
     bind(ss_bernoulli);
     ss_bernoulli.feval();
-    ss_bernoulli.beval(1, 0, 0, util::beval_policy::single);
+    ss_bernoulli.beval(1);
     EXPECT_DOUBLE_EQ(scl_p.get_adj(), 0.);
 }
 
@@ -141,7 +141,7 @@ TEST_F(bernoulli_fixture, ss_beval_x_out_of_range)
     scl_x.get() = -1;
     bind(ss_bernoulli);
     ss_bernoulli.feval();
-    ss_bernoulli.beval(1, 0, 0, util::beval_policy::single);
+    ss_bernoulli.beval(1);
     EXPECT_DOUBLE_EQ(scl_p.get_adj(), 0.);
 }
 
@@ -180,7 +180,7 @@ TEST_F(bernoulli_fixture, vs_beval)
 {
     bind(vs_bernoulli);
     vs_bernoulli.feval();
-    vs_bernoulli.beval(1, 0, 0, util::beval_policy::single);
+    vs_bernoulli.beval(1);
     EXPECT_DOUBLE_EQ(scl_p.get_adj(), 
                      19998.99989998999808449298);
 }
@@ -190,7 +190,7 @@ TEST_F(bernoulli_fixture, vs_beval_p_below_range)
     scl_p.get() = -0.321;
     bind(vs_bernoulli);
     vs_bernoulli.feval();
-    vs_bernoulli.beval(1, 0, 0, util::beval_policy::single);
+    vs_bernoulli.beval(1);
     EXPECT_DOUBLE_EQ(scl_p.get_adj(), 0);
 }
 
@@ -199,7 +199,7 @@ TEST_F(bernoulli_fixture, vs_beval_p_above_range)
     scl_p.get() = 1.321;
     bind(vs_bernoulli);
     vs_bernoulli.feval();
-    vs_bernoulli.beval(1, 0, 0, util::beval_policy::single);
+    vs_bernoulli.beval(1);
     EXPECT_DOUBLE_EQ(scl_p.get_adj(), 0);
 }
 
@@ -208,7 +208,7 @@ TEST_F(bernoulli_fixture, vs_beval_one_x_out_of_range)
     vec_x.get(0,0) = 2;
     bind(vs_bernoulli);
     vs_bernoulli.feval();
-    vs_bernoulli.beval(1, 0, 0, util::beval_policy::single);
+    vs_bernoulli.beval(1);
     EXPECT_DOUBLE_EQ(scl_p.get_adj(), 0);
 }
 
@@ -247,7 +247,7 @@ TEST_F(bernoulli_fixture, vv_beval)
 {
     bind(vv_bernoulli);
     vv_bernoulli.feval();
-    vv_bernoulli.beval(1, 0, 0, util::beval_policy::single);
+    vv_bernoulli.beval(1);
  
     EXPECT_DOUBLE_EQ(vec_p.get_adj(0,0), 
                      3.33333333333333348136);
@@ -262,7 +262,7 @@ TEST_F(bernoulli_fixture, vv_beval_p_below_range)
     vec_p.get(0,0) = -0.03;
     bind(vv_bernoulli);
     vv_bernoulli.feval();
-    vv_bernoulli.beval(1, 0, 0, util::beval_policy::single);
+    vv_bernoulli.beval(1);
     EXPECT_DOUBLE_EQ(vec_p.get_adj(0,0), 0);
     EXPECT_DOUBLE_EQ(vec_p.get_adj(1,0), 
                      -1.72413793103448265143);
@@ -275,7 +275,7 @@ TEST_F(bernoulli_fixture, vv_beval_p_above_range)
     vec_p.get(1,0) = 3.023;
     bind(vv_bernoulli);
     vv_bernoulli.feval();
-    vv_bernoulli.beval(1, 0, 0, util::beval_policy::single);
+    vv_bernoulli.beval(1);
     EXPECT_DOUBLE_EQ(vec_p.get_adj(0,0), 
                      3.33333333333333348136);
     EXPECT_DOUBLE_EQ(vec_p.get_adj(1,0), 0);
@@ -288,7 +288,7 @@ TEST_F(bernoulli_fixture, vv_beval_x_out_of_range)
     vec_x.get(1,0) = 3;
     bind(vv_bernoulli);
     vv_bernoulli.feval();
-    vv_bernoulli.beval(1, 0, 0, util::beval_policy::single);
+    vv_bernoulli.beval(1);
     EXPECT_DOUBLE_EQ(vec_p.get_adj(0,0), 0);
     EXPECT_DOUBLE_EQ(vec_p.get_adj(1,0), 0);
     EXPECT_DOUBLE_EQ(vec_p.get_adj(2,0), 0);
