@@ -13,9 +13,9 @@ protected:
     using mat_v_t = Var<value_t, mat>;
 
     template <class T>
-    void test_ctor(const T tmp)
+    void test_ctor(T&& tmp)
     {
-        T x = std::move(tmp);    
+        T x(std::forward<T>(tmp)); 
         T y = x;
         y = x;
         x = std::move(y);
@@ -24,9 +24,9 @@ protected:
 
 TEST_F(var_fixture, var_ctors)
 {
-    test_ctor<scl_v_t>(scl_v_t());
-    test_ctor<vec_v_t>(vec_v_t(1));
-    test_ctor<mat_v_t>(mat_v_t(1,2));
+    test_ctor(scl_v_t());
+    test_ctor(vec_v_t(1));
+    test_ctor(mat_v_t(1,2));
 }
 
 } // namespace core
