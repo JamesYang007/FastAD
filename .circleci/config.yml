@@ -2,7 +2,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: buildpack-deps:xenial
+      - image: buildpack-deps:bionic
    
     steps:
       - checkout
