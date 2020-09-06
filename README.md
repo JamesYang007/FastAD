@@ -65,10 +65,10 @@ we can significantly reduce this overhead.
 
 Speed is the utmost critical aspect of any AD library.
 FastAD has been proven to be extremely fast, which inspired the name of this library.
-Benchmark shows over 40-50x improvement from [Adept](https://github.com/rjhogan/Adept-2), an existing AD library.
+Benchmark shows over orders of magnitude improvement from existing libraries 
+such as Adept, Stan Math Library, ADOL-C, CppAD, and Sacado
+(see our separate benchmark repositor [ADBenchmark](https://github.com/JamesYang007/ADBenchmark)).
 Moreover, it also shows 10x improvement from the naive (and often inaccurate) finite-difference method.
-For complicated functions like the multivariate normal log-pdf with a covariance matrix of size (4000 x 4000),
-the average differentiating time is about 8ns per variable.
 
 ## Installation
 
@@ -237,14 +237,13 @@ by calling `get_adjoint()` on the final `ForwardVar` object.
 The most basic usage simply requires users to create `Var<T, ShapeType>` objects.
 `T` denotes the underlying value type (usually `double`).
 `ShapeType` denotes the general shape of the variable.
-It must be one of `ad::scl, ad::vec, ad::mat, ad::selfadjmat` corresponding to
-scalar, (column) vector, matrix, and self-adjoint matrix, respectively.
+It must be one of `ad::scl, ad::vec, ad::mat` corresponding to
+scalar, (column) vector, and matrix, respectively.
 
 ```cpp
 Var<double, scl> x(2);    // set value to 2
 Var<double, vec> v(5);    // set size to 5
 Var<double, mat> m(2, 3); // set shape to 2x3
-Var<double, selfadjmat> m(3, 3); // set shape to 3x3
 ```
 
 From here, one can create complicated expressions 
@@ -259,16 +258,20 @@ Note that this represents a vector expression, since `sin(x)` is a scalar expres
 but `cos(v)` is a vectorized function on a vector, which is again a vector expression.
 
 Before we differentiate, the expression is required to
-"bind" to a storage for temporary variables.
+"bind" to a storage for the values and adjoints of intermediate expression nodes.
 The reason for this design is for speed purposes and cache hits.
 If the user wishes to manage this storage, they can do this:
 ```cpp
-std::vector<double> tmp(expr.bind_size());
-expr.bind(tmp.data());
+auto size_pack = expr.bind_cache_size();
+std::vector<double> val_buf(size_pack(0));
+std::vector<double> adj_buf(size_pack(1));
+expr.bind_cache({val_buf.data(), adj_buf.data()});
 ```
 
-The `bind_size()` will return exactly how many temporary doubles are needed
-and `bind(T*)` will bind itself to that region of memory.
+The `bind_cache_size()` will return exactly how many temporary doubles are needed
+for values and adjoints, respectively, of type `util::SizePack`, which is an alias for `Eigen::Array<size_t, 2, 2>`.
+and `bind(util::PtrPack<double>)` will bind itself to that region of memory.
+It is encouraged to create the pointer pack object using initializer list as shown above.
 This pattern occurs so often that if the user does not care about managing this,
 they should use the following helper function:
 ```cpp
@@ -276,34 +279,37 @@ auto expr_bound = ad::bind(sin(x) + cos(v));
 ```
 
 `ad::bind` will return a wrapper class that wraps the expression
-and at construction binds it to a privately owned temporary storage 
+and at construction binds it to a privately owned storage 
 in the same way described above.
 
-_If the expression is not bound to any temporary storage, it will lead to segfault_!
+_If the expression is not bound to any storage, it will lead to segfault_!
 
 To differentiate the expression, simply call the following:
 ```cpp
-auto f = ad::autodiff(expr_bound, i, j);
+auto f = ad::autodiff(expr_bound, seed);
 
 // or if the raw expression is manually bound,
-// auto f = ad::autodiff(expr, i, j);
+// auto f = ad::autodiff(expr, seed);
 ```
-where `i,j` refer to the `(i,j)`th element of the expression.
-This will return the evaluated function value, if the user is interested.
+where `seed` is the initial adjoint for the root of the expression.
+If the expression is scalar, seed is a literal (`double`)
+and the default value is `1`, so the user does not have to input anything.
+If the expression is multi-dimensional, 
+seed does not have a default value,
+must be of type type `Eigen::Array`,
+and must have the same dimensions as the expression.
+`autodiff` will return the evaluated function value.
 This return value is `T` if it is a scalar expression, and otherwise,
 `Eigen::Map<Eigen::Matrix<T, Eigen::Dynamic, ...>>` where `...` depends on
 the shape of the expression (`1` if vector, `Eigen::Dynamic` if matrix).
-The reason for `i,j` arguments is because in general the expression can be
-multi-dimensional, like in the example above.
-Of course, if it's a scalar expression, then one can omit the two parameters,
-and if it's a vector expression, one can omit the last parameter.
-By default, the two are set to `0`.
 
 You can retrieve the adjoints by calling `get_adj(i,j)` from `x, v` like so:
 ```cpp
 x.get_adj(0,0); // get adjoint for x 
 v.get_adj(2,0); // get adjoint for v at index 2
 ```
+For multi-dimensional variables like `v`,
+one can retrieve the full adjoint by calling `get_adj()` (with no arguments).
 
 The full code for this example is the following:
 ```cpp
@@ -318,7 +324,7 @@ int main()
     Var<double, vec> v(5);
 
     auto expr_bound = bind(sin(x) + cos(v));
-    auto f = autodiff(expr_bound, 0); // differentiate first element of expr_bound
+    auto f = autodiff(expr_bound);
 
     std::cout << x.get_adj(0,0) << std::endl;
     std::cout << v.get_adj(2,0) << std::endl;
@@ -547,15 +553,11 @@ __Operators__:
 ### Reverse 
 
 __Shape Types__:
-- `ad::scl, ad::vec, ad::mat, ad::selfadjmat`
+- `ad::scl, ad::vec, ad::mat`
 
 __VarView<T, ShapeType=scl>__:
 - This is only useful for users who really want to optimize for performance
 - `ShapeType` must be one of the types listed above
-- Note: `ad::selfadjmat` is no different from `ad::mat` except in how we interpret
-  matrix representation. Instead of viewing the matrix as a function of all of its elements,
-  we regard `ad::selfadjmat` variables as a function of only lower triangle + diagonal elements.
-  Hence, for `i < j`, the adjoint will accumulate to the (j,i)th adjoint.
 - `T` is the underlying value type
 - `VarView(T* v, T* a, rows=1, cols=1)`:
     - constructs to view values starting from v,
@@ -576,7 +578,7 @@ __Var<T, ShapeType=scl>__:
 __Unary Functions (vectorized if multi-dimensional)__:
 - unary minus: `operator-`
 - trig functions: `sin, cos, tan, asin, acos, atan`
-- others: `exp, log`
+- others: `exp, log, sqrt, erf`
 
 __Operators__:
 - binary: `+,-,*,/`
@@ -592,13 +594,9 @@ __Special Expressions__:
 - `ad::constant(T)`:
 - `ad::constant(const Eigen::Vector<T, Eigen::Dynamic, 1>&)`:
 - `ad::constant(const Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>&)`:
-    - if `Eigen::Matrix`, user can further specify the shape to be a certain kind of matrix:
-      e.g. `ad::constant<ad::selfadjmat>(mat)`
 - `ad::constant_view(T*)`:
 - `ad::constant_view(T*, rows)`:
 - `ad::constant_view(T*, rows, cols)`:
-    - if user specifies `rows` and `cols`, user can further specify the shape to be a certain kind of matrix:
-      e.g. `ad::constant<ad::selfadjmat>(ptr, 2, 2)`
 - `ad::dot(m, v)`:
     - represents matrix product with a matrix and a (column) vector
 - `ad::for_each(begin, end, f)`:
@@ -610,11 +608,9 @@ __Special Expressions__:
     - `cond` MUST be a scalar expression
     - `if` and `else` must have the exact same shape
 - `ad::norm(v)`:
-    - only supports vector expressions
-    - represents the squared norm of a vector
+    - represents the squared norm of a vector or Frobenius norm for matrix
 - `ad::pow<n>(e)`:
     - compile-time known, integer-powered expression
-    - vectorized operation
 - `ad::prod(begin, end, f)`:
     - represents the product of expressions generated by `f`
       when fed with elements from `begin` to `end`.
@@ -626,9 +622,13 @@ __Special Expressions__:
     - same as prod but represents summation
 
 __Stats Expressions__:
-- `ad::normal_adj_log_pdf(x, mu, s)`:
-    - represents log pdf of normal distribution adjusted to omit constants
-    - note that `x, mu, s` could be of different shapes: follows the usual vectorized notion.
+All log-pdfs are adjusted to omit constants.
+Parameters can have various combinations of shapes and follow the usual vectorized notion.
+- `ad::bernoulli(x, p)`
+- `ad::cauchy_adj_log_pdf(x, loc, scale)`
+- `ad::normal_adj_log_pdf(x, mu, s)`
+- `ad::uniform_adj_log_pdf(x, min, max)`
+- `ad::wishart_adj_log_pdf(X, V, n)`
 
 ## Contact
 
