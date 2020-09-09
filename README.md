@@ -582,6 +582,7 @@ __Unary Functions (vectorized if multi-dimensional)__:
 
 __Operators__:
 - binary: `+,-,*,/`
+- modification: `+=`, `-=`, `*=`, `/=`
 - comparison: `<,<=,>,>=,==,!=,&&,||`
     - Note: `&&` and `||` are undefined behavior for 
       multi-dimensional non-boolean expressions
@@ -589,6 +590,9 @@ __Operators__:
     - only overloaded for `VarView` expressions
 - glue: `operator,`
     - any expressions can be "glued" using this operator
+- unary minus: `operator-`
+- trig functions: `sin, cos, tan, asin, acos, atan`
+- others: `exp, log, sqrt`
 
 __Special Expressions__:
 - `ad::constant(T)`:
