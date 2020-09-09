@@ -69,6 +69,7 @@ add_executable(reverse_core_unittest
     ${CMAKE_CURRENT_SOURCE_DIR}/reverse/core/dot_unittest.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/reverse/core/eq_unittest.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/reverse/core/eval_unittest.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/reverse/core/for_each_unittest.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/reverse/core/glue_unittest.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/reverse/core/if_else_unittest.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/reverse/core/norm_unittest.cpp

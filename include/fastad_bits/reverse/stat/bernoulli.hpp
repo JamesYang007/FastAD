@@ -37,7 +37,11 @@ struct BernoulliBase:
     {
         begin = x_.bind_cache(begin);
         begin = p_.bind_cache(begin);
-        return value_adj_view_t::bind(begin);
+        auto adj = begin.adj;
+        begin.adj = nullptr;
+        begin = value_adj_view_t::bind(begin);
+        begin.adj = adj;
+        return begin;
     }
 
     util::SizePack bind_cache_size() const 
