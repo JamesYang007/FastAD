@@ -152,6 +152,20 @@ protected:
             }
         }
     }
+
+    template <class T, class U>
+    void check_near(const Eigen::DenseBase<T>& x,
+                    const Eigen::DenseBase<U>& y,
+                    double tol = 1e-15)
+    {
+        EXPECT_EQ(x.rows(), y.rows());
+        EXPECT_EQ(x.cols(), y.cols());
+        for (int i = 0; i < x.rows(); ++i) {
+            for (int j = 0; j < x.cols(); ++j) {
+                EXPECT_NEAR(x(i,j), y(i,j), tol);
+            }
+        }
+    }
 };
 
 } // namespace ad
