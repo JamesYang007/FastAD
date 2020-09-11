@@ -241,7 +241,7 @@ It must be one of `ad::scl, ad::vec, ad::mat` corresponding to
 scalar, (column) vector, and matrix, respectively.
 
 ```cpp
-Var<double, scl> x(2);    // set value to 2
+Var<double, scl> x;
 Var<double, vec> v(5);    // set size to 5
 Var<double, mat> m(2, 3); // set shape to 2x3
 ```
@@ -268,8 +268,8 @@ std::vector<double> adj_buf(size_pack(1));
 expr.bind_cache({val_buf.data(), adj_buf.data()});
 ```
 
-The `bind_cache_size()` will return exactly how many temporary doubles are needed
-for values and adjoints, respectively, of type `util::SizePack`, which is an alias for `Eigen::Array<size_t, 2, 2>`.
+The `bind_cache_size()` will return exactly how many doubles are needed
+for values and adjoints, respectively, of type `util::SizePack`, which is an alias for `Eigen::Array<size_t, 2, 1>`.
 and `bind(util::PtrPack<double>)` will bind itself to that region of memory.
 It is encouraged to create the pointer pack object using initializer list as shown above.
 This pattern occurs so often that if the user does not care about managing this,
@@ -289,27 +289,28 @@ To differentiate the expression, simply call the following:
 auto f = ad::autodiff(expr_bound, seed);
 
 // or if the raw expression is manually bound,
-// auto f = ad::autodiff(expr, seed);
+auto f = ad::autodiff(expr, seed);
 ```
 where `seed` is the initial adjoint for the root of the expression.
 If the expression is scalar, seed is a literal (`double`)
 and the default value is `1`, so the user does not have to input anything.
 If the expression is multi-dimensional, 
 seed does not have a default value,
-must be of type type `Eigen::Array`,
+must be of type `Eigen::Array`,
 and must have the same dimensions as the expression.
 `autodiff` will return the evaluated function value.
 This return value is `T` if it is a scalar expression, and otherwise,
 `Eigen::Map<Eigen::Matrix<T, Eigen::Dynamic, ...>>` where `...` depends on
 the shape of the expression (`1` if vector, `Eigen::Dynamic` if matrix).
 
-You can retrieve the adjoints by calling `get_adj(i,j)` from `x, v` like so:
+You can retrieve the adjoints by calling `get_adj(i,j)` or 
+`get_adj()` (with no arguments) from `x, v` like so:
 ```cpp
-x.get_adj(0,0); // get adjoint for x 
-v.get_adj(2,0); // get adjoint for v at index 2
+x.get_adj(0,0); // (1) get adjoint for x 
+v.get_adj(2,0); // (2) get adjoint for v at index 2
+x.get_adj();    // (3) get full adjoint (same as (1))
+v.get_adj();    // (4) get full adjoint
 ```
-For multi-dimensional variables like `v`,
-one can retrieve the full adjoint by calling `get_adj()` (with no arguments).
 
 The full code for this example is the following:
 ```cpp
@@ -326,7 +327,7 @@ int main()
     auto expr_bound = bind(sin(x) + cos(v));
     auto f = autodiff(expr_bound);
 
-    std::cout << x.get_adj(0,0) << std::endl;
+    std::cout << x.get_adj() << std::endl;
     std::cout << v.get_adj(2,0) << std::endl;
 
     return 0;
@@ -422,19 +423,20 @@ VarView<double, vec> w(3);
 
 std::vector<double> vals(x.size() + v.size());
 std::vector<double> adjs(x.size() + v.size());
-std::vector<double> tmp_vals(w.size());
-std::vector<double> tmp_adjs(w.size());
+std::vector<double> w_vals(w.size());
+std::vector<double> w_adjs(w.size());
 
 // x binds to the first element of storages
-// v binds starting from 2nd element of storages
 double* val_next = x.bind(vals.data());
 double* adj_next = x.bind_adj(adjs.data());
+
+// v binds starting from 2nd element of storages
 v.bind(val_next);
 v.bind_adj(adj_next);
 
 // bind placeholders to a separate storage region
-w.bind(tmp_vals.data());
-w.bind_adj(tmp_adjs.data());
+w.bind(w_vals.data());
+w.bind_adj(w_adjs.data());
 
 auto expr = (
     w = cos(v),
@@ -601,6 +603,11 @@ __Special Expressions__:
 - `ad::constant_view(T*)`:
 - `ad::constant_view(T*, rows)`:
 - `ad::constant_view(T*, rows, cols)`:
+- `ad::det<policy>(m)`:
+    - determinant of matrix `m`
+    - `policy` must be one of: `DetFullPivLU`, `DetLDLT`, `DetLLT`
+        - see `Eigen` documentation for each of these (without the prefix `Det`) for 
+          when they apply.
 - `ad::dot(m, v)`:
     - represents matrix product with a matrix and a (column) vector
 - `ad::for_each(begin, end, f)`:
@@ -611,6 +618,9 @@ __Special Expressions__:
     - represents an if-else statement
     - `cond` MUST be a scalar expression
     - `if` and `else` must have the exact same shape
+- `ad::log_det<policy>(m)`
+    - same as `det<policy>(m)` but computes log-abs-determinant
+    - `policy` must be one of: `LogDetFullPivLU`, `LogDetLDLT`, `LogDetLLT`
 - `ad::norm(v)`:
     - represents the squared norm of a vector or Frobenius norm for matrix
 - `ad::pow<n>(e)`:
