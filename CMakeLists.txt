@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.7)
 
 set(CMAKE_TRY_COMPILE_TARGET_TYPE "STATIC_LIBRARY")
 
-project("FastAD" VERSION 3.2.0
+project("FastAD" VERSION 3.2.1
                  DESCRIPTION "A light-weight header-only C++ library of automatic differentiation.")
 
 option(FASTAD_ENABLE_TEST "Enable unit tests to be built." ON)
