@@ -34,7 +34,7 @@ struct ConstantView:
     using value_t = ValueType;
     using shape_t = ShapeType;
     using value_adj_view_t = ConstantView<value_t, shape_t>;
-    using var_t = util::shape_to_raw_view_t<value_t, shape_t>;
+    using var_t = util::shape_to_raw_view_t<const value_t, shape_t>;
     using ptr_pack_t = util::PtrPack<value_t>;
 
     ConstantView(const value_t* begin,
