@@ -28,6 +28,7 @@
 - [Applications](#applications)
   - [Black-Scholes Put-Call Option Pricing](#black-scholes-put-call-option-pricing)
   - [Quadratic Expression Differential](#quad-expr-diff)
+  - [Simple Regression Model](#simple-regression)
 - [Quick Reference](#quick-reference)
   - [Forward](#forward)
   - [Reverse](#reverse)
@@ -579,6 +580,55 @@ int main() {
 }
 ```
 
+### Simple Regression Model
+In a regression model, one has many rows of data. A loop is needed to calculate loss of each row.
+
+```cpp
+#include "fastad"
+#include <Eigen/src/Core/Matrix.h>
+#include <iostream>
+#include <vector>
+
+int main() {
+    using namespace ad;
+    // Create data matrix.
+    Eigen::MatrixXd X(5, 2);
+    X << 1, 10, 2, 20, 3, 30, 4, 40, 5, 50;
+    Eigen::VectorXd y(5);
+    y << 32, 64, 96, 128, 160; // y=2*x1+3*x2
+
+    // Generating buffer.
+    Eigen::MatrixXd theta_data(2, 1);
+    theta_data << 1, 2;
+    Eigen::MatrixXd theta_adj(2, 1);
+    theta_adj.setZero(); // Set adjoints to zeros.
+
+    // Initialize variable.
+    VarView<double, mat> theta(theta_data.data(), theta_adj.data(), 2, 1);
+
+    // Loop over each row to calulate loss.
+    double loss = 0;
+    for (int i = 0; i < X.rows(); ++i) {
+        Eigen::MatrixXd x = X.row(i);
+        auto expr = bind(pow<2>(constant(y.coeff(i)) - dot(constant(x), theta)));
+        // Seed
+        Eigen::MatrixXd seed(1, 1);
+        seed.setOnes(); // Usually seed is 1. DONT'T FORGET!
+        // Auto differential.
+        auto f = autodiff(expr, seed.array());
+        loss += f.coeff(0);
+    }
+
+    // Print results.
+    std::cout << "loss: " << loss << std::endl; // 6655
+    std::cout << theta.get() << std::endl;      //[1, 2]
+    std::cout << theta.get_adj() << std::endl;  //[-1210, -12100]
+
+    theta_adj.setZero(); // Reset differential to zero after one full pass.
+
+    return 0;
+}
+```
 ## Quick Reference
 
 ### Forward 

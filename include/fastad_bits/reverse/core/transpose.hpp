@@ -11,13 +11,6 @@ namespace core {
 
 /**
  * TransposeNode represents transpose of a matrix or vector.
- * If matrix, then uses Frobenius norm.
- * Currently, we do not support the feature for row vectors.
- * No other shapes are permitted for this node.
- *
- * The node assumes the same value type as that of the vector expression.
- * It is always a scalar shape.
- *
  * @tparam  ExprType     type of vector expression
  */
 
@@ -41,20 +34,13 @@ struct TransposeNode : ValueAdjView<typename util::expr_traits<ExprType>::value_
         : value_adj_view_t(nullptr, nullptr, expr.cols(), expr.rows()), expr_{expr} {}
 
     const var_t &feval() {
-        std::cout << "forward..." << std::endl;
         auto &&res = expr_.feval();
         return this->get() = res.transpose();
     }
 
     template <class T> void beval(const T &seed) {
-        // auto &&a_expr = util::to_array(expr_.get());
-        // std::cout << "backward..." << std::endl;
-        // std::cout << seed << std::endl;
-        // std::cout << util::to_array(this->get_adj()) << std::endl;
         util::to_array(this->get_adj()) = seed;
-        // std::cout << "backward 1..." << std::endl;
         auto adj = util::to_array(this->get_adj().transpose());
-        // std::cout << "backward 2..." << std::endl;
         expr_.beval(adj);
     }
 
