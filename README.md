@@ -538,9 +538,7 @@ In ML applications, user usually provide a full parameter vector to an optimizer
 
 Here is an example of differentiating a quadratic expression `x^T*Sigma*x` using `VarView`.
 
-Note that currently there is no `transpose()` support so we crete two `VarView` but they share the same buffer.
-
-```
+```cpp
 #include <iostream>
 #include "fastad"
 #include <Eigen/src/Core/Matrix.h>
@@ -682,7 +680,9 @@ __Special Expressions__:
 - `ad::sum(begin, end, f)`:
 - `ad::sum(e)`:
     - same as prod but represents summation
-
+- `ad::transpose(e)`:
+	- matrix or vector transpose.
+	
 __Stats Expressions__:
 All log-pdfs are adjusted to omit constants.
 Parameters can have various combinations of shapes and follow the usual vectorized notion.
