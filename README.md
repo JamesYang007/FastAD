@@ -538,6 +538,8 @@ In ML applications, user usually provide a full parameter vector to an optimizer
 
 Here is an example of differentiating a quadratic expression `x^T*Sigma*x` using `VarView`.
 
+Note that currently there is no `transpose()` support so we crete two `VarView` but they share the same buffer.
+
 ```
 #include "fastad"
 #include <Eigen/src/Core/Matrix.h>
