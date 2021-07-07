@@ -27,6 +27,7 @@
     - [Advanced Usage](#advanced-usage)
 - [Applications](#applications)
   - [Black-Scholes Put-Call Option Pricing](#black-scholes-put-call-option-pricing)
+  - [Quadratic Expression Differential](#quad-expr-diff)
 - [Quick Reference](#quick-reference)
   - [Forward](#forward)
   - [Reverse](#reverse)
@@ -534,7 +535,7 @@ for the prices and deltas (S's adjoints).
 
 ### Quadratic Expression Differential
 
-In ML applications, user usually provide a full parameter vector to an optimizer and write an objective function to calculate objective value and gradient. The gradient pointer is provided by the optimizer and user fill values. Then it will be more convinent to use `VarView` to bind gradient pointer as buffer.
+In ML applications, user usually provide a full parameter vector to an optimizer and write an objective function to calculate objective value and gradient. The gradient pointer is provided by the optimizer and user fill values. Then it will be more convinent to use `VarView` to bind the gradient pointer as buffer.
 
 Here is an example of differentiating a quadratic expression `x^T*Sigma*x` using `VarView`.
 
@@ -682,7 +683,7 @@ __Special Expressions__:
     - same as prod but represents summation
 - `ad::transpose(e)`:
 	- matrix or vector transpose.
-	
+
 __Stats Expressions__:
 All log-pdfs are adjusted to omit constants.
 Parameters can have various combinations of shapes and follow the usual vectorized notion.
