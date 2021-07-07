@@ -541,22 +541,21 @@ Here is an example of differentiating a quadratic expression `x^T*Sigma*x` using
 Note that currently there is no `transpose()` support so we crete two `VarView` but they share the same buffer.
 
 ```
+#include <iostream>
 #include "fastad"
 #include <Eigen/src/Core/Matrix.h>
-#include <iostream>
 
 int main() {
     using namespace ad;
 
     // Generating buffer.
-    Eigen::MatrixXd x_data(1, 2);
+    Eigen::MatrixXd x_data(2, 1);
     x_data << 0.5, 0.6;
-    Eigen::MatrixXd x_adj(1, 2);
-    x_adj.setZero();
+    Eigen::MatrixXd x_adj(2, 1);
+    x_adj.setZero(); // Set adjoints to zeros.
 
     // Initialize variable.
-    VarView<double, mat> x_T(x_data.data(), x_adj.data(), 1, 2),
-        x(x_data.data(), x_adj.data(), 2, 1);
+    VarView<double, mat> x(x_data.data(), x_adj.data(), 2, 1);
 
     // Initialize matrix.
     Eigen::MatrixXd _Sigma(2, 2);
@@ -564,16 +563,18 @@ int main() {
     std::cout << _Sigma << std::endl;
     auto Sigma = constant(_Sigma);
 
-    // expression: x^T*Sigma*x
-    auto quad_expr = bind(dot(dot(x_T, Sigma), x));
-    Eigen::ArrayXd seed(1);
-    seed.setOnes();
-    auto f = autodiff(quad_expr, seed);
+    // Quadratic expression: x^T*Sigma*x
+    auto expr = bind(dot(dot(transpose(x), Sigma), x));
+    // Seed
+    Eigen::MatrixXd seed(1, 1);
+    seed.setOnes(); // Usually seed is 1. DONT'T FORGET!
+    // Auto differential.
+    auto f = autodiff(expr, seed.array());
 
     // Print results.
     std::cout << "f: " << f << std::endl;
-    std::cout << x_T.get() << std::endl;     //[0.5, 0.6]
-    std::cout << x_T.get_adj() << std::endl; //[5.6, 10.2]
+    std::cout << x.get() << std::endl;     //[0.5, 0.6]
+    std::cout << x.get_adj() << std::endl; //[5.6, 10.2]
 
     return 0;
 }
