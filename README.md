@@ -532,6 +532,51 @@ We observed the same output as the one shown in
 [boost](https://www.boost.org/doc/libs/master/libs/math/doc/html/math_toolkit/autodiff.html#math_toolkit.autodiff.example-black_scholes)
 for the prices and deltas (S's adjoints).
 
+### Quadratic Expression Differential
+
+In ML applications, user usually provide a full parameter vector to an optimizer and write an objective function to calculate objective value and gradient. The gradient pointer is provided by the optimizer and user fill values. Then it will be more convinent to use `VarView` to bind gradient pointer as buffer.
+
+Here is an example of differentiating a quadratic expression `x^T*Sigma*x` using `VarView`.
+
+```
+#include "fastad"
+#include <Eigen/src/Core/Matrix.h>
+#include <iostream>
+
+int main() {
+    using namespace ad;
+
+    // Generating buffer.
+    Eigen::MatrixXd x_data(1, 2);
+    x_data << 0.5, 0.6;
+    Eigen::MatrixXd x_adj(1, 2);
+    x_adj.setZero();
+
+    // Initialize variable.
+    VarView<double, mat> x_T(x_data.data(), x_adj.data(), 1, 2),
+        x(x_data.data(), x_adj.data(), 2, 1);
+
+    // Initialize matrix.
+    Eigen::MatrixXd _Sigma(2, 2);
+    _Sigma << 2, 3, 3, 6;
+    std::cout << _Sigma << std::endl;
+    auto Sigma = constant(_Sigma);
+
+    // expression: x^T*Sigma*x
+    auto quad_expr = bind(dot(dot(x_T, Sigma), x));
+    Eigen::ArrayXd seed(1);
+    seed.setOnes();
+    auto f = autodiff(quad_expr, seed);
+
+    // Print results.
+    std::cout << "f: " << f << std::endl;
+    std::cout << x_T.get() << std::endl;     //[0.5, 0.6]
+    std::cout << x_T.get_adj() << std::endl; //[5.6, 10.2]
+
+    return 0;
+}
+```
+
 ## Quick Reference
 
 ### Forward 
