@@ -28,7 +28,7 @@
 - [Applications](#applications)
   - [Black-Scholes Put-Call Option Pricing](#black-scholes-put-call-option-pricing)
   - [Quadratic Expression Differential](#quad-expr-diff)
-  - [Simple Regression Model](#simple-regression)
+  - [Simple Linear Regression Model](#simple-linear-regression)
 - [Quick Reference](#quick-reference)
   - [Forward](#forward)
   - [Reverse](#reverse)
@@ -580,7 +580,7 @@ int main() {
 }
 ```
 
-### Simple Regression Model
+### Simple Linear Regression Model
 In a regression model, one has many rows of data. A loop is needed to calculate loss of each row.
 
 ```cpp
