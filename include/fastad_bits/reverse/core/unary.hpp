@@ -269,6 +269,32 @@ UNARY_STRUCT(Erf,
                 1.1283791670955126;
              return two_over_sqrt_pi * seed * Exp::fmap(-x * x););
 
+// sigmoid
+UNARY_STRUCT(Sigmoid, 
+             USING_STD_AD_EIGEN(exp);
+             return 1/(1+exp(-x));, 
+             static_cast<void>(x); 
+             return seed * exp(-x)/((exp(-x)+1)*(exp(-x)+1)););
+
+// sinh
+UNARY_STRUCT(Sinh, 
+             //USING_STD_AD_EIGEN(tanh);
+             return Eigen::sinh(x);, 
+             static_cast<void>(f); 
+             return seed *(Eigen::cosh(x)););
+// cosh
+UNARY_STRUCT(Cosh, 
+             //USING_STD_AD_EIGEN(tanh);
+             return Eigen::cosh(x);, 
+             static_cast<void>(f); 
+             return seed *(Eigen::sinh(x)););			 
+// tanh
+UNARY_STRUCT(Tanh, 
+             //USING_STD_AD_EIGEN(tanh);
+             return Eigen::tanh(x);, 
+             static_cast<void>(f); 
+             return seed *(1-f*f););
+			 
 // operator- (IMPORTANT TO DECLARE IN core)
 ADNODE_UNARY_FUNC(operator-, UnaryMinus)
 
@@ -294,6 +320,14 @@ ADNODE_UNARY_FUNC(log, Log)
 ADNODE_UNARY_FUNC(sqrt, Sqrt)
 // ad::erf(ADNode)
 ADNODE_UNARY_FUNC(erf, Erf)
+
+// ad::sigmoid(ADNode)
+ADNODE_UNARY_FUNC(sigmoid, Sigmoid)
+
+// ad::tanh(ADNode)
+ADNODE_UNARY_FUNC(sinh, Sinh)
+ADNODE_UNARY_FUNC(cosh, Cosh)
+ADNODE_UNARY_FUNC(tanh, Tanh)
 
 } // namespace ad
 
