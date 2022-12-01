@@ -28,5 +28,5 @@ else
 fi
 
 rm -rf ./*
-cmake ../../ -GNinja "$@"
+cmake ../../ -DFASTAD_ENABLE_TEST=ON -GNinja "$@"
 cmake --build . -- -j12
