@@ -12,30 +12,36 @@
 
 ## Table of contents
 
-- [Overview](#overview)
-- [Installation](#installation)
-  - [General Users](#general-users)
-  - [Developers](#developers)
-- [Integration](#integration)
-  - [CMake](#cmake)
-  - [Others](#others)
-- [User Guide](#user-guide)
-  - [Forward Mode](#forward-mode)
-  - [Reverse Mode](#reverse-mode)
-    - [Basic Usage](#basic-usage)
-    - [Placeholder](#placeholder)
-    - [Advanced Usage](#advanced-usage)
-- [Applications](#applications)
-  - [Black-Scholes Put-Call Option Pricing](#black-scholes-put-call-option-pricing)
-  - [Quadratic Expression Differential](#quad-expr-diff)
-  - [Simple Linear Regression Model](#simple-linear-regression)
-- [Quick Reference](#quick-reference)
-  - [Forward](#forward)
-  - [Reverse](#reverse)
-- [Contact](#contact)
-- [Contributors](#contributors)
-- [Third Party Tools](#third-party-tools)
-- [License](#license)
+- [FastAD](#fastad)
+  - [Table of contents](#table-of-contents)
+  - [Overview](#overview)
+    - [Intuitive syntax](#intuitive-syntax)
+    - [Robustness](#robustness)
+    - [Memory Efficiency](#memory-efficiency)
+    - [Speed](#speed)
+  - [Installation](#installation)
+    - [General Users](#general-users)
+    - [Developers](#developers)
+  - [Integration](#integration)
+    - [CMake](#cmake)
+    - [Others](#others)
+  - [User Guide](#user-guide)
+    - [Forward Mode](#forward-mode)
+    - [Reverse Mode](#reverse-mode)
+      - [Basic Usage](#basic-usage)
+      - [Placeholder](#placeholder)
+      - [Advanced Usage](#advanced-usage)
+  - [Applications](#applications)
+    - [Black-Scholes Put-Call Option Pricing](#black-scholes-put-call-option-pricing)
+    - [Quadratic Expression Differential](#quad-expr-diff)
+    - [Simple Linear Regression Model](#simple-linear-regression)
+  - [Quick Reference](#quick-reference)
+    - [Forward](#forward)
+    - [Reverse](#reverse)
+  - [Contact](#contact)
+  - [Contributors](#contributors)
+  - [Third Party Tools](#third-party-tools)
+  - [License](#license)
 
 ## Overview
 
@@ -106,12 +112,24 @@ This will build and install the header files into the system.
 For users who want to install `FastAD` locally, run the following from `workspace_dir`:
 ```bash
 mkdir -p build && cd build
-cmake -DCMAKE_INSTALL_PREFIX=. -DFASTAD_ENABLE_TEST=OFF ..
+cmake -DCMAKE_INSTALL_PREFIX=. ..
 make install
 ```
 One can set the `CMAKE_INSTALL_PREFIX` to anything.
-This example will install the library in `workspace_dir/build`.
+This example will install the library in `workspace_dir/build`.  
 
+For users that want to integrate `FastAD` in their own CMakeLists, use FetchContent (CMake >= 3.11)
+```CMake
+include(FetchContent)
+FetchContent_Declare(
+        FastAD
+        GIT_REPOSITORY https://github.com/JamesYang007/FastAD
+        GIT_TAG v3.2.1
+        GIT_SHALLOW TRUE
+        GIT_PROGRESS TRUE)
+FetchContent_MakeAvailable(FastAD)
+# Further link target 'FastAD'
+```
 ### Developers
 
 Run the following to install all of the dependencies locally:
@@ -129,7 +147,7 @@ Here are the following options one can specify as a CMake flag `-D...=ON`
 - FASTAD_ENABLE_BENCHMARK   (builds benchmarks)
 - FASTAD_ENABLE_EXAMPLE     (builds examples)
 
-By default, with the exception of `FASTAD_ENABLE_TEST`, the flags are `OFF`.
+By default, the flags are `OFF`.
 Note that this only builds and does not install the library.
 
 To run tests, execute the following:
