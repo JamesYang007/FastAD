@@ -870,10 +870,10 @@ feel free to [send me an email](mailto:jamesyang916@gmail.com).
 
 ## Contributors
 
-| **James Yang** | **Kent Hall** |
-| :---: | :---: |
-| [![JamesYang007](https://avatars3.githubusercontent.com/u/5008832?s=100&v=4)](https://github.com/JamesYang007) | [](https://github.com/kentjhall) |
-| <a href="http://github.com/JamesYang007" target="_blank">`github.com/JamesYang007`</a> | <a href="http://github.com/kentjhall" target="_blank">`github.com/kentjhall`</a> |
+| **James Yang** | **Kent Hall** | **Jean-Christophe Ruel** | **ZhouYao** |
+| :---: | :---: | :---: | :---: |
+| [![JamesYang007](https://avatars3.githubusercontent.com/u/5008832?s=100&v=4)](https://github.com/JamesYang007) | [![Kent](https://avatars3.githubusercontent.com/u/4146614?s=100&v=4)](https://github.com/kentjhall) | [![Jean-Christophe Ruel](https://avatars3.githubusercontent.com/u/16375770?s=100&v=4)](https://github.com/jeanchristopheruel) | [](https://github.com/kilasuelika) |
+| <a href="http://github.com/JamesYang007" target="_blank">`github.com/JamesYang007`</a> | <a href="http://github.com/kentjhall" target="_blank">`github.com/kentjhall`</a> | <a href="http://github.com/jeanchristopheruel" target="_blank">`github.com/jeanchristopheruel`</a> | <a href="http://github.com/kilasuelika" target="_blank">`github.com/kilasuelika`</a> |
 
 ## Third Party Tools
 
