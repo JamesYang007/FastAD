@@ -18,3 +18,4 @@
 #include "fastad_bits/reverse/core/var.hpp"
 #include "fastad_bits/reverse/core/var_view.hpp"
 //#include "fastad_bits/reverse/core/hessian.hpp"
+#include "fastad_bits/reverse/core/transpose.hpp"

@@ -33,6 +33,8 @@
       - [Advanced Usage](#advanced-usage)
   - [Applications](#applications)
     - [Black-Scholes Put-Call Option Pricing](#black-scholes-put-call-option-pricing)
+    - [Quadratic Expression Differential](#quad-expr-diff)
+    - [Simple Linear Regression Model](#simple-linear-regression)
   - [Quick Reference](#quick-reference)
     - [Forward](#forward)
     - [Reverse](#reverse)
@@ -550,6 +552,198 @@ We observed the same output as the one shown in
 [boost](https://www.boost.org/doc/libs/master/libs/math/doc/html/math_toolkit/autodiff.html#math_toolkit.autodiff.example-black_scholes)
 for the prices and deltas (S's adjoints).
 
+### Quadratic Expression Differential
+
+In ML applications, user usually provide a full parameter vector to an optimizer and write an objective function to calculate objective value and gradient. The gradient pointer is provided by the optimizer and user fill values. Then it will be more convinent to use `VarView` to bind the gradient pointer as buffer.
+
+Here is an example of differentiating a quadratic expression `x^T*Sigma*x` using `VarView`.
+
+```cpp
+#include <iostream>
+#include "fastad"
+#include <Eigen/src/Core/Matrix.h>
+
+int main() {
+    using namespace ad;
+
+    // Generating buffer.
+    Eigen::MatrixXd x_data(2, 1);
+    x_data << 0.5, 0.6;
+    Eigen::MatrixXd x_adj(2, 1);
+    x_adj.setZero(); // Set adjoints to zeros.
+
+    // Initialize variable.
+    VarView<double, mat> x(x_data.data(), x_adj.data(), 2, 1);
+
+    // Initialize matrix.
+    Eigen::MatrixXd _Sigma(2, 2);
+    _Sigma << 2, 3, 3, 6;
+    std::cout << _Sigma << std::endl;
+    auto Sigma = constant(_Sigma);
+
+    // Quadratic expression: x^T*Sigma*x
+    auto expr = bind(dot(dot(transpose(x), Sigma), x));
+    // Seed
+    Eigen::MatrixXd seed(1, 1);
+    seed.setOnes(); // Usually seed is 1. DONT'T FORGET!
+    // Auto differential.
+    auto f = autodiff(expr, seed.array());
+
+    // Print results.
+    std::cout << "f: " << f << std::endl;
+    std::cout << x.get() << std::endl;     //[0.5, 0.6]
+    std::cout << x.get_adj() << std::endl; //[5.6, 10.2]
+
+    return 0;
+}
+```
+
+### Simple Linear Regression Model
+In a regression model, one has many rows of data. A loop is needed to calculate loss of each row.
+
+```cpp
+#include "fastad"
+#include <iostream>
+
+int main() {
+    using namespace ad;
+    // Create data matrix.
+    Eigen::MatrixXd X(5, 2);
+    X << 1, 10, 2, 20, 3, 30, 4, 40, 5, 50;
+    Eigen::VectorXd y(5);
+    y << 32, 64, 96, 128, 160; // y=2*x1+3*x2
+
+    // Generating buffer.
+    Eigen::MatrixXd theta_data(2, 1);
+    theta_data << 1, 2;
+    Eigen::MatrixXd theta_adj(2, 1);
+    theta_adj.setZero(); // Set adjoints to zeros.
+
+    // Initialize variable.
+    VarView<double, mat> theta(theta_data.data(), theta_adj.data(), 2, 1);
+
+    // Create expr. Use a row buffer to store data. Then we only need to manipulate data when
+    // looping.
+    Eigen::MatrixXd x_row_buffer = X.row(0);
+    auto xi = constant_view(x_row_buffer.data(), 1, X.cols());
+    Eigen::MatrixXd y_row_buffer = y.row(0);
+    auto yi = constant_view(y_row_buffer.data(), 1, y.cols());
+    auto expr = bind(pow<2>(yi - dot(xi, theta)));
+
+    // Seed
+    Eigen::MatrixXd seed(1, 1);
+    seed.setOnes(); // Usually seed is 1. DONT'T FORGET!
+
+    // Loop over each row to calulate loss.
+    double loss = 0;
+    for (int i = 0; i < X.rows(); ++i) {
+        x_row_buffer = X.row(i);
+        y_row_buffer = y.row(i);
+
+        auto f = autodiff(expr, seed.array());
+        loss += f.coeff(0);
+    }
+
+    // Print results.
+    std::cout << "loss: " << loss << std::endl; // 6655
+    std::cout << theta.get() << std::endl;      //[1, 2]
+    std::cout << theta.get_adj() << std::endl;  //[-1210, -12100]
+
+    theta_adj.setZero(); // Reset differential to zero after one full pass.
+
+    return 0;
+}
+```
+
+### 3-layer Neural Network with Jump Connection
+
+Here is an example of 3-layer neural network. The result has been confirmed by symbolic differential using Mathematica. See `test/reverse/util/GenTestData.nb` for Mathematica code used.
+
+There is also a full independent example that using `ceres` to train this network in `examples/ceres_3layer_neural_net`. `ceres` has it's own automatic differential tool for non-linear least square problem which is unavailiable for the more versatile `GradientProbelm`. That's why we need `FastAD`. To run this example, you need to install and `Eigen` and `ceres`.
+
+```cpp
+#include "fastad"
+#include <iostream>
+
+using namespace ad;
+// A3*s(A2*s(A1*x+b1)+b2+(A1*x+b1))+b3
+struct NN {
+    Eigen::MatrixXd X, y;
+    NN(const Eigen::MatrixXd &X, const Eigen::VectorXd &y)
+        : X(X), y(y){
+
+                };
+    double loss(const double *parm, double *grad) {
+        Eigen::Map<Eigen::VectorXd> g(grad, 25);
+        g.setZero();
+
+		//Create variables.
+        VarView<double, mat> A1(const_cast<double *>(parm), grad, 3, 2);
+        VarView<double, mat> b1(const_cast<double *>(parm + 6), grad + 6, 3, 1);
+        VarView<double, mat> A2(const_cast<double *>(parm + 9), grad + 9, 3, 3);
+        VarView<double, mat> b2(const_cast<double *>(parm + 18), grad + 18, 3, 1);
+        VarView<double, mat> A3(const_cast<double *>(parm + 21), grad + 21, 1, 3);
+        VarView<double, mat> b3(const_cast<double *>(parm + 24), grad + 24, 1, 1);
+
+        // Data buffer
+        Eigen::VectorXd x_row_buffer = X.row(0);
+        auto xi = constant_view(x_row_buffer.data(), X.cols(), 1);
+        Eigen::VectorXd y_row_buffer = y.row(0);
+        auto yi = constant_view(y_row_buffer.data(), y.cols(), 1);
+        
+        // Expression
+        auto x1 = dot(A1, xi) + b1;
+        auto y1 = sigmoid(x1);
+        auto y2 = sigmoid(dot(A2, y1) + b2) + x1;
+        auto y3 = dot(A3, y2) + b3;
+        auto residual_norm2 = pow<2>(yi - y3);
+        auto expr = bind(residual_norm2);
+
+        // Seed
+        Eigen::MatrixXd seed(1, 1);
+        seed.setOnes(); // Usually seed is 1. DONT'T FORGET!
+
+        // Loop over each row to calulate loss.
+        double loss = 0;
+        for (int i = 0; i < X.rows(); ++i) {
+            x_row_buffer = X.row(i);
+            y_row_buffer = y.row(i);
+
+            auto f = autodiff(expr, seed.array());
+            loss += f.coeff(0);
+        }
+        return loss;
+    };
+};
+
+int main() {
+
+    // Create data matrix.
+    Eigen::MatrixXd X(5, 2);
+    X << 1, 10, 2, 20, 3, 30, 4, 40, 5, 50;
+    Eigen::VectorXd y(5);
+    y << 32, 64, 96, 128, 160; // y=2*x1+3*x2
+
+    // Generating parameter buffer and NN.
+    Eigen::VectorXd parm_data(25);
+    parm_data << 0.043984, 0.960126, -0.520941, -0.800526, -0.0287914, 0.635809, 0.584603,
+        -0.443382, 0.224304, 0.97505, -0.824084, 0.2363, 0.666392, -0.498828, -0.781428, -0.911053,
+        -0.230156, -0.136367, 0.263425, 0.841535, 0.920342, 0.65629, 0.848248, -0.748697, 0.21522;
+
+    Eigen::VectorXd grad_data(25);
+    grad_data.setZero(); // Set adjoints to zeros.
+    NN net(X, y);
+
+    auto loss = net.loss(parm_data.data(), grad_data.data());
+
+    // Print results.
+    std::cout << "loss: " << loss << std::endl;      // 6655
+    std::cout << "parm: " << parm_data << std::endl; //[1, 2]
+    std::cout << "diff: " << grad_data << std::endl; //[-1210, -12100]
+
+    return 0;
+}
+```
 ## Quick Reference
 
 ### Forward 
@@ -598,6 +792,8 @@ __Var<T, ShapeType=scl>__:
 __Unary Functions (vectorized if multi-dimensional)__:
 - unary minus: `operator-`
 - trig functions: `sin, cos, tan, asin, acos, atan`
+- Hyperbolic: `sinh, cosh, tanh`
+- Neural network activations: `sigmoid`
 - others: `exp, log, sqrt, erf`
 
 __Operators__:
@@ -652,6 +848,8 @@ __Special Expressions__:
 - `ad::sum(begin, end, f)`:
 - `ad::sum(e)`:
     - same as prod but represents summation
+- `ad::transpose(e)`:
+	- matrix or vector transpose.
 
 __Stats Expressions__:
 All log-pdfs are adjusted to omit constants.
