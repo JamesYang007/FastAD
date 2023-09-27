@@ -344,9 +344,20 @@ int main()
 
     Var<double, scl> x(2);
     Var<double, vec> v(5);
+    
+    // randomly generate values for v
+    v.get().setRandom();
 
+    // create AD expression bound to storage
     auto expr_bound = bind(sin(x) + cos(v));
-    auto f = autodiff(expr_bound);
+    
+    // seed to get gradient of function at index 2
+    Eigen::Array<double, Eigen::Dynamic, 1> seed(v.size());
+    seed.setZero();
+    seed[2] = 1;
+
+    // differentiate
+    auto f = autodiff(expr_bound, seed);
 
     std::cout << x.get_adj() << std::endl;
     std::cout << v.get_adj(2,0) << std::endl;
